@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { UserManagement } from "@/components/settings/UserManagement";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -238,6 +239,9 @@ export default function SettingsPage() {
             />
           </CardContent>
         </Card>
+
+        {/* User Management */}
+        <UserManagement />
       </div>
     </DashboardLayout>
   );

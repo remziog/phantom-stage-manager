@@ -1,6 +1,8 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { RevenueBarChart, EquipmentUtilizationPieChart } from "@/components/dashboard/DashboardCharts";
+import { EquipmentAlerts } from "@/components/dashboard/EquipmentAlerts";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEvents } from "@/hooks/useEvents";
 import { useQuotes } from "@/hooks/useQuotes";
@@ -152,8 +154,8 @@ function AdminDashboard() {
         ) : null;
       })()}
 
-      {/* Bottom panels */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Bottom panels — 3 columns */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Upcoming Events */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader className="pb-3">
@@ -224,7 +226,13 @@ function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Equipment Alerts */}
+        <EquipmentAlerts equipment={equipment} />
       </div>
+
+      {/* Recent Activity */}
+      <RecentActivity />
     </div>
   );
 }
@@ -235,7 +243,6 @@ function CustomerDashboard() {
   const { data: events = [] } = useEvents();
   const { profile } = useAuth();
 
-  const today = new Date().toISOString().split("T")[0];
   const activeEvents = events.filter((e) => e.status !== "Completed" && e.status !== "Cancelled");
   const pendingQuotes = quotes.filter((q) => q.status === "Sent" || q.status === "Draft");
   const approvedTotal = quotes.filter((q) => q.status === "Approved").reduce((s, q) => s + q.total, 0);
@@ -249,7 +256,6 @@ function CustomerDashboard() {
         <p className="text-sm text-muted-foreground">View your quotes and event status.</p>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard title="My Quotes" value={quotes.length} icon={FileText} color="text-primary" />
         <KpiCard title="Active Events" value={activeEvents.length} icon={Calendar} color="text-accent" />
@@ -258,7 +264,6 @@ function CustomerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* My Quotes */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -297,7 +302,6 @@ function CustomerDashboard() {
           </CardContent>
         </Card>
 
-        {/* My Events */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
