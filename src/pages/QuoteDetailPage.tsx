@@ -215,28 +215,30 @@ export default function QuoteDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-4">
-                <div className="space-y-1.5 flex-1">
-                  <Label>Discount %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={discount}
-                    onChange={(e) => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                  />
+              {isAdmin && (
+                <div className="flex items-center gap-4">
+                  <div className="space-y-1.5 flex-1">
+                    <Label>Discount %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={discount}
+                      onChange={(e) => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    />
+                  </div>
+                  <div className="space-y-1.5 flex-1">
+                    <Label>Tax (KDV) %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={tax}
+                      onChange={(e) => setTax(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5 flex-1">
-                  <Label>Tax (KDV) %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={tax}
-                    onChange={(e) => setTax(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                  />
-                </div>
-              </div>
+              )}
               <div className="space-y-2 text-sm tabular-nums">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
