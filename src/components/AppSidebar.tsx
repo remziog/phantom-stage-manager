@@ -8,6 +8,7 @@ import {
   FileText,
   Calendar,
   Settings,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
