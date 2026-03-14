@@ -10,8 +10,9 @@ import EquipmentPage from "./pages/EquipmentPage";
 import TeamPage from "./pages/TeamPage";
 import LogisticsPage from "./pages/LogisticsPage";
 import CustomersPage from "./pages/CustomersPage";
+import QuotesPage from "./pages/QuotesPage";
+import QuoteDetailPage from "./pages/QuoteDetailPage";
 import {
-  QuotesPage,
   EventsPage,
   SettingsPage,
 } from "./pages/PlaceholderPages";
@@ -51,6 +52,7 @@ function AppRoutes() {
       <Route path="/logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
       <Route path="/quotes" element={<ProtectedRoute><QuotesPage /></ProtectedRoute>} />
+      <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetailPage /></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
