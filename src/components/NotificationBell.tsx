@@ -9,6 +9,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   quote_created: { icon: FileText, color: "text-primary" },
   event_status: { icon: Calendar, color: "text-accent" },
   quote_approved: { icon: CheckCircle, color: "text-[hsl(var(--success))]" },
+  quote_rejected: { icon: CheckCircle, color: "text-destructive" },
   info: { icon: Info, color: "text-muted-foreground" },
 };
 
@@ -38,18 +39,6 @@ export function NotificationBell() {
   };
 
   const recent = notifications.slice(0, 5);
-  const { data: notifications = [] } = useNotifications();
-  const unreadCount = useUnreadCount();
-  const markRead = useMarkAsRead();
-  const markAllRead = useMarkAllAsRead();
-  const navigate = useNavigate();
-
-  const handleClick = (n: (typeof notifications)[0]) => {
-    if (!n.is_read) markRead.mutate(n.id);
-    if (n.reference_id && n.reference_type) {
-      navigate(`/${n.reference_type === "quote" ? "quotes" : "events"}/${n.reference_id}`);
-    }
-  };
 
   return (
     <Popover>
@@ -76,14 +65,14 @@ export function NotificationBell() {
           )}
         </div>
         <ScrollArea className="max-h-80">
-          {notifications.length === 0 ? (
+          {recent.length === 0 ? (
             <div className="py-8 text-center">
               <Bell className="mx-auto h-8 w-8 text-muted-foreground/30" />
               <p className="mt-2 text-sm text-muted-foreground">No notifications yet</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {notifications.map((n) => {
+              {recent.map((n) => {
                 const config = typeConfig[n.type] || typeConfig.info;
                 const Icon = config.icon;
                 return (
@@ -115,6 +104,16 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        {notifications.length > 5 && (
+          <div className="border-t border-border px-4 py-2.5">
+            <button
+              onClick={() => navigate("/notifications")}
+              className="text-xs text-primary hover:underline w-full text-center"
+            >
+              View all notifications
+            </button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
