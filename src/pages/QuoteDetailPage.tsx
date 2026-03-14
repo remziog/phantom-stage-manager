@@ -26,6 +26,7 @@ export default function QuoteDetailPage() {
   const { data: lineItems = [], isLoading: loadingItems } = useQuoteLineItems(id);
   const updateQuote = useUpdateQuote();
   const saveLines = useSaveLineItems();
+  const { settings: company } = useCompanySettings();
 
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(20);
