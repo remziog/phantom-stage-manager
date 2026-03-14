@@ -8,6 +8,7 @@ import {
   FileText,
   Calendar,
   Settings,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +31,7 @@ const adminNavItems = [
   { title: "Customers", url: "/customers", icon: Building2 },
   { title: "Quotes", url: "/quotes", icon: FileText },
   { title: "Events", url: "/events", icon: Calendar },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
@@ -37,6 +39,7 @@ const customerNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "My Quotes", url: "/quotes", icon: FileText },
   { title: "My Events", url: "/events", icon: Calendar },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 export function AppSidebar() {
