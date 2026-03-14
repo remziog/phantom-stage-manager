@@ -33,8 +33,9 @@ export function useCreateEquipment() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      logActivity("Equipment added", "equipment", data.id, data.name, `${data.category} · qty ${data.quantity_total}`);
     },
   });
 }
