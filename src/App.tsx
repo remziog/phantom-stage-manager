@@ -8,8 +8,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import EquipmentPage from "./pages/EquipmentPage";
 import TeamPage from "./pages/TeamPage";
+import LogisticsPage from "./pages/LogisticsPage";
 import {
-  LogisticsPage,
   CustomersPage,
   QuotesPage,
   EventsPage,
