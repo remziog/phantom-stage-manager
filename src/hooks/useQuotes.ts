@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/activityLogger";
 
 export type QuoteStatus = "Draft" | "Sent" | "Approved" | "Rejected" | "Cancelled";
 export type LineItemType = "Equipment" | "Personnel" | "Vehicle" | "Custom";
@@ -111,9 +112,10 @@ export function useCreateQuote() {
       if (error) throw error;
       return data as Quote;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["quotes"] });
       toast.success("Quote created");
+      logActivity("Quote created", "quote", data.id, `${data.quote_number} — ${data.event_name}`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -125,10 +127,14 @@ export function useUpdateQuote() {
     mutationFn: async ({ id, ...updates }: Partial<Quote> & { id: string }) => {
       const { error } = await supabase.from("quotes").update(updates).eq("id", id);
       if (error) throw error;
+      return { id, ...updates };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (vars) => {
       qc.invalidateQueries({ queryKey: ["quotes"] });
       qc.invalidateQueries({ queryKey: ["quotes", vars.id] });
+      if (vars.status) {
+        logActivity(`Quote ${vars.status.toLowerCase()}`, "quote", vars.id, `Status → ${vars.status}`);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -144,7 +150,6 @@ export function useSaveLineItems() {
       quoteId: string;
       items: Omit<QuoteLineItem, "id" | "created_at">[];
     }) => {
-      // Delete existing then insert new
       await supabase.from("quote_line_items").delete().eq("quote_id", quoteId);
       if (items.length > 0) {
         const { error } = await supabase
