@@ -111,6 +111,47 @@ function AdminDashboard() {
         <EquipmentUtilizationPieChart equipment={equipment} />
       </div>
 
+      {/* Category Availability */}
+      {(() => {
+        const categories = ["Light", "Sound", "Video/Image", "Truss", "Rigging", "Power/Cable", "Other"] as const;
+        const catData = categories.map((cat) => {
+          const items = equipment.filter((e) => e.category === cat);
+          const total = items.reduce((s, e) => s + e.quantity_total, 0);
+          const available = items.reduce((s, e) => s + e.quantity_available, 0);
+          const pct = total > 0 ? Math.round((available / total) * 100) : 0;
+          return { cat, total, available, pct };
+        }).filter((c) => c.total > 0);
+
+        return catData.length > 0 ? (
+          <Card className="phantom-shadow border-border/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Package className="h-4 w-4 text-primary" /> Equipment Availability by Category
+                </CardTitle>
+                <button onClick={() => navigate("/equipment")} className="text-xs text-primary hover:underline">View all</button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {catData.map((c) => (
+                  <div key={c.cat} className="rounded-lg bg-secondary/50 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">{c.cat}</p>
+                    <p className="text-sm font-semibold text-foreground tabular-nums">
+                      {c.available} <span className="text-muted-foreground font-normal">/ {c.total}</span>
+                    </p>
+                    <Progress value={c.pct} className="h-1.5" />
+                    <p className={`text-xs tabular-nums ${c.pct < 20 ? "text-destructive" : c.pct < 50 ? "text-[hsl(var(--warning))]" : "text-[hsl(var(--success))]"}`}>
+                      {c.pct}% available
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null;
+      })()}
+
       {/* Bottom panels */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Upcoming Events */}
