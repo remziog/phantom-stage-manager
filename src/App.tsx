@@ -17,6 +17,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import QuoteRequestPage from "./pages/QuoteRequestPage";
+import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
