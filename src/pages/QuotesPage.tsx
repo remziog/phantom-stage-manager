@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuotes, useUpdateQuote, type QuoteStatus } from "@/hooks/useQuotes";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateQuoteDialog } from "@/components/quotes/CreateQuoteDialog";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +22,7 @@ const statuses: QuoteStatus[] = ["Draft", "Sent", "Approved", "Rejected", "Cance
 
 export default function QuotesPage() {
   const { data: quotes = [], isLoading } = useQuotes();
+  const { role } = useAuth();
   const update = useUpdateQuote();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -53,16 +55,22 @@ export default function QuotesPage() {
     { label: "Pending", value: `${draftCount} draft · ${sentCount} sent`, icon: Clock, color: "text-accent" },
   ];
 
+  const isAdmin = role === "admin" || role === "team_member";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Quotes & Proposals</h1>
-            <p className="text-sm text-muted-foreground">Create, price, and manage event proposals.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              {isAdmin ? "Quotes & Proposals" : "My Quotes"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "Create, price, and manage event proposals." : "View your quotes and proposals."}
+            </p>
           </div>
-          <CreateQuoteDialog />
+          {isAdmin && <CreateQuoteDialog />}
         </div>
 
         {/* Stats */}
@@ -148,7 +156,7 @@ export default function QuotesPage() {
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        {q.status === "Draft" && (
+                        {isAdmin && q.status === "Draft" && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -158,7 +166,7 @@ export default function QuotesPage() {
                             Send
                           </Button>
                         )}
-                        {q.status === "Sent" && (
+                        {isAdmin && q.status === "Sent" && (
                           <Button
                             variant="outline"
                             size="sm"

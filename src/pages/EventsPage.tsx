@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEvents, type EventStatus } from "@/hooks/useEvents";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateEventDialog } from "@/components/events/CreateEventDialog";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { EventCalendar } from "@/components/events/EventCalendar";
@@ -30,7 +31,9 @@ const statusColors: Record<EventStatus, string> = {
 
 export default function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
+  const { role } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = role === "admin" || role === "team_member";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"list" | "calendar">("list");
@@ -69,10 +72,14 @@ export default function EventsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Events</h1>
-            <p className="text-sm text-muted-foreground">Track active and upcoming events with resource assignments.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              {isAdmin ? "Events" : "My Events"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "Track active and upcoming events with resource assignments." : "View your event status and details."}
+            </p>
           </div>
-          <CreateEventDialog />
+          {isAdmin && <CreateEventDialog />}
         </div>
 
         {/* Stats */}
