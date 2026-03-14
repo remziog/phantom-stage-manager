@@ -16,9 +16,6 @@ function PlaceholderPage({ title, description }: { title: string; description: s
   );
 }
 
-export function EquipmentPage() {
-  return <PlaceholderPage title="Equipment" description="Manage your inventory of lights, sound, video, and truss systems." />;
-}
 
 export function TeamPage() {
   return <PlaceholderPage title="Team" description="Manage your crew and technicians." />;
