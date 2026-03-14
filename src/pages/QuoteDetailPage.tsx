@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useSaveLineItems } from "@/hooks/useQuotes";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { LineItemEditor } from "@/components/quotes/LineItemEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function QuoteDetailPage() {
   const { data: lineItems = [], isLoading: loadingItems } = useQuoteLineItems(id);
   const updateQuote = useUpdateQuote();
   const saveLines = useSaveLineItems();
+  const { settings: company } = useCompanySettings();
 
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(20);
@@ -86,7 +88,7 @@ export default function QuoteDetailPage() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={() => generateQuotePdf(quote, lineItems)}
+            onClick={() => generateQuotePdf({ quote, lineItems, company })}
             disabled={lineItems.length === 0}
           >
             <Download className="h-4 w-4" /> Export PDF
