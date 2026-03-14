@@ -22,6 +22,7 @@ const statuses: QuoteStatus[] = ["Draft", "Sent", "Approved", "Rejected", "Cance
 
 export default function QuotesPage() {
   const { data: quotes = [], isLoading } = useQuotes();
+  const { role } = useAuth();
   const update = useUpdateQuote();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
