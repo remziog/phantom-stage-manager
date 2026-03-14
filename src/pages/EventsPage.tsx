@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEvents, type EventStatus } from "@/hooks/useEvents";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateEventDialog } from "@/components/events/CreateEventDialog";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { EventCalendar } from "@/components/events/EventCalendar";
