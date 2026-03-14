@@ -18,10 +18,6 @@ function PlaceholderPage({ title, description }: { title: string; description: s
 
 
 
-export function QuotesPage() {
-  return <PlaceholderPage title="Quotes" description="Create and manage proposals." />;
-}
-
 export function EventsPage() {
   return <PlaceholderPage title="Events" description="Track active and upcoming events." />;
 }
