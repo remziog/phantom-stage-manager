@@ -1,9 +1,16 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Quote, QuoteLineItem } from "@/hooks/useQuotes";
+import type { CompanySettings } from "@/hooks/useCompanySettings";
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(v);
+interface PdfOptions {
+  quote: Quote;
+  lineItems: QuoteLineItem[];
+  company?: CompanySettings | null;
+}
+
+const makeFmt = (currency: string, symbol: string) => (v: number) =>
+  new Intl.NumberFormat("tr-TR", { style: "currency", currency, maximumFractionDigits: 0 }).format(v);
 
 const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }) : "—";
