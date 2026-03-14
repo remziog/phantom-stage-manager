@@ -28,7 +28,8 @@ export default function QuoteDetailPage() {
   const updateQuote = useUpdateQuote();
   const saveLines = useSaveLineItems();
   const { settings: company } = useCompanySettings();
-
+  const { role } = useAuth();
+  const isAdmin = role === "admin" || role === "team_member";
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(20);
 
