@@ -53,8 +53,9 @@ export function useUpdateEquipment() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      logActivity("Equipment updated", "equipment", data.id, data.name);
     },
   });
 }
