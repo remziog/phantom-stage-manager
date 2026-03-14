@@ -10,8 +10,9 @@ import EquipmentPage from "./pages/EquipmentPage";
 import TeamPage from "./pages/TeamPage";
 import LogisticsPage from "./pages/LogisticsPage";
 import CustomersPage from "./pages/CustomersPage";
+import QuotesPage from "./pages/QuotesPage";
+import QuoteDetailPage from "./pages/QuoteDetailPage";
 import {
-  QuotesPage,
   EventsPage,
   SettingsPage,
 } from "./pages/PlaceholderPages";
