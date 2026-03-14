@@ -5,14 +5,16 @@ import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { LineItemEditor } from "@/components/quotes/LineItemEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Calendar, MapPin, Building2, Download } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Building2, Download, CheckCircle, XCircle } from "lucide-react";
 import { generateQuotePdf } from "@/components/quotes/generateQuotePdf";
 import type { QuoteStatus } from "@/hooks/useQuotes";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(v);
@@ -27,7 +29,8 @@ export default function QuoteDetailPage() {
   const updateQuote = useUpdateQuote();
   const saveLines = useSaveLineItems();
   const { settings: company } = useCompanySettings();
-
+  const { role } = useAuth();
+  const isAdmin = role === "admin" || role === "team_member";
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(20);
 
@@ -93,16 +96,37 @@ export default function QuoteDetailPage() {
           >
             <Download className="h-4 w-4" /> Export PDF
           </Button>
-          <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statuses.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isAdmin && (
+            <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {!isAdmin && quote.status === "Sent" && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="gap-1.5 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-foreground"
+                onClick={() => handleStatusChange("Approved")}
+              >
+                <CheckCircle className="h-4 w-4" /> Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => handleStatusChange("Rejected")}
+              >
+                <XCircle className="h-4 w-4" /> Reject
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Info Cards */}
@@ -149,13 +173,37 @@ export default function QuoteDetailPage() {
           <CardContent>
             {loadingItems ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : (
+            ) : isAdmin ? (
               <LineItemEditor
                 quoteId={quote.id}
                 initialItems={lineItems}
                 onSave={handleSaveLineItems}
                 saving={saveLines.isPending}
               />
+            ) : (
+              /* Read-only line items for customers */
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-center">Qty</TableHead>
+                    <TableHead className="text-center">Days</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-foreground">{item.description}</TableCell>
+                      <TableCell className="text-center text-muted-foreground">{item.quantity}</TableCell>
+                      <TableCell className="text-center text-muted-foreground">{item.days}</TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums">{fmt(item.unit_price)}</TableCell>
+                      <TableCell className="text-right font-medium text-foreground tabular-nums">{fmt(item.line_total)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -167,28 +215,30 @@ export default function QuoteDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-4">
-                <div className="space-y-1.5 flex-1">
-                  <Label>Discount %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={discount}
-                    onChange={(e) => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                  />
+              {isAdmin && (
+                <div className="flex items-center gap-4">
+                  <div className="space-y-1.5 flex-1">
+                    <Label>Discount %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={discount}
+                      onChange={(e) => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    />
+                  </div>
+                  <div className="space-y-1.5 flex-1">
+                    <Label>Tax (KDV) %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={tax}
+                      onChange={(e) => setTax(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5 flex-1">
-                  <Label>Tax (KDV) %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={tax}
-                    onChange={(e) => setTax(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                  />
-                </div>
-              </div>
+              )}
               <div className="space-y-2 text-sm tabular-nums">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>

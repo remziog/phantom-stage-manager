@@ -176,6 +176,26 @@ export default function QuotesPage() {
                             Approve
                           </Button>
                         )}
+                        {!isAdmin && q.status === "Sent" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs text-[hsl(var(--success))] border-[hsl(var(--success))]/30 hover:bg-[hsl(var(--success))]/10"
+                              onClick={() => update.mutate({ id: q.id, status: "Approved" })}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                              onClick={() => update.mutate({ id: q.id, status: "Rejected" })}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
