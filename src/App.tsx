@@ -14,7 +14,7 @@ import QuotesPage from "./pages/QuotesPage";
 import QuoteDetailPage from "./pages/QuoteDetailPage";
 import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
-import { SettingsPage } from "./pages/PlaceholderPages";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
