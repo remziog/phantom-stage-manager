@@ -15,26 +15,41 @@ const makeFmt = (currency: string, symbol: string) => (v: number) =>
 const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" }) : "—";
 
-export function generateQuotePdf(quote: Quote, lineItems: QuoteLineItem[]) {
+export function generateQuotePdf({ quote, lineItems, company }: PdfOptions) {
+  const companyName = company?.company_name || "PHANTOM";
+  const companyTagline = "Event Production & Technical Services";
+  const companyLocation = [
+    company?.company_city,
+    company?.company_country,
+  ].filter(Boolean).join(", ") || "İstanbul, Turkey";
+  const companyContact = [
+    company?.company_email || "info@phantom.com.tr",
+    company?.company_phone || "+90 212 555 0000",
+  ].join("  ·  ");
+  const currency = company?.currency || "TRY";
+  const currencySymbol = company?.currency_symbol || "₺";
+  const taxRate = company?.default_tax_rate ?? quote.tax_percent;
+  const fmt = makeFmt(currency, currencySymbol);
+
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = 20;
 
   // — Brand header bar —
-  doc.setFillColor(15, 23, 42); // slate-900
+  doc.setFillColor(15, 23, 42);
   doc.rect(0, 0, w, 38, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
-  doc.text("PHANTOM", margin, 18);
+  doc.text(companyName.toUpperCase(), margin, 18);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184); // slate-400
-  doc.text("Event Production & Technical Services", margin, 25);
-  doc.text("İstanbul, Turkey  ·  info@phantom.com.tr  ·  +90 212 555 0000", margin, 31);
+  doc.setTextColor(148, 163, 184);
+  doc.text(companyTagline, margin, 25);
+  doc.text(`${companyLocation}  ·  ${companyContact}`, margin, 31);
 
   // — Quote title block (right side) —
   doc.setFontSize(24);
