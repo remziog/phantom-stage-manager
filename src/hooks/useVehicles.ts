@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { logActivity } from "@/lib/activityLogger";
 
 export type Vehicle = Tables<"vehicles">;
 export type VehicleInsert = TablesInsert<"vehicles">;
