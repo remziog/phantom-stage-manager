@@ -38,6 +38,7 @@ const customerNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "My Quotes", url: "/quotes", icon: FileText },
   { title: "My Events", url: "/events", icon: Calendar },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 export function AppSidebar() {
