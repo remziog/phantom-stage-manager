@@ -33,7 +33,10 @@ export function useCreateVehicle() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["vehicles"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+      logActivity("Vehicle added", "vehicle", data.id, data.name, `${data.type} · ${data.license_plate}`);
+    },
   });
 }
 
