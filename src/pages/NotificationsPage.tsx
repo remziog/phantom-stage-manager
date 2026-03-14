@@ -17,6 +17,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   event_status: { icon: Calendar, color: "text-accent", label: "Event Update" },
   quote_approved: { icon: CheckCircle, color: "text-[hsl(var(--success))]", label: "Quote Approved" },
   quote_rejected: { icon: XCircle, color: "text-destructive", label: "Quote Rejected" },
+  quote_request: { icon: FileText, color: "text-[hsl(var(--warning))]", label: "Quote Request" },
   info: { icon: Info, color: "text-muted-foreground", label: "Info" },
 };
 
