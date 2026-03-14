@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Calendar, MapPin, Building2, Download } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Building2, Download, CheckCircle, XCircle } from "lucide-react";
 import { generateQuotePdf } from "@/components/quotes/generateQuotePdf";
 import type { QuoteStatus } from "@/hooks/useQuotes";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(v);
