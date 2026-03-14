@@ -161,6 +161,124 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_line_items: {
+        Row: {
+          created_at: string
+          days: number
+          description: string
+          id: string
+          item_type: Database["public"]["Enums"]["line_item_type"]
+          line_total: number
+          quantity: number
+          quote_id: string
+          sort_order: number
+          source_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          days?: number
+          description: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["line_item_type"]
+          line_total?: number
+          quantity?: number
+          quote_id: string
+          sort_order?: number
+          source_id?: string | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          days?: number
+          description?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["line_item_type"]
+          line_total?: number
+          quantity?: number
+          quote_id?: string
+          sort_order?: number
+          source_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_line_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string
+          discount_percent: number
+          event_date: string | null
+          event_end_date: string | null
+          event_name: string
+          id: string
+          notes: string | null
+          quote_number: string
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_percent: number
+          total: number
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name: string
+          discount_percent?: number
+          event_date?: string | null
+          event_end_date?: string | null
+          event_name: string
+          id?: string
+          notes?: string | null
+          quote_number: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_percent?: number
+          total?: number
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          discount_percent?: number
+          event_date?: string | null
+          event_end_date?: string | null
+          event_name?: string
+          id?: string
+          notes?: string | null
+          quote_number?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_percent?: number
+          total?: number
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           created_at: string
@@ -308,6 +426,8 @@ export type Database = {
         | "On Event"
         | "In Transit"
         | "Under Maintenance"
+      line_item_type: "Equipment" | "Personnel" | "Vehicle" | "Custom"
+      quote_status: "Draft" | "Sent" | "Approved" | "Rejected" | "Cancelled"
       team_role:
         | "Project Manager"
         | "Light Technician"
@@ -468,6 +588,8 @@ export const Constants = {
         "In Transit",
         "Under Maintenance",
       ],
+      line_item_type: ["Equipment", "Personnel", "Vehicle", "Custom"],
+      quote_status: ["Draft", "Sent", "Approved", "Rejected", "Cancelled"],
       team_role: [
         "Project Manager",
         "Light Technician",
