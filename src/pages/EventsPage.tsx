@@ -72,10 +72,14 @@ export default function EventsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Events</h1>
-            <p className="text-sm text-muted-foreground">Track active and upcoming events with resource assignments.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              {isAdmin ? "Events" : "My Events"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "Track active and upcoming events with resource assignments." : "View your event status and details."}
+            </p>
           </div>
-          <CreateEventDialog />
+          {isAdmin && <CreateEventDialog />}
         </div>
 
         {/* Stats */}
