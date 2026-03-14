@@ -31,6 +31,7 @@ const adminNavItems = [
   { title: "Customers", url: "/customers", icon: Building2 },
   { title: "Quotes", url: "/quotes", icon: FileText },
   { title: "Events", url: "/events", icon: Calendar },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
