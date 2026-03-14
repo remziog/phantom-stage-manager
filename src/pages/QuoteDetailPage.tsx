@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useSaveLineItems } from "@/hooks/useQuotes";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { LineItemEditor } from "@/components/quotes/LineItemEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
