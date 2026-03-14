@@ -17,6 +17,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import QuoteRequestPage from "./pages/QuoteRequestPage";
+import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/get-quote" element={<PublicQuoteRequestPage />} />
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><EquipmentPage /></ProtectedRoute>} />
       <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />

@@ -504,6 +504,10 @@ export type Database = {
         Row: {
           admin_notes: string | null
           budget_range: string | null
+          contact_company: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           customer_id: string | null
           details: string | null
@@ -518,12 +522,16 @@ export type Database = {
           start_date: string | null
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           venue: string | null
         }
         Insert: {
           admin_notes?: string | null
           budget_range?: string | null
+          contact_company?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           customer_id?: string | null
           details?: string | null
@@ -538,12 +546,16 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           venue?: string | null
         }
         Update: {
           admin_notes?: string | null
           budget_range?: string | null
+          contact_company?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           customer_id?: string | null
           details?: string | null
@@ -558,7 +570,7 @@ export type Database = {
           start_date?: string | null
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           venue?: string | null
         }
         Relationships: [
