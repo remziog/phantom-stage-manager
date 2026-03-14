@@ -167,6 +167,59 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicles: {
+        Row: {
+          capacity_kg: number | null
+          capacity_volume_m3: number | null
+          created_at: string
+          current_status: Database["public"]["Enums"]["vehicle_status"]
+          daily_cost: number
+          driver_id: string | null
+          id: string
+          is_available: boolean
+          license_plate: string
+          name: string
+          notes: string | null
+          type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          capacity_kg?: number | null
+          capacity_volume_m3?: number | null
+          created_at?: string
+          current_status?: Database["public"]["Enums"]["vehicle_status"]
+          daily_cost?: number
+          driver_id?: string | null
+          id?: string
+          is_available?: boolean
+          license_plate: string
+          name: string
+          notes?: string | null
+          type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          capacity_kg?: number | null
+          capacity_volume_m3?: number | null
+          created_at?: string
+          current_status?: Database["public"]["Enums"]["vehicle_status"]
+          daily_cost?: number
+          driver_id?: string | null
+          id?: string
+          is_available?: boolean
+          license_plate?: string
+          name?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -209,6 +262,12 @@ export type Database = {
         | "Stage Hand"
         | "Driver"
         | "General Crew"
+      vehicle_status:
+        | "In Garage"
+        | "On Route"
+        | "On Event Site"
+        | "Under Maintenance"
+      vehicle_type: "Truck" | "Van" | "Trailer" | "Crane" | "Other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -363,6 +422,13 @@ export const Constants = {
         "Driver",
         "General Crew",
       ],
+      vehicle_status: [
+        "In Garage",
+        "On Route",
+        "On Event Site",
+        "Under Maintenance",
+      ],
+      vehicle_type: ["Truck", "Van", "Trailer", "Crane", "Other"],
     },
   },
 } as const
