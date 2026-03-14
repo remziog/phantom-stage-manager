@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import EquipmentPage from "./pages/EquipmentPage";
 import {
-  EquipmentPage,
   TeamPage,
   LogisticsPage,
   CustomersPage,

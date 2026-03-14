@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipment: {
+        Row: {
+          brand: string | null
+          category: Database["public"]["Enums"]["equipment_category"]
+          condition: Database["public"]["Enums"]["equipment_condition"]
+          created_at: string
+          current_location: Database["public"]["Enums"]["equipment_location"]
+          gross_price_per_day: number
+          id: string
+          image_url: string | null
+          model: string | null
+          name: string
+          notes: string | null
+          power_consumption_watts: number | null
+          quantity_available: number
+          quantity_total: number
+          serial_number: string | null
+          subcategory: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          brand?: string | null
+          category: Database["public"]["Enums"]["equipment_category"]
+          condition?: Database["public"]["Enums"]["equipment_condition"]
+          created_at?: string
+          current_location?: Database["public"]["Enums"]["equipment_location"]
+          gross_price_per_day?: number
+          id?: string
+          image_url?: string | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          power_consumption_watts?: number | null
+          quantity_available?: number
+          quantity_total?: number
+          serial_number?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          brand?: string | null
+          category?: Database["public"]["Enums"]["equipment_category"]
+          condition?: Database["public"]["Enums"]["equipment_condition"]
+          created_at?: string
+          current_location?: Database["public"]["Enums"]["equipment_location"]
+          gross_price_per_day?: number
+          id?: string
+          image_url?: string | null
+          model?: string | null
+          name?: string
+          notes?: string | null
+          power_consumption_watts?: number | null
+          quantity_available?: number
+          quantity_total?: number
+          serial_number?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -81,6 +144,20 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "team_member" | "customer"
+      equipment_category:
+        | "Light"
+        | "Sound"
+        | "Video/Image"
+        | "Truss"
+        | "Rigging"
+        | "Power/Cable"
+        | "Other"
+      equipment_condition: "Excellent" | "Good" | "Fair" | "Needs Repair"
+      equipment_location:
+        | "Warehouse"
+        | "On Event"
+        | "In Transit"
+        | "Under Maintenance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -209,6 +286,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "team_member", "customer"],
+      equipment_category: [
+        "Light",
+        "Sound",
+        "Video/Image",
+        "Truss",
+        "Rigging",
+        "Power/Cable",
+        "Other",
+      ],
+      equipment_condition: ["Excellent", "Good", "Fair", "Needs Repair"],
+      equipment_location: [
+        "Warehouse",
+        "On Event",
+        "In Transit",
+        "Under Maintenance",
+      ],
     },
   },
 } as const
