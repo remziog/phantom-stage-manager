@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contact_name: string
+          created_at: string
+          customer_type: Database["public"]["Enums"]["customer_type"]
+          email: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          phone: string | null
+          tax_id: string | null
+          total_events: number
+          total_revenue: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name: string
+          contact_name: string
+          created_at?: string
+          customer_type?: Database["public"]["Enums"]["customer_type"]
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          tax_id?: string | null
+          total_events?: number
+          total_revenue?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          customer_type?: Database["public"]["Enums"]["customer_type"]
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          tax_id?: string | null
+          total_events?: number
+          total_revenue?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           brand: string | null
@@ -239,6 +293,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "team_member" | "customer"
+      customer_type: "Corporate" | "Agency" | "Individual" | "Government"
       equipment_category:
         | "Light"
         | "Sound"
@@ -396,6 +451,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "team_member", "customer"],
+      customer_type: ["Corporate", "Agency", "Individual", "Government"],
       equipment_category: [
         "Light",
         "Sound",

@@ -17,9 +17,6 @@ function PlaceholderPage({ title, description }: { title: string; description: s
 }
 
 
-export function CustomersPage() {
-  return <PlaceholderPage title="Customers" description="Manage your client relationships." />;
-}
 
 export function QuotesPage() {
   return <PlaceholderPage title="Quotes" description="Create and manage proposals." />;
