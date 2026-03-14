@@ -7,8 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import EquipmentPage from "./pages/EquipmentPage";
+import TeamPage from "./pages/TeamPage";
 import {
-  TeamPage,
   LogisticsPage,
   CustomersPage,
   QuotesPage,
