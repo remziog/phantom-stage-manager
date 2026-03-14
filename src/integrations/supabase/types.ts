@@ -500,6 +500,77 @@ export type Database = {
           },
         ]
       }
+      quote_requests: {
+        Row: {
+          admin_notes: string | null
+          budget_range: string | null
+          created_at: string
+          customer_id: string | null
+          details: string | null
+          end_date: string | null
+          estimated_audience_size: string | null
+          event_name: string
+          event_type: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          services_needed: string[] | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          venue: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          created_at?: string
+          customer_id?: string | null
+          details?: string | null
+          end_date?: string | null
+          estimated_audience_size?: string | null
+          event_name: string
+          event_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          services_needed?: string[] | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          venue?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          created_at?: string
+          customer_id?: string | null
+          details?: string | null
+          end_date?: string | null
+          estimated_audience_size?: string | null
+          event_name?: string
+          event_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          services_needed?: string[] | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           created_at: string
