@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { RevenueBarChart, EquipmentUtilizationPieChart } from "@/components/dashboard/DashboardCharts";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEvents } from "@/hooks/useEvents";
 import { useQuotes } from "@/hooks/useQuotes";
@@ -102,6 +103,12 @@ function AdminDashboard() {
             <p className="text-xs text-muted-foreground">{team.length - availableTeam} assigned · {availableTeam} free</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RevenueBarChart quotes={quotes} />
+        <EquipmentUtilizationPieChart equipment={equipment} />
       </div>
 
       {/* Bottom panels */}
