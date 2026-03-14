@@ -105,6 +105,12 @@ function AdminDashboard() {
         </Card>
       </div>
 
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RevenueBarChart quotes={quotes} />
+        <EquipmentUtilizationPieChart equipment={equipment} />
+      </div>
+
       {/* Bottom panels */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Upcoming Events */}
