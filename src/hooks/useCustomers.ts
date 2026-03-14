@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/activityLogger";
 
 export type Customer = {
   id: string;
@@ -46,9 +47,10 @@ export function useCreateCustomer() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Customer added");
+      logActivity("Customer created", "customer", data.id, data.company_name);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -64,7 +66,10 @@ export function useUpdateCustomer() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      logActivity("Customer updated", "customer", vars.id, vars.company_name || undefined);
+    },
     onError: (e) => toast.error(e.message),
   });
 }

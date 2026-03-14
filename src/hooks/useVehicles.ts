@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { logActivity } from "@/lib/activityLogger";
 
 export type Vehicle = Tables<"vehicles">;
 export type VehicleInsert = TablesInsert<"vehicles">;
@@ -32,7 +33,10 @@ export function useCreateVehicle() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["vehicles"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+      logActivity("Vehicle added", "vehicle", data.id, data.name, `${data.type} · ${data.license_plate}`);
+    },
   });
 }
 
@@ -44,6 +48,9 @@ export function useUpdateVehicle() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["vehicles"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+      logActivity("Vehicle updated", "vehicle", data.id, data.name);
+    },
   });
 }

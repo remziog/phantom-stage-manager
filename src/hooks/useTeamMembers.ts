@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { logActivity } from "@/lib/activityLogger";
 
 export type TeamMember = Tables<"team_members">;
 export type TeamMemberInsert = TablesInsert<"team_members">;
@@ -32,7 +33,10 @@ export function useCreateTeamMember() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["team_members"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["team_members"] });
+      logActivity("Team member added", "team_member", data.id, data.full_name, data.role);
+    },
   });
 }
 
@@ -49,6 +53,9 @@ export function useUpdateTeamMember() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["team_members"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["team_members"] });
+      logActivity("Team member updated", "team_member", data.id, data.full_name);
+    },
   });
 }
