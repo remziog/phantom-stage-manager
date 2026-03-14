@@ -172,13 +172,37 @@ export default function QuoteDetailPage() {
           <CardContent>
             {loadingItems ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : (
+            ) : isAdmin ? (
               <LineItemEditor
                 quoteId={quote.id}
                 initialItems={lineItems}
                 onSave={handleSaveLineItems}
                 saving={saveLines.isPending}
               />
+            ) : (
+              /* Read-only line items for customers */
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-center">Qty</TableHead>
+                    <TableHead className="text-center">Days</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-foreground">{item.description}</TableCell>
+                      <TableCell className="text-center text-muted-foreground">{item.quantity}</TableCell>
+                      <TableCell className="text-center text-muted-foreground">{item.days}</TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums">{fmt(item.unit_price)}</TableCell>
+                      <TableCell className="text-right font-medium text-foreground tabular-nums">{fmt(item.line_total)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
