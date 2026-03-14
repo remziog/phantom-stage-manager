@@ -55,16 +55,22 @@ export default function QuotesPage() {
     { label: "Pending", value: `${draftCount} draft · ${sentCount} sent`, icon: Clock, color: "text-accent" },
   ];
 
+  const isAdmin = role === "admin" || role === "team_member";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Quotes & Proposals</h1>
-            <p className="text-sm text-muted-foreground">Create, price, and manage event proposals.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              {isAdmin ? "Quotes & Proposals" : "My Quotes"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? "Create, price, and manage event proposals." : "View your quotes and proposals."}
+            </p>
           </div>
-          <CreateQuoteDialog />
+          {isAdmin && <CreateQuoteDialog />}
         </div>
 
         {/* Stats */}
