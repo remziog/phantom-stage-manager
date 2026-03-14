@@ -17,9 +17,7 @@ function PlaceholderPage({ title, description }: { title: string; description: s
 }
 
 
-export function TeamPage() {
-  return <PlaceholderPage title="Team" description="Manage your crew and technicians." />;
-}
+
 
 export function LogisticsPage() {
   return <PlaceholderPage title="Logistics" description="Fleet and vehicle management." />;
