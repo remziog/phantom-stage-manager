@@ -9,6 +9,7 @@ import {
   Calendar,
   Settings,
   Bell,
+  PenLine,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,7 @@ const adminNavItems = [
 
 const customerNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Request Quote", url: "/request-quote", icon: PenLine },
   { title: "My Quotes", url: "/quotes", icon: FileText },
   { title: "My Events", url: "/events", icon: Calendar },
   { title: "Notifications", url: "/notifications", icon: Bell },
