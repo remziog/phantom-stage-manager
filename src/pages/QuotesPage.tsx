@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuotes, useUpdateQuote, type QuoteStatus } from "@/hooks/useQuotes";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateQuoteDialog } from "@/components/quotes/CreateQuoteDialog";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
