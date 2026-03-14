@@ -12,10 +12,9 @@ import LogisticsPage from "./pages/LogisticsPage";
 import CustomersPage from "./pages/CustomersPage";
 import QuotesPage from "./pages/QuotesPage";
 import QuoteDetailPage from "./pages/QuoteDetailPage";
-import {
-  EventsPage,
-  SettingsPage,
-} from "./pages/PlaceholderPages";
+import EventsPage from "./pages/EventsPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import { SettingsPage } from "./pages/PlaceholderPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
