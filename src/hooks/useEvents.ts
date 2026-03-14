@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/activityLogger";
 
 export type EventStatus = "Planning" | "Confirmed" | "In Progress" | "Completed" | "Cancelled";
 
@@ -134,9 +135,10 @@ export function useCreateEvent() {
       if (error) throw error;
       return data as Event;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["events"] });
       toast.success("Event created");
+      logActivity("Event created", "event", data.id, data.name);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -148,10 +150,14 @@ export function useUpdateEvent() {
     mutationFn: async ({ id, ...updates }: Partial<Event> & { id: string }) => {
       const { error } = await supabase.from("events").update(updates).eq("id", id);
       if (error) throw error;
+      return { id, ...updates };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (vars) => {
       qc.invalidateQueries({ queryKey: ["events"] });
       qc.invalidateQueries({ queryKey: ["events", vars.id] });
+      if (vars.status) {
+        logActivity("Event status changed", "event", vars.id, `${vars.name || "Event"} → ${vars.status}`);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -163,10 +169,12 @@ export function useAssignEquipment() {
     mutationFn: async (data: { event_id: string; equipment_id: string; quantity?: number }) => {
       const { error } = await supabase.from("event_equipment").insert(data);
       if (error) throw error;
+      return data;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["event_equipment", vars.event_id] });
       toast.success("Equipment assigned");
+      logActivity("Equipment assigned to event", "equipment", vars.equipment_id, `Qty: ${vars.quantity || 1}`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -178,10 +186,12 @@ export function useAssignTeam() {
     mutationFn: async (data: { event_id: string; team_member_id: string; role_on_event?: string }) => {
       const { error } = await supabase.from("event_team").insert(data);
       if (error) throw error;
+      return data;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["event_team", vars.event_id] });
       toast.success("Team member assigned");
+      logActivity("Team member assigned to event", "team_member", vars.team_member_id, vars.role_on_event || undefined);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -193,10 +203,12 @@ export function useAssignVehicle() {
     mutationFn: async (data: { event_id: string; vehicle_id: string }) => {
       const { error } = await supabase.from("event_vehicles").insert(data);
       if (error) throw error;
+      return data;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["event_vehicles", vars.event_id] });
       toast.success("Vehicle assigned");
+      logActivity("Vehicle assigned to event", "vehicle", vars.vehicle_id);
     },
     onError: (e) => toast.error(e.message),
   });
