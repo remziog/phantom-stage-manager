@@ -67,8 +67,9 @@ export function useDeleteEquipment() {
       const { error } = await supabase.from("equipment").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      logActivity("Equipment deleted", "equipment", id);
     },
   });
 }

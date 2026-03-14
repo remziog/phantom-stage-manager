@@ -48,6 +48,9 @@ export function useUpdateVehicle() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["vehicles"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+      logActivity("Vehicle updated", "vehicle", data.id, data.name);
+    },
   });
 }

@@ -66,7 +66,10 @@ export function useUpdateCustomer() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      logActivity("Customer updated", "customer", vars.id, vars.company_name || undefined);
+    },
     onError: (e) => toast.error(e.message),
   });
 }

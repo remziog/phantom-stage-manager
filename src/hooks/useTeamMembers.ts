@@ -53,6 +53,9 @@ export function useUpdateTeamMember() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["team_members"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["team_members"] });
+      logActivity("Team member updated", "team_member", data.id, data.full_name);
+    },
   });
 }
