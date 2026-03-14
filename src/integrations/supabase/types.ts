@@ -107,6 +107,48 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          created_at: string
+          daily_rate: number
+          email: string | null
+          full_name: string
+          id: string
+          is_available: boolean
+          notes: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["team_role"]
+          skills: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          daily_rate?: number
+          email?: string | null
+          full_name: string
+          id?: string
+          is_available?: boolean
+          notes?: string | null
+          phone?: string | null
+          role: Database["public"]["Enums"]["team_role"]
+          skills?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          daily_rate?: number
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_available?: boolean
+          notes?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
+          skills?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -158,6 +200,15 @@ export type Database = {
         | "On Event"
         | "In Transit"
         | "Under Maintenance"
+      team_role:
+        | "Project Manager"
+        | "Light Technician"
+        | "Sound Technician"
+        | "Video Technician"
+        | "Rigger"
+        | "Stage Hand"
+        | "Driver"
+        | "General Crew"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -301,6 +352,16 @@ export const Constants = {
         "On Event",
         "In Transit",
         "Under Maintenance",
+      ],
+      team_role: [
+        "Project Manager",
+        "Light Technician",
+        "Sound Technician",
+        "Video Technician",
+        "Rigger",
+        "Stage Hand",
+        "Driver",
+        "General Crew",
       ],
     },
   },
