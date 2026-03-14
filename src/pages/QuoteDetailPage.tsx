@@ -95,16 +95,37 @@ export default function QuoteDetailPage() {
           >
             <Download className="h-4 w-4" /> Export PDF
           </Button>
-          <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statuses.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isAdmin && (
+            <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {!isAdmin && quote.status === "Sent" && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="gap-1.5 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-foreground"
+                onClick={() => handleStatusChange("Approved")}
+              >
+                <CheckCircle className="h-4 w-4" /> Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => handleStatusChange("Rejected")}
+              >
+                <XCircle className="h-4 w-4" /> Reject
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Info Cards */}
