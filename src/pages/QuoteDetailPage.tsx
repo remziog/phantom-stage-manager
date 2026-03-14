@@ -82,6 +82,15 @@ export default function QuoteDetailPage() {
             </div>
             <p className="text-sm text-muted-foreground">{quote.event_name}</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => generateQuotePdf(quote, lineItems)}
+            disabled={lineItems.length === 0}
+          >
+            <Download className="h-4 w-4" /> Export PDF
+          </Button>
           <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue />
