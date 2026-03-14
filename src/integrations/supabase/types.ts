@@ -131,6 +131,202 @@ export type Database = {
         }
         Relationships: []
       }
+      event_equipment: {
+        Row: {
+          equipment_id: string
+          event_id: string
+          id: string
+          notes: string | null
+          quantity: number
+        }
+        Insert: {
+          equipment_id: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+        }
+        Update: {
+          equipment_id?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_equipment_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_team: {
+        Row: {
+          event_id: string
+          id: string
+          notes: string | null
+          role_on_event: string | null
+          team_member_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          notes?: string | null
+          role_on_event?: string | null
+          team_member_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          notes?: string | null
+          role_on_event?: string | null
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_team_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_team_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_vehicles: {
+        Row: {
+          event_id: string
+          id: string
+          notes: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          notes?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          notes?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_vehicles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_vehicles_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string
+          end_date: string
+          id: string
+          load_in_date: string | null
+          load_out_date: string | null
+          name: string
+          notes: string | null
+          project_manager_id: string | null
+          quote_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["event_status"]
+          updated_at: string
+          venue: string | null
+          venue_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name: string
+          end_date: string
+          id?: string
+          load_in_date?: string | null
+          load_out_date?: string | null
+          name: string
+          notes?: string | null
+          project_manager_id?: string | null
+          quote_id?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["event_status"]
+          updated_at?: string
+          venue?: string | null
+          venue_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          end_date?: string
+          id?: string
+          load_in_date?: string | null
+          load_out_date?: string | null
+          name?: string
+          notes?: string | null
+          project_manager_id?: string | null
+          quote_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          updated_at?: string
+          venue?: string | null
+          venue_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_project_manager_id_fkey"
+            columns: ["project_manager_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -426,6 +622,12 @@ export type Database = {
         | "On Event"
         | "In Transit"
         | "Under Maintenance"
+      event_status:
+        | "Planning"
+        | "Confirmed"
+        | "In Progress"
+        | "Completed"
+        | "Cancelled"
       line_item_type: "Equipment" | "Personnel" | "Vehicle" | "Custom"
       quote_status: "Draft" | "Sent" | "Approved" | "Rejected" | "Cancelled"
       team_role:
@@ -587,6 +789,13 @@ export const Constants = {
         "On Event",
         "In Transit",
         "Under Maintenance",
+      ],
+      event_status: [
+        "Planning",
+        "Confirmed",
+        "In Progress",
+        "Completed",
+        "Cancelled",
       ],
       line_item_type: ["Equipment", "Personnel", "Vehicle", "Custom"],
       quote_status: ["Draft", "Sent", "Approved", "Rejected", "Cancelled"],
