@@ -37,6 +37,20 @@ export function NotificationBell() {
     }
   };
 
+  const recent = notifications.slice(0, 5);
+  const { data: notifications = [] } = useNotifications();
+  const unreadCount = useUnreadCount();
+  const markRead = useMarkAsRead();
+  const markAllRead = useMarkAllAsRead();
+  const navigate = useNavigate();
+
+  const handleClick = (n: (typeof notifications)[0]) => {
+    if (!n.is_read) markRead.mutate(n.id);
+    if (n.reference_id && n.reference_type) {
+      navigate(`/${n.reference_type === "quote" ? "quotes" : "events"}/${n.reference_id}`);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
