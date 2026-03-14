@@ -229,7 +229,7 @@ export function generateQuotePdf({ quote, lineItems, company }: PdfOptions) {
   doc.line(margin, pageH - 18, w - margin, pageH - 18);
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
-  doc.text("PHANTOM Event Production  ·  İstanbul, Turkey  ·  All prices in TRY, excluding additional logistics unless stated.", margin, pageH - 12);
+  doc.text(`${companyName}  ·  ${companyLocation}  ·  All prices in ${currency}, excluding additional logistics unless stated.`, margin, pageH - 12);
   doc.text(`Generated ${new Date().toLocaleDateString("tr-TR")}`, w - margin, pageH - 12, { align: "right" });
 
   // Save
