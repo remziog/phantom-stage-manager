@@ -47,9 +47,10 @@ export function useCreateCustomer() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Customer added");
+      logActivity("Customer created", "customer", data.id, data.company_name);
     },
     onError: (e) => toast.error(e.message),
   });
