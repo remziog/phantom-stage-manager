@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useEvents, useUpdateEvent, type EventStatus } from "@/hooks/useEvents";
+import { useEvents, type EventStatus } from "@/hooks/useEvents";
 import { CreateEventDialog } from "@/components/events/CreateEventDialog";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
+import { EventCalendar } from "@/components/events/EventCalendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarDays, CheckCircle2, Clock, Zap, MapPin, Building2, Eye } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, CalendarDays, CheckCircle2, Clock, Zap, MapPin, Building2, Eye, List, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const fmt = (d: string) =>
@@ -31,6 +33,8 @@ export default function EventsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [view, setView] = useState<"list" | "calendar">("list");
+  const [calMonth, setCalMonth] = useState(new Date());
 
   const filtered = useMemo(() => {
     let list = events;
@@ -88,7 +92,7 @@ export default function EventsPage() {
           ))}
         </div>
 
-        {/* Filters */}
+        {/* Filters + View Toggle */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -105,13 +109,25 @@ export default function EventsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
+            <TabsList className="h-9">
+              <TabsTrigger value="list" className="px-2.5">
+                <List className="h-4 w-4" />
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="px-2.5">
+                <LayoutGrid className="h-4 w-4" />
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Timeline Cards */}
+        {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <p className="text-sm text-muted-foreground">Loading events…</p>
           </div>
+        ) : view === "calendar" ? (
+          <EventCalendar events={filtered} currentMonth={calMonth} onMonthChange={setCalMonth} />
         ) : filtered.length === 0 ? (
           <Card className="phantom-shadow border-border/50">
             <CardContent className="flex items-center justify-center p-12">
