@@ -239,6 +239,9 @@ export default function SettingsPage() {
             />
           </CardContent>
         </Card>
+
+        {/* User Management */}
+        <UserManagement />
       </div>
     </DashboardLayout>
   );
