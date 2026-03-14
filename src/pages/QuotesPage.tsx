@@ -156,7 +156,7 @@ export default function QuotesPage() {
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        {q.status === "Draft" && (
+                        {isAdmin && q.status === "Draft" && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -166,7 +166,7 @@ export default function QuotesPage() {
                             Send
                           </Button>
                         )}
-                        {q.status === "Sent" && (
+                        {isAdmin && q.status === "Sent" && (
                           <Button
                             variant="outline"
                             size="sm"

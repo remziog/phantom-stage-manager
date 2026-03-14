@@ -182,23 +182,104 @@ function AdminDashboard() {
 }
 
 function CustomerDashboard() {
+  const navigate = useNavigate();
+  const { data: quotes = [] } = useQuotes();
+  const { data: events = [] } = useEvents();
+  const { profile } = useAuth();
+
+  const today = new Date().toISOString().split("T")[0];
+  const activeEvents = events.filter((e) => e.status !== "Completed" && e.status !== "Cancelled");
+  const pendingQuotes = quotes.filter((q) => q.status === "Sent" || q.status === "Draft");
+  const approvedTotal = quotes.filter((q) => q.status === "Approved").reduce((s, q) => s + q.total, 0);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">Welcome</h1>
-        <p className="text-sm text-muted-foreground">View your quotes and events.</p>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+          Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}
+        </h1>
+        <p className="text-sm text-muted-foreground">View your quotes and event status.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <KpiCard title="My Quotes" value={quotes.length} icon={FileText} color="text-primary" />
+        <KpiCard title="Active Events" value={activeEvents.length} icon={Calendar} color="text-accent" />
+        <KpiCard title="Pending Quotes" value={pendingQuotes.length} icon={Clock} color="text-[hsl(var(--warning))]" />
+        <KpiCard title="Approved Value" value={fmt(approvedTotal)} icon={TrendingUp} color="text-[hsl(var(--success))]" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* My Quotes */}
         <Card className="phantom-shadow border-border/50">
-          <CardContent className="p-5">
-            <h3 className="text-sm font-medium text-foreground mb-4">My Quotes</h3>
-            <p className="text-sm text-muted-foreground">No quotes yet.</p>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" /> My Quotes
+              </CardTitle>
+              <button onClick={() => navigate("/quotes")} className="text-xs text-primary hover:underline">View all</button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {quotes.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No quotes yet.</p>
+            ) : (
+              quotes.slice(0, 5).map((qt) => (
+                <div
+                  key={qt.id}
+                  className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 cursor-pointer hover:bg-secondary transition-colors"
+                  onClick={() => navigate(`/quotes/${qt.id}`)}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      <span className="font-mono text-primary">{qt.quote_number}</span>{" "}
+                      {qt.event_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {qt.event_date ? fmtDate(qt.event_date) : "No date"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground tabular-nums">{fmt(qt.total)}</span>
+                    <QuoteStatusBadge status={qt.status} />
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
+
+        {/* My Events */}
         <Card className="phantom-shadow border-border/50">
-          <CardContent className="p-5">
-            <h3 className="text-sm font-medium text-foreground mb-4">My Events</h3>
-            <p className="text-sm text-muted-foreground">No events yet.</p>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-accent" /> My Events
+              </CardTitle>
+              <button onClick={() => navigate("/events")} className="text-xs text-primary hover:underline">View all</button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {events.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No events yet.</p>
+            ) : (
+              events.slice(0, 5).map((ev) => (
+                <div
+                  key={ev.id}
+                  className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 cursor-pointer hover:bg-secondary transition-colors"
+                  onClick={() => navigate(`/events/${ev.id}`)}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{ev.name}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {ev.venue || "TBD"} · {fmtDate(ev.start_date)}
+                    </p>
+                  </div>
+                  <EventStatusBadge status={ev.status} />
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
