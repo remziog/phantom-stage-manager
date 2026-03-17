@@ -10,6 +10,7 @@ import {
   Settings,
   Bell,
   PenLine,
+  ClipboardList,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,26 +24,33 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import type { Database } from "@/integrations/supabase/types";
 
-const adminNavItems = [
-  { title: "Panel", url: "/", icon: LayoutDashboard },
-  { title: "Ekipman", url: "/equipment", icon: Package },
-  { title: "Ekip", url: "/team", icon: Users },
-  { title: "Lojistik", url: "/logistics", icon: Truck },
-  { title: "Müşteriler", url: "/customers", icon: Building2 },
-  { title: "Teklifler", url: "/quotes", icon: FileText },
-  { title: "Etkinlikler", url: "/events", icon: Calendar },
-  { title: "Bildirimler", url: "/notifications", icon: Bell },
-  { title: "Ayarlar", url: "/settings", icon: Settings },
+type AppRole = Database["public"]["Enums"]["app_role"];
+
+type NavItem = { title: string; url: string; icon: React.ElementType };
+
+const allNavItems: (NavItem & { roles: AppRole[] })[] = [
+  { title: "Panel", url: "/", icon: LayoutDashboard, roles: ["admin", "sales", "team_member", "crew", "customer"] },
+  { title: "Ekipman", url: "/equipment", icon: Package, roles: ["admin", "sales", "team_member", "crew"] },
+  { title: "Ekip", url: "/team", icon: Users, roles: ["admin"] },
+  { title: "Lojistik", url: "/logistics", icon: Truck, roles: ["admin", "sales"] },
+  { title: "Müşteriler", url: "/customers", icon: Building2, roles: ["admin", "sales"] },
+  { title: "Teklifler", url: "/quotes", icon: FileText, roles: ["admin", "sales", "customer"] },
+  { title: "Etkinlikler", url: "/events", icon: Calendar, roles: ["admin", "sales", "team_member", "crew"] },
+  { title: "Teklif Talepleri", url: "/request-quote", icon: ClipboardList, roles: ["admin", "sales"] },
+  { title: "Teklif İste", url: "/request-quote", icon: PenLine, roles: ["customer"] },
+  { title: "Bildirimler", url: "/notifications", icon: Bell, roles: ["admin", "sales", "team_member", "crew", "customer"] },
+  { title: "Ayarlar", url: "/settings", icon: Settings, roles: ["admin"] },
 ];
 
-const customerNavItems = [
-  { title: "Panel", url: "/", icon: LayoutDashboard },
-  { title: "Teklif İste", url: "/request-quote", icon: PenLine },
-  { title: "Tekliflerim", url: "/quotes", icon: FileText },
-  { title: "Etkinliklerim", url: "/events", icon: Calendar },
-  { title: "Bildirimler", url: "/notifications", icon: Bell },
-];
+const roleLabels: Record<AppRole, string> = {
+  admin: "Yönetici",
+  sales: "Teklif Hazırlayıcı",
+  team_member: "Ekip Üyesi",
+  crew: "Personel",
+  customer: "Müşteri",
+};
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -50,7 +58,7 @@ export function AppSidebar() {
   const { role, signOut, profile } = useAuth();
   const location = useLocation();
 
-  const navItems = role === "customer" ? customerNavItems : adminNavItems;
+  const navItems = allNavItems.filter((item) => role && item.roles.includes(role));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -96,8 +104,8 @@ export function AppSidebar() {
               <p className="text-xs font-medium text-foreground truncate">
                 {profile?.full_name || "Kullanıcı"}
               </p>
-              <p className="text-xs text-muted-foreground capitalize">
-                {role === "admin" ? "Yönetici" : role === "team_member" ? "Ekip Üyesi" : role === "customer" ? "Müşteri" : "..."}
+              <p className="text-xs text-muted-foreground">
+                {role ? roleLabels[role] : "..."}
               </p>
             </div>
           )}

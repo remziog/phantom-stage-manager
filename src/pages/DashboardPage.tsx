@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Package, Calendar, FileText, TrendingUp, Users, Truck,
-  Building2, Zap, CheckCircle2, Clock, MapPin,
+  Building2, Clock, MapPin,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -44,6 +44,25 @@ function KpiCard({
       </CardContent>
     </Card>
   );
+}
+
+/** Helper: get start of current week (Monday) and end of next week (Sunday) */
+function getCrewDateRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const nextSunday = new Date(monday);
+  nextSunday.setDate(monday.getDate() + 13);
+  nextSunday.setHours(23, 59, 59, 999);
+
+  return {
+    start: monday.toISOString().split("T")[0],
+    end: nextSunday.toISOString().split("T")[0],
+  };
 }
 
 function AdminDashboard() {
@@ -240,6 +259,70 @@ function AdminDashboard() {
   );
 }
 
+/** Sales dashboard — same as admin but without team/expense management */
+function SalesDashboard() {
+  return <AdminDashboard />;
+}
+
+/** Crew dashboard — only this week + next week assignments, no financial data */
+function CrewDashboard() {
+  const navigate = useNavigate();
+  const { data: events = [] } = useEvents();
+  const { data: equipment = [] } = useEquipment();
+  const { profile } = useAuth();
+
+  const { start, end } = getCrewDateRange();
+  const thisWeekEvents = events.filter(
+    (e) => e.start_date <= end && e.end_date >= start && e.status !== "Cancelled" && e.status !== "Completed"
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">
+          Hoş geldiniz{profile?.full_name ? `, ${profile.full_name}` : ""}
+        </h1>
+        <p className="text-sm text-muted-foreground">Bu hafta ve gelecek haftaki işleriniz.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <KpiCard title="Aktif İşler" value={thisWeekEvents.length} subtitle="Bu hafta + gelecek hafta" icon={Calendar} color="text-primary" />
+        <KpiCard title="Toplam Ekipman" value={equipment.reduce((s, e) => s + e.quantity_total, 0)} subtitle={`${equipment.reduce((s, e) => s + e.quantity_available, 0)} müsait`} icon={Package} color="text-accent" />
+      </div>
+
+      <Card className="phantom-shadow border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 text-primary" /> Bu Hafta & Gelecek Hafta İşlerim
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {thisWeekEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Bu dönemde atanmış iş yok.</p>
+          ) : (
+            thisWeekEvents.map((ev) => (
+              <div
+                key={ev.id}
+                className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 cursor-pointer hover:bg-secondary transition-colors"
+                onClick={() => navigate(`/events/${ev.id}`)}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{ev.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.venue || "Belirsiz"}</span>
+                    <span>{fmtDate(ev.start_date)}{ev.start_date !== ev.end_date && ` — ${fmtDate(ev.end_date)}`}</span>
+                  </div>
+                </div>
+                <EventStatusBadge status={ev.status} />
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function CustomerDashboard() {
   const navigate = useNavigate();
   const { data: quotes = [] } = useQuotes();
@@ -347,7 +430,15 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {role === "customer" ? <CustomerDashboard /> : <AdminDashboard />}
+      {role === "customer" ? (
+        <CustomerDashboard />
+      ) : role === "crew" ? (
+        <CrewDashboard />
+      ) : role === "sales" ? (
+        <SalesDashboard />
+      ) : (
+        <AdminDashboard />
+      )}
     </DashboardLayout>
   );
 }

@@ -21,13 +21,17 @@ type UserWithRole = {
 
 const roleBadgeColors: Record<AppRole, string> = {
   admin: "bg-primary/20 text-primary border-primary/30",
-  team_member: "bg-accent/20 text-accent border-accent/30",
+  sales: "bg-accent/20 text-accent border-accent/30",
+  team_member: "bg-[hsl(var(--warning))]/20 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30",
+  crew: "bg-[hsl(var(--success))]/20 text-[hsl(var(--success))] border-[hsl(var(--success))]/30",
   customer: "bg-muted text-muted-foreground border-border",
 };
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Yönetici",
+  sales: "Teklif Hazırlayıcı",
   team_member: "Ekip Üyesi",
+  crew: "Personel",
   customer: "Müşteri",
 };
 
@@ -105,7 +109,9 @@ export function UserManagement() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Yönetici</SelectItem>
+                      <SelectItem value="sales">Teklif Hazırlayıcı</SelectItem>
                       <SelectItem value="team_member">Ekip Üyesi</SelectItem>
+                      <SelectItem value="crew">Personel</SelectItem>
                       <SelectItem value="customer">Müşteri</SelectItem>
                     </SelectContent>
                   </Select>
@@ -134,10 +140,12 @@ export function UserManagement() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Select value={u.role} onValueChange={(v) => changeRole.mutate({ roleId: u.id, newRole: v as AppRole })}>
-                    <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Yönetici</SelectItem>
+                      <SelectItem value="sales">Teklif Hazırlayıcı</SelectItem>
                       <SelectItem value="team_member">Ekip Üyesi</SelectItem>
+                      <SelectItem value="crew">Personel</SelectItem>
                       <SelectItem value="customer">Müşteri</SelectItem>
                     </SelectContent>
                   </Select>
