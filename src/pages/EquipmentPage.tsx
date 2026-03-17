@@ -158,9 +158,9 @@ export default function EquipmentPage() {
             )}
           </div>
         ) : viewMode === "table" ? (
-          <EquipmentTable data={filtered} />
+          <EquipmentTable data={filtered} hidePrices={isCrew} />
         ) : (
-          <EquipmentGrid data={filtered} />
+          <EquipmentGrid data={filtered} hidePrices={isCrew} />
         )}
       </div>
 

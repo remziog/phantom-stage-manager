@@ -22,10 +22,12 @@ export function EquipmentGrid({ data, hidePrices = false }: { data: Equipment[];
           )}
           <div className="flex items-end justify-between">
             <AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} />
-            <span className="text-sm font-medium tabular-nums text-foreground">
-              {formatCurrency(item.gross_price_per_day)}
-              <span className="text-xs text-muted-foreground">/gün</span>
-            </span>
+            {!hidePrices && (
+              <span className="text-sm font-medium tabular-nums text-foreground">
+                {formatCurrency(item.gross_price_per_day)}
+                <span className="text-xs text-muted-foreground">/gün</span>
+              </span>
+            )}
           </div>
         </div>
       ))}

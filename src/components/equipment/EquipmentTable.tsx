@@ -35,7 +35,7 @@ export function EquipmentTable({ data, hidePrices = false }: { data: Equipment[]
                 </td>
                 <td className="px-4 py-3"><CategoryBadge category={item.category} /></td>
                 <td className="px-4 py-3 text-muted-foreground">{[item.brand, item.model].filter(Boolean).join(" ") || "—"}</td>
-                <td className="px-4 py-3 tabular-nums text-foreground">{formatCurrency(item.gross_price_per_day)}</td>
+                {!hidePrices && <td className="px-4 py-3 tabular-nums text-foreground">{formatCurrency(item.gross_price_per_day)}</td>}
                 <td className="px-4 py-3"><AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} /></td>
                 <td className="px-4 py-3"><ConditionBadge condition={item.condition} /></td>
                 <td className="px-4 py-3"><LocationBadge location={item.current_location} /></td>
