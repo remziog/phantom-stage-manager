@@ -4,7 +4,7 @@ import { LocationBadge, CategoryBadge, AvailabilityDisplay } from "./EquipmentBa
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
 
-export function EquipmentGrid({ data }: { data: Equipment[] }) {
+export function EquipmentGrid({ data, hidePrices = false }: { data: Equipment[]; hidePrices?: boolean }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {data.map((item) => (
