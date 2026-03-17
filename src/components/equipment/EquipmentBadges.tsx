@@ -32,13 +32,7 @@ const categoryStyles: Record<EquipmentCategory, string> = {
 
 export function LocationBadge({ location }: { location: EquipmentLocation }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5",
-        locationStyles[location]
-      )}
-    >
+    <Badge variant="outline" className={cn("text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5", locationStyles[location])}>
       {location}
     </Badge>
   );
@@ -46,13 +40,7 @@ export function LocationBadge({ location }: { location: EquipmentLocation }) {
 
 export function ConditionBadge({ condition }: { condition: EquipmentCondition }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5",
-        conditionStyles[condition]
-      )}
-    >
+    <Badge variant="outline" className={cn("text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5", conditionStyles[condition])}>
       {condition}
     </Badge>
   );
@@ -60,13 +48,7 @@ export function ConditionBadge({ condition }: { condition: EquipmentCondition })
 
 export function CategoryBadge({ category }: { category: EquipmentCategory }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5",
-        categoryStyles[category]
-      )}
-    >
+    <Badge variant="outline" className={cn("text-[10px] uppercase tracking-widest font-semibold rounded px-2 py-0.5", categoryStyles[category])}>
       {category}
     </Badge>
   );
@@ -82,11 +64,56 @@ export function AvailabilityDisplay({ available, total }: { available: number; t
         {available} <span className="text-muted-foreground">/ {total}</span>
       </span>
       <div className="h-1 w-16 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all", barColor)}
-          style={{ width: `${ratio * 100}%` }}
-        />
+        <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${ratio * 100}%` }} />
       </div>
     </div>
+  );
+}
+
+/** Durum dağılımı: Depoda / Kirada / Tamirde / Servis Dışı */
+export function StatusDistribution({
+  warehouse, onRent, inRepair, outOfService, total,
+}: {
+  warehouse: number; onRent: number; inRepair: number; outOfService: number; total: number;
+}) {
+  if (total === 0) return null;
+  const items = [
+    { label: "Depoda", count: warehouse, cls: "text-success" },
+    { label: "Kirada", count: onRent, cls: "text-primary" },
+    { label: "Tamirde", count: inRepair, cls: "text-warning" },
+    { label: "S.Dışı", count: outOfService, cls: "text-destructive" },
+  ].filter((i) => i.count > 0);
+
+  return (
+    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] tabular-nums">
+      <span className="text-muted-foreground">{total} Adet:</span>
+      {items.map((i) => (
+        <span key={i.label} className={i.cls}>
+          {i.count} {i.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Case hesaplama özeti */
+export function CaseCalculation({
+  quantity, itemsPerCase, caseWeightKg, caseVolumeM3,
+}: {
+  quantity: number; itemsPerCase: number; caseWeightKg: number | null; caseVolumeM3: number | null;
+}) {
+  if (!itemsPerCase || itemsPerCase <= 0) return null;
+  const cases = Math.ceil(quantity / itemsPerCase);
+  const totalKg = caseWeightKg ? cases * caseWeightKg : null;
+  const totalM3 = caseVolumeM3 ? cases * caseVolumeM3 : null;
+
+  if (!totalKg && !totalM3) return null;
+
+  return (
+    <span className="text-[11px] text-muted-foreground tabular-nums">
+      {quantity} ad → {cases} case
+      {totalKg != null && <> · {totalKg.toLocaleString("tr-TR")} kg</>}
+      {totalM3 != null && <> · {totalM3.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} m³</>}
+    </span>
   );
 }

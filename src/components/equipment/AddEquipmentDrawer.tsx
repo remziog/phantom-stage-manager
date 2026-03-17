@@ -22,14 +22,17 @@ const locations = Constants.public.Enums.equipment_location;
 
 interface Props { open: boolean; onOpenChange: (open: boolean) => void; }
 
+const initialForm = {
+  name: "", category: "Light" as EquipmentCategory, subcategory: "", brand: "", model: "",
+  serial_number: "", quantity_total: 1, quantity_available: 1, gross_price_per_day: 0,
+  weight_kg: "", power_consumption_watts: "", condition: "Good" as EquipmentCondition,
+  current_location: "Warehouse" as EquipmentLocation, notes: "",
+  items_per_case: 1, case_weight_kg: "", case_volume_m3: "",
+};
+
 export function AddEquipmentDrawer({ open, onOpenChange }: Props) {
   const createEquipment = useCreateEquipment();
-  const [form, setForm] = useState({
-    name: "", category: "Light" as EquipmentCategory, subcategory: "", brand: "", model: "",
-    serial_number: "", quantity_total: 1, quantity_available: 1, gross_price_per_day: 0,
-    weight_kg: "", power_consumption_watts: "", condition: "Good" as EquipmentCondition,
-    current_location: "Warehouse" as EquipmentLocation, notes: "",
-  });
+  const [form, setForm] = useState(initialForm);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,12 +44,14 @@ export function AddEquipmentDrawer({ open, onOpenChange }: Props) {
         gross_price_per_day: form.gross_price_per_day, weight_kg: form.weight_kg ? Number(form.weight_kg) : null,
         power_consumption_watts: form.power_consumption_watts ? Number(form.power_consumption_watts) : null,
         condition: form.condition, current_location: form.current_location, notes: form.notes || null,
+        items_per_case: form.items_per_case,
+        case_weight_kg: form.case_weight_kg ? Number(form.case_weight_kg) : null,
+        case_volume_m3: form.case_volume_m3 ? Number(form.case_volume_m3) : null,
+        qty_in_warehouse: form.quantity_available,
       });
       toast.success("Ekipman başarıyla eklendi");
       onOpenChange(false);
-      setForm({ name: "", category: "Light", subcategory: "", brand: "", model: "", serial_number: "",
-        quantity_total: 1, quantity_available: 1, gross_price_per_day: 0, weight_kg: "", power_consumption_watts: "",
-        condition: "Good", current_location: "Warehouse", notes: "" });
+      setForm(initialForm);
     } catch (err: any) {
       toast.error(err.message || "Ekipman eklenemedi");
     }
@@ -106,6 +111,26 @@ export function AddEquipmentDrawer({ open, onOpenChange }: Props) {
             <Label className="text-xs text-muted-foreground">Günlük Brüt Fiyat (₺) *</Label>
             <Input type="number" min={0} step="0.01" value={form.gross_price_per_day} onChange={(e) => update("gross_price_per_day", Number(e.target.value))} className="bg-input border-border tabular-nums" />
           </div>
+
+          {/* Case Bilgileri */}
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Case Bilgileri</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Adet/Case</Label>
+                <Input type="number" min={1} value={form.items_per_case} onChange={(e) => update("items_per_case", Math.max(1, Number(e.target.value)))} className="bg-input border-border tabular-nums" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Case Ağırlık (kg)</Label>
+                <Input type="number" step="0.1" min={0} value={form.case_weight_kg} onChange={(e) => update("case_weight_kg", e.target.value)} placeholder="90" className="bg-input border-border tabular-nums" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Case Hacim (m³)</Label>
+                <Input type="number" step="0.01" min={0} value={form.case_volume_m3} onChange={(e) => update("case_volume_m3", e.target.value)} placeholder="0.8" className="bg-input border-border tabular-nums" />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Ağırlık (kg)</Label>
