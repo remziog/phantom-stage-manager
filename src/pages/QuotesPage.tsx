@@ -55,7 +55,7 @@ export default function QuotesPage() {
     { label: "Bekleyen", value: `${draftCount} taslak · ${sentCount} gönderildi`, icon: Clock, color: "text-accent" },
   ];
 
-  const isAdmin = role === "admin" || role === "team_member";
+  const isAdmin = role === "admin" || role === "team_member" || role === "sales";
 
   return (
     <DashboardLayout>
