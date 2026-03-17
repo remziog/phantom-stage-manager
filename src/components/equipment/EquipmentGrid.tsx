@@ -4,7 +4,7 @@ import { LocationBadge, CategoryBadge, AvailabilityDisplay } from "./EquipmentBa
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
 
-export function EquipmentGrid({ data }: { data: Equipment[] }) {
+export function EquipmentGrid({ data, hidePrices = false }: { data: Equipment[]; hidePrices?: boolean }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {data.map((item) => (
@@ -22,10 +22,12 @@ export function EquipmentGrid({ data }: { data: Equipment[] }) {
           )}
           <div className="flex items-end justify-between">
             <AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} />
-            <span className="text-sm font-medium tabular-nums text-foreground">
-              {formatCurrency(item.gross_price_per_day)}
-              <span className="text-xs text-muted-foreground">/gün</span>
-            </span>
+            {!hidePrices && (
+              <span className="text-sm font-medium tabular-nums text-foreground">
+                {formatCurrency(item.gross_price_per_day)}
+                <span className="text-xs text-muted-foreground">/gün</span>
+              </span>
+            )}
           </div>
         </div>
       ))}

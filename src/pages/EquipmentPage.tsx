@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEquipment } from "@/hooks/useEquipment";
+import { useAuth } from "@/contexts/AuthContext";
 import { EquipmentTable } from "@/components/equipment/EquipmentTable";
 import { EquipmentGrid } from "@/components/equipment/EquipmentGrid";
 import { AddEquipmentDrawer } from "@/components/equipment/AddEquipmentDrawer";
@@ -25,6 +26,8 @@ const locations = Constants.public.Enums.equipment_location;
 
 export default function EquipmentPage() {
   const { data: equipment, isLoading } = useEquipment();
+  const { role } = useAuth();
+  const isCrew = role === "crew";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
@@ -58,10 +61,12 @@ export default function EquipmentPage() {
               Envanterinizde {equipment?.length ?? 0} ürün bulunuyor.
             </p>
           </div>
-          <Button onClick={() => setDrawerOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Ekipman Ekle
-          </Button>
+          {!isCrew && (
+            <Button onClick={() => setDrawerOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Ekipman Ekle
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -155,9 +160,9 @@ export default function EquipmentPage() {
             )}
           </div>
         ) : viewMode === "table" ? (
-          <EquipmentTable data={filtered} />
+          <EquipmentTable data={filtered} hidePrices={isCrew} />
         ) : (
-          <EquipmentGrid data={filtered} />
+          <EquipmentGrid data={filtered} hidePrices={isCrew} />
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { LocationBadge, ConditionBadge, CategoryBadge, AvailabilityDisplay } fro
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
 
-export function EquipmentTable({ data }: { data: Equipment[] }) {
+export function EquipmentTable({ data, hidePrices = false }: { data: Equipment[]; hidePrices?: boolean }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden phantom-shadow">
       <div className="overflow-x-auto">
@@ -14,7 +14,7 @@ export function EquipmentTable({ data }: { data: Equipment[] }) {
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Marka / Model</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Fiyat/Gün</th>
+              {!hidePrices && <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Fiyat/Gün</th>}
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Müsait</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Durum</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Konum</th>
@@ -35,7 +35,7 @@ export function EquipmentTable({ data }: { data: Equipment[] }) {
                 </td>
                 <td className="px-4 py-3"><CategoryBadge category={item.category} /></td>
                 <td className="px-4 py-3 text-muted-foreground">{[item.brand, item.model].filter(Boolean).join(" ") || "—"}</td>
-                <td className="px-4 py-3 tabular-nums text-foreground">{formatCurrency(item.gross_price_per_day)}</td>
+                {!hidePrices && <td className="px-4 py-3 tabular-nums text-foreground">{formatCurrency(item.gross_price_per_day)}</td>}
                 <td className="px-4 py-3"><AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} /></td>
                 <td className="px-4 py-3"><ConditionBadge condition={item.condition} /></td>
                 <td className="px-4 py-3"><LocationBadge location={item.current_location} /></td>
