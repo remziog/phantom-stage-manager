@@ -173,6 +173,7 @@ export default function QuoteDetailPage() {
             ) : isAdmin ? (
               <LineItemEditor
                 quoteId={quote.id}
+                customerId={quote.customer_id}
                 initialItems={lineItems}
                 onSave={handleSaveLineItems}
                 saving={saveLines.isPending}
