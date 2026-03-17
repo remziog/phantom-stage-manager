@@ -24,7 +24,7 @@ export default function LoginPage() {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Account created! Check your email to confirm.");
+        toast.success("Hesap oluşturuldu! Onay için e-postanızı kontrol edin.");
       }
     } else {
       const { error } = await signIn(email, password);
@@ -46,7 +46,7 @@ export default function LoginPage() {
             PHANTOM
           </h1>
           <p className="text-sm text-muted-foreground">
-            Event Engineering CRM
+            Etkinlik Mühendisliği CRM
           </p>
         </div>
 
@@ -54,43 +54,43 @@ export default function LoginPage() {
         <div className="rounded-lg bg-card p-6 phantom-shadow space-y-6">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold tracking-display text-foreground">
-              {isSignUp ? "Create Account" : "Sign In"}
+              {isSignUp ? "Hesap Oluştur" : "Giriş Yap"}
             </h2>
             <p className="text-sm text-muted-foreground">
               {isSignUp
-                ? "Register to get started"
-                : "Enter your credentials to continue"}
+                ? "Başlamak için kayıt olun"
+                : "Devam etmek için bilgilerinizi girin"}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm text-muted-foreground">Full Name</Label>
+                <Label htmlFor="fullName" className="text-sm text-muted-foreground">Ad Soyad</Label>
                 <Input
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder="Adınız ve soyadınız"
                   required
                   className="bg-input border-border focus:ring-primary focus:phantom-glow"
                 />
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-muted-foreground">Email</Label>
+              <Label htmlFor="email" className="text-sm text-muted-foreground">E-posta</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                placeholder="siz@sirket.com"
                 required
                 className="bg-input border-border focus:ring-primary"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
+              <Label htmlFor="password" className="text-sm text-muted-foreground">Şifre</Label>
               <Input
                 id="password"
                 type="password"
@@ -103,7 +103,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
+              {loading ? "Yükleniyor..." : isSignUp ? "Hesap Oluştur" : "Giriş Yap"}
             </Button>
           </form>
 
@@ -114,14 +114,14 @@ export default function LoginPage() {
               className="text-sm text-primary hover:text-accent transition-colors"
             >
               {isSignUp
-                ? "Already have an account? Sign in"
-                : "Need an account? Sign up"}
+                ? "Zaten hesabınız var mı? Giriş yapın"
+                : "Hesabınız yok mu? Kayıt olun"}
             </button>
           </div>
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Phantom Event Engineering © {new Date().getFullYear()}
+          Phantom Etkinlik Mühendisliği © {new Date().getFullYear()}
         </p>
       </div>
     </div>

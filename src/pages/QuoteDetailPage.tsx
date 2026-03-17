@@ -45,7 +45,7 @@ export default function QuoteDetailPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center p-12">
-          <p className="text-sm text-muted-foreground">Loading quote…</p>
+          <p className="text-sm text-muted-foreground">Teklif yükleniyor…</p>
         </div>
       </DashboardLayout>
     );
@@ -73,7 +73,6 @@ export default function QuoteDetailPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/quotes")}>
             <ArrowLeft className="h-4 w-4" />
@@ -94,7 +93,7 @@ export default function QuoteDetailPage() {
             onClick={() => generateQuotePdf({ quote, lineItems, company })}
             disabled={lineItems.length === 0}
           >
-            <Download className="h-4 w-4" /> Export PDF
+            <Download className="h-4 w-4" /> PDF İndir
           </Button>
           {isAdmin && (
             <Select value={quote.status} onValueChange={(v) => handleStatusChange(v as QuoteStatus)}>
@@ -115,7 +114,7 @@ export default function QuoteDetailPage() {
                 className="gap-1.5 bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-foreground"
                 onClick={() => handleStatusChange("Approved")}
               >
-                <CheckCircle className="h-4 w-4" /> Approve
+                <CheckCircle className="h-4 w-4" /> Onayla
               </Button>
               <Button
                 size="sm"
@@ -123,19 +122,18 @@ export default function QuoteDetailPage() {
                 className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
                 onClick={() => handleStatusChange("Rejected")}
               >
-                <XCircle className="h-4 w-4" /> Reject
+                <XCircle className="h-4 w-4" /> Reddet
               </Button>
             </div>
           )}
         </div>
 
-        {/* Info Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card className="phantom-shadow border-border/50">
             <CardContent className="flex items-center gap-3 p-4">
               <Building2 className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-xs text-muted-foreground">Customer</p>
+                <p className="text-xs text-muted-foreground">Müşteri</p>
                 <p className="text-sm font-medium text-foreground">{quote.customer_name}</p>
               </div>
             </CardContent>
@@ -144,11 +142,11 @@ export default function QuoteDetailPage() {
             <CardContent className="flex items-center gap-3 p-4">
               <Calendar className="h-5 w-5 text-accent" />
               <div>
-                <p className="text-xs text-muted-foreground">Event Dates</p>
+                <p className="text-xs text-muted-foreground">Etkinlik Tarihleri</p>
                 <p className="text-sm font-medium text-foreground">
                   {quote.event_date
                     ? new Date(quote.event_date).toLocaleDateString("tr-TR")
-                    : "TBD"}
+                    : "Belirsiz"}
                   {quote.event_end_date && ` — ${new Date(quote.event_end_date).toLocaleDateString("tr-TR")}`}
                 </p>
               </div>
@@ -158,21 +156,20 @@ export default function QuoteDetailPage() {
             <CardContent className="flex items-center gap-3 p-4">
               <MapPin className="h-5 w-5 text-[hsl(var(--warning))]" />
               <div>
-                <p className="text-xs text-muted-foreground">Venue</p>
-                <p className="text-sm font-medium text-foreground">{quote.venue || "TBD"}</p>
+                <p className="text-xs text-muted-foreground">Mekan</p>
+                <p className="text-sm font-medium text-foreground">{quote.venue || "Belirsiz"}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Line Items */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">Line Items</CardTitle>
+            <CardTitle className="text-base">Kalem Detayları</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingItems ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <p className="text-sm text-muted-foreground">Yükleniyor…</p>
             ) : isAdmin ? (
               <LineItemEditor
                 quoteId={quote.id}
@@ -181,15 +178,14 @@ export default function QuoteDetailPage() {
                 saving={saveLines.isPending}
               />
             ) : (
-              /* Read-only line items for customers */
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-center">Qty</TableHead>
-                    <TableHead className="text-center">Days</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Açıklama</TableHead>
+                    <TableHead className="text-center">Adet</TableHead>
+                    <TableHead className="text-center">Gün</TableHead>
+                    <TableHead className="text-right">Birim Fiyat</TableHead>
+                    <TableHead className="text-right">Toplam</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -208,17 +204,16 @@ export default function QuoteDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Pricing Summary */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">Pricing Summary</CardTitle>
+            <CardTitle className="text-base">Fiyat Özeti</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {isAdmin && (
                 <div className="flex items-center gap-4">
                   <div className="space-y-1.5 flex-1">
-                    <Label>Discount %</Label>
+                    <Label>İndirim %</Label>
                     <Input
                       type="number"
                       min={0}
@@ -228,7 +223,7 @@ export default function QuoteDetailPage() {
                     />
                   </div>
                   <div className="space-y-1.5 flex-1">
-                    <Label>Tax (KDV) %</Label>
+                    <Label>KDV %</Label>
                     <Input
                       type="number"
                       min={0}
@@ -241,21 +236,21 @@ export default function QuoteDetailPage() {
               )}
               <div className="space-y-2 text-sm tabular-nums">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-muted-foreground">Ara Toplam</span>
                   <span className="text-foreground">{fmt(subtotal)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Discount ({discount}%)</span>
+                    <span className="text-muted-foreground">İndirim (%{discount})</span>
                     <span className="text-destructive">-{fmt(discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">KDV ({tax}%)</span>
+                  <span className="text-muted-foreground">KDV (%{tax})</span>
                   <span className="text-foreground">{fmt(taxAmount)}</span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-                  <span className="text-foreground">Total</span>
+                  <span className="text-foreground">Genel Toplam</span>
                   <span className="text-primary">{fmt(total)}</span>
                 </div>
               </div>

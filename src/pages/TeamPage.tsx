@@ -51,59 +51,56 @@ export default function TeamPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-display text-foreground">Team</h1>
+            <h1 className="text-lg font-semibold tracking-display text-foreground">Ekip</h1>
             <p className="text-sm text-muted-foreground">
-              {members?.length ?? 0} crew members.{" "}
-              {members?.filter((m) => m.is_available).length ?? 0} available.
+              {members?.length ?? 0} ekip üyesi.{" "}
+              {members?.filter((m) => m.is_available).length ?? 0} müsait.
             </p>
           </div>
           <Button onClick={() => setDrawerOpen(true)} size="sm">
             <Plus className="h-4 w-4 mr-1" />
-            Add Member
+            Üye Ekle
           </Button>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search members..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-input border-border" />
+            <Input placeholder="Üye ara..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-input border-border" />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-[180px] bg-input border-border">
-              <SelectValue placeholder="Role" />
+              <SelectValue placeholder="Rol" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="all">Tüm Roller</SelectItem>
               {roles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
           <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
             <Switch checked={showAvailableOnly} onCheckedChange={setShowAvailableOnly} />
-            Available only
+            Sadece müsait
           </label>
         </div>
 
-        {/* Table */}
         {isLoading ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">Loading team...</p>
+            <p className="text-sm text-muted-foreground">Ekip yükleniyor...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex flex-col items-center justify-center gap-3">
             <p className="text-sm text-muted-foreground">
-              {members?.length === 0 ? "No team members yet." : "No members match your filters."}
+              {members?.length === 0 ? "Henüz ekip üyesi yok." : "Filtrelere uygun üye bulunamadı."}
             </p>
             {members?.length === 0 ? (
               <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Add New Member
+                <Plus className="h-4 w-4 mr-1" /> Yeni Üye Ekle
               </Button>
             ) : (
               <Button variant="outline" size="sm" onClick={() => { setSearch(""); setRoleFilter("all"); setShowAvailableOnly(false); }}>
-                Clear Filters
+                Filtreleri Temizle
               </Button>
             )}
           </div>
@@ -113,13 +110,13 @@ export default function TeamPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-card">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Daily Rate</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Skills</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Available</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Rol</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">İletişim</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Günlük Ücret</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Yetenekler</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Durum</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Müsait</th>
                   </tr>
                 </thead>
                 <tbody>

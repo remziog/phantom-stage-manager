@@ -55,22 +55,22 @@ export function CreateEventDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5">
-          <Plus className="h-4 w-4" /> New Event
+          <Plus className="h-4 w-4" /> Yeni Etkinlik
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Event</DialogTitle>
+          <DialogTitle>Etkinlik Oluştur</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
-            <Label htmlFor="name">Event Name *</Label>
+            <Label htmlFor="name">Etkinlik Adı *</Label>
             <Input id="name" name="name" required maxLength={200} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="customer_id">Customer</Label>
+            <Label htmlFor="customer_id">Müşteri</Label>
             <Select name="customer_id">
-              <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
               <SelectContent>
                 {customers.filter((c) => c.is_active).map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.company_name}</SelectItem>
@@ -80,33 +80,33 @@ export function CreateEventDialog() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="start_date">Start Date *</Label>
+              <Label htmlFor="start_date">Başlangıç Tarihi *</Label>
               <Input id="start_date" name="start_date" type="date" required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="end_date">End Date *</Label>
+              <Label htmlFor="end_date">Bitiş Tarihi *</Label>
               <Input id="end_date" name="end_date" type="date" required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="load_in_date">Load-in Date</Label>
+              <Label htmlFor="load_in_date">Kurulum Tarihi</Label>
               <Input id="load_in_date" name="load_in_date" type="date" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="load_out_date">Load-out Date</Label>
+              <Label htmlFor="load_out_date">Söküm Tarihi</Label>
               <Input id="load_out_date" name="load_out_date" type="date" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="venue">Venue</Label>
+              <Label htmlFor="venue">Mekan</Label>
               <Input id="venue" name="venue" maxLength={200} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pm_id">Project Manager</Label>
+              <Label htmlFor="pm_id">Proje Yöneticisi</Label>
               <Select name="pm_id">
-                <SelectTrigger><SelectValue placeholder="Assign PM" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="PM Ata" /></SelectTrigger>
                 <SelectContent>
                   {pms.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
@@ -116,15 +116,15 @@ export function CreateEventDialog() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="venue_address">Venue Address</Label>
+            <Label htmlFor="venue_address">Mekan Adresi</Label>
             <Input id="venue_address" name="venue_address" maxLength={300} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notlar</Label>
             <Textarea id="notes" name="notes" rows={2} maxLength={1000} />
           </div>
           <Button type="submit" className="w-full" disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create Event"}
+            {create.isPending ? "Oluşturuluyor…" : "Etkinlik Oluştur"}
           </Button>
         </form>
       </DialogContent>

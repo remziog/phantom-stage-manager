@@ -49,10 +49,10 @@ export default function QuotesPage() {
   const sentCount = quotes.filter((q) => q.status === "Sent").length;
 
   const stats = [
-    { label: "Total Quotes", value: quotes.length, icon: FileText, color: "text-primary" },
-    { label: "Approved Value", value: fmt(approvedValue), icon: CheckCircle, color: "text-[hsl(var(--success))]" },
-    { label: "Pipeline Value", value: fmt(totalValue), icon: TrendingUp, color: "text-[hsl(var(--warning))]" },
-    { label: "Pending", value: `${draftCount} draft · ${sentCount} sent`, icon: Clock, color: "text-accent" },
+    { label: "Toplam Teklif", value: quotes.length, icon: FileText, color: "text-primary" },
+    { label: "Onaylanan Değer", value: fmt(approvedValue), icon: CheckCircle, color: "text-[hsl(var(--success))]" },
+    { label: "Beklenen Değer", value: fmt(totalValue), icon: TrendingUp, color: "text-[hsl(var(--warning))]" },
+    { label: "Bekleyen", value: `${draftCount} taslak · ${sentCount} gönderildi`, icon: Clock, color: "text-accent" },
   ];
 
   const isAdmin = role === "admin" || role === "team_member";
@@ -60,20 +60,18 @@ export default function QuotesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">
-              {isAdmin ? "Quotes & Proposals" : "My Quotes"}
+              {isAdmin ? "Teklifler & Teklifnameler" : "Tekliflerim"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isAdmin ? "Create, price, and manage event proposals." : "View your quotes and proposals."}
+              {isAdmin ? "Etkinlik tekliflerini oluşturun, fiyatlandırın ve yönetin." : "Tekliflerinizi ve teklifnamelerinizi görüntüleyin."}
             </p>
           </div>
           {isAdmin && <CreateQuoteDialog />}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
             <Card key={s.label} className="phantom-shadow border-border/50">
@@ -90,12 +88,11 @@ export default function QuotesPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search quotes…"
+              placeholder="Teklif ara…"
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -103,10 +100,10 @@ export default function QuotesPage() {
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
               {statuses.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -114,27 +111,26 @@ export default function QuotesPage() {
           </Select>
         </div>
 
-        {/* Table */}
         <Card className="phantom-shadow border-border/50">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">Loading quotes…</p>
+              <p className="text-sm text-muted-foreground">Teklifler yükleniyor…</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">No quotes found.</p>
+              <p className="text-sm text-muted-foreground">Teklif bulunamadı.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Quote #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
+                  <TableHead>Teklif No</TableHead>
+                  <TableHead>Müşteri</TableHead>
+                  <TableHead>Etkinlik</TableHead>
+                  <TableHead>Tarih</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead className="text-right">Toplam</TableHead>
+                  <TableHead className="text-center">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -163,7 +159,7 @@ export default function QuotesPage() {
                             className="h-7 text-xs"
                             onClick={() => update.mutate({ id: q.id, status: "Sent" })}
                           >
-                            Send
+                            Gönder
                           </Button>
                         )}
                         {isAdmin && q.status === "Sent" && (
@@ -173,7 +169,7 @@ export default function QuotesPage() {
                             className="h-7 text-xs text-[hsl(var(--success))]"
                             onClick={() => update.mutate({ id: q.id, status: "Approved" })}
                           >
-                            Approve
+                            Onayla
                           </Button>
                         )}
                         {!isAdmin && q.status === "Sent" && (
@@ -184,7 +180,7 @@ export default function QuotesPage() {
                               className="h-7 text-xs text-[hsl(var(--success))] border-[hsl(var(--success))]/30 hover:bg-[hsl(var(--success))]/10"
                               onClick={() => update.mutate({ id: q.id, status: "Approved" })}
                             >
-                              Approve
+                              Onayla
                             </Button>
                             <Button
                               variant="outline"
@@ -192,7 +188,7 @@ export default function QuotesPage() {
                               className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                               onClick={() => update.mutate({ id: q.id, status: "Rejected" })}
                             >
-                              Reject
+                              Reddet
                             </Button>
                           </>
                         )}

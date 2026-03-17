@@ -44,7 +44,7 @@ export default function EventDetailPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center p-12">
-          <p className="text-sm text-muted-foreground">Loading event…</p>
+          <p className="text-sm text-muted-foreground">Etkinlik yükleniyor…</p>
         </div>
       </DashboardLayout>
     );
@@ -63,7 +63,6 @@ export default function EventDetailPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/events")}>
             <ArrowLeft className="h-4 w-4" />
@@ -87,15 +86,14 @@ export default function EventDetailPage() {
           </Select>
         </div>
 
-        {/* Info Cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Card className="phantom-shadow border-border/50">
             <CardContent className="flex items-center gap-3 p-4">
               <Calendar className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-xs text-muted-foreground">Event Dates</p>
+                <p className="text-xs text-muted-foreground">Etkinlik Tarihleri</p>
                 <p className="text-sm font-medium text-foreground">{fmtDate(event.start_date)} — {fmtDate(event.end_date)}</p>
-                <p className="text-xs text-muted-foreground">{days} day{days > 1 ? "s" : ""}</p>
+                <p className="text-xs text-muted-foreground">{days} gün</p>
               </div>
             </CardContent>
           </Card>
@@ -103,8 +101,8 @@ export default function EventDetailPage() {
             <CardContent className="flex items-center gap-3 p-4">
               <MapPin className="h-5 w-5 text-[hsl(var(--warning))]" />
               <div>
-                <p className="text-xs text-muted-foreground">Venue</p>
-                <p className="text-sm font-medium text-foreground">{event.venue || "TBD"}</p>
+                <p className="text-xs text-muted-foreground">Mekan</p>
+                <p className="text-sm font-medium text-foreground">{event.venue || "Belirsiz"}</p>
               </div>
             </CardContent>
           </Card>
@@ -112,7 +110,7 @@ export default function EventDetailPage() {
             <CardContent className="flex items-center gap-3 p-4">
               <Building2 className="h-5 w-5 text-accent" />
               <div>
-                <p className="text-xs text-muted-foreground">Load In / Out</p>
+                <p className="text-xs text-muted-foreground">Kurulum / Söküm</p>
                 <p className="text-sm font-medium text-foreground">{fmtDate(event.load_in_date)} / {fmtDate(event.load_out_date)}</p>
               </div>
             </CardContent>
@@ -121,22 +119,20 @@ export default function EventDetailPage() {
             <CardContent className="flex items-center gap-3 p-4">
               <User className="h-5 w-5 text-[hsl(var(--success))]" />
               <div>
-                <p className="text-xs text-muted-foreground">Resources</p>
+                <p className="text-xs text-muted-foreground">Kaynaklar</p>
                 <p className="text-sm font-medium text-foreground">
-                  {eqAssignments.length} equip · {teamAssignments.length} crew · {vehicleAssignments.length} vehicles
+                  {eqAssignments.length} ekipman · {teamAssignments.length} ekip · {vehicleAssignments.length} araç
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Assignment Sections */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Equipment */}
           <Card className="phantom-shadow border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <Package className="h-4 w-4 text-primary" /> Equipment ({eqAssignments.length})
+                <Package className="h-4 w-4 text-primary" /> Ekipman ({eqAssignments.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -144,7 +140,7 @@ export default function EventDetailPage() {
                 <div key={a.id} className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2">
                   <div>
                     <p className="text-sm text-foreground">{a.equipment?.name}</p>
-                    <p className="text-xs text-muted-foreground">Qty: {a.quantity} · {a.equipment?.category}</p>
+                    <p className="text-xs text-muted-foreground">Adet: {a.quantity} · {a.equipment?.category}</p>
                   </div>
                   <Button
                     variant="ghost" size="icon" className="h-7 w-7 text-destructive"
@@ -157,7 +153,7 @@ export default function EventDetailPage() {
               <div className="flex gap-2 pt-1">
                 <Select value={eqSelect} onValueChange={setEqSelect}>
                   <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Add equipment…" />
+                    <SelectValue placeholder="Ekipman ekle…" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableEq.map((e) => (
@@ -175,11 +171,10 @@ export default function EventDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Team */}
           <Card className="phantom-shadow border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-[hsl(var(--success))]" /> Crew ({teamAssignments.length})
+                <User className="h-4 w-4 text-[hsl(var(--success))]" /> Ekip ({teamAssignments.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -200,7 +195,7 @@ export default function EventDetailPage() {
               <div className="flex gap-2 pt-1">
                 <Select value={tmSelect} onValueChange={setTmSelect}>
                   <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Add crew…" />
+                    <SelectValue placeholder="Ekip üyesi ekle…" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableTm.map((t) => (
@@ -218,11 +213,10 @@ export default function EventDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Vehicles */}
           <Card className="phantom-shadow border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <Truck className="h-4 w-4 text-[hsl(var(--warning))]" /> Vehicles ({vehicleAssignments.length})
+                <Truck className="h-4 w-4 text-[hsl(var(--warning))]" /> Araçlar ({vehicleAssignments.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -243,7 +237,7 @@ export default function EventDetailPage() {
               <div className="flex gap-2 pt-1">
                 <Select value={vhSelect} onValueChange={setVhSelect}>
                   <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Add vehicle…" />
+                    <SelectValue placeholder="Araç ekle…" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableVh.map((v) => (
@@ -262,11 +256,10 @@ export default function EventDetailPage() {
           </Card>
         </div>
 
-        {/* Notes */}
         {event.notes && (
           <Card className="phantom-shadow border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Notes</CardTitle>
+              <CardTitle className="text-sm">Notlar</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">{event.notes}</p>

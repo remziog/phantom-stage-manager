@@ -13,12 +13,12 @@ const entityIcons: Record<string, React.ElementType> = {
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "az önce";
+  if (mins < 60) return `${mins}dk önce`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}sa önce`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${days}g önce`;
 }
 
 export function RecentActivity() {
@@ -30,7 +30,7 @@ export function RecentActivity() {
     <Card className="phantom-shadow border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Activity className="h-4 w-4 text-accent" /> Recent Activity
+          <Activity className="h-4 w-4 text-accent" /> Son Aktiviteler
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 max-h-64 overflow-auto">

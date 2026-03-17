@@ -25,7 +25,7 @@ export function ActiveBadge({ active }: { active: boolean }) {
           : "bg-destructive/15 text-destructive border-destructive/20"
       }
     >
-      {active ? "Active" : "Inactive"}
+      {active ? "Aktif" : "Pasif"}
     </Badge>
   );
 }
