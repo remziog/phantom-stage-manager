@@ -4,7 +4,7 @@ import { LocationBadge, ConditionBadge, CategoryBadge, AvailabilityDisplay } fro
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
 
-export function EquipmentTable({ data }: { data: Equipment[] }) {
+export function EquipmentTable({ data, hidePrices = false }: { data: Equipment[]; hidePrices?: boolean }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden phantom-shadow">
       <div className="overflow-x-auto">
