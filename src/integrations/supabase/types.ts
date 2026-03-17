@@ -101,60 +101,120 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_price_list: {
+        Row: {
+          created_at: string
+          custom_price_per_day: number
+          customer_id: string
+          equipment_id: string
+          id: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_price_per_day?: number
+          customer_id: string
+          equipment_id: string
+          id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_price_per_day?: number
+          customer_id?: string
+          equipment_id?: string
+          id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_price_list_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_list_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
+          address_district: string | null
+          address_postal_code: string | null
           city: string | null
           company_name: string
           contact_name: string
           created_at: string
           customer_type: Database["public"]["Enums"]["customer_type"]
           email: string | null
+          has_contract: boolean
           id: string
           is_active: boolean
           notes: string | null
           phone: string | null
           tax_id: string | null
+          tax_office: string | null
           total_events: number
           total_revenue: number
           updated_at: string
           user_id: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
+          address_district?: string | null
+          address_postal_code?: string | null
           city?: string | null
           company_name: string
           contact_name: string
           created_at?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
           email?: string | null
+          has_contract?: boolean
           id?: string
           is_active?: boolean
           notes?: string | null
           phone?: string | null
           tax_id?: string | null
+          tax_office?: string | null
           total_events?: number
           total_revenue?: number
           updated_at?: string
           user_id?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
+          address_district?: string | null
+          address_postal_code?: string | null
           city?: string | null
           company_name?: string
           contact_name?: string
           created_at?: string
           customer_type?: Database["public"]["Enums"]["customer_type"]
           email?: string | null
+          has_contract?: boolean
           id?: string
           is_active?: boolean
           notes?: string | null
           phone?: string | null
           tax_id?: string | null
+          tax_office?: string | null
           total_events?: number
           total_revenue?: number
           updated_at?: string
           user_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }

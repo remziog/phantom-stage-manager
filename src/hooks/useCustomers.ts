@@ -10,13 +10,19 @@ export type Customer = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  address_district: string | null;
+  address_postal_code: string | null;
   city: string | null;
   customer_type: "Corporate" | "Agency" | "Individual" | "Government";
   tax_id: string | null;
+  tax_office: string | null;
+  website: string | null;
+  has_contract: boolean;
   total_revenue: number;
   total_events: number;
   notes: string | null;
   is_active: boolean;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -38,7 +44,7 @@ export function useCustomers() {
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "total_revenue" | "total_events">) => {
+    mutationFn: async (customer: Partial<Customer> & { company_name: string; contact_name: string }) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)
