@@ -13,23 +13,23 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  quote_created: { icon: FileText, color: "text-primary", label: "Quote Created" },
-  event_status: { icon: Calendar, color: "text-accent", label: "Event Update" },
-  quote_approved: { icon: CheckCircle, color: "text-[hsl(var(--success))]", label: "Quote Approved" },
-  quote_rejected: { icon: XCircle, color: "text-destructive", label: "Quote Rejected" },
-  quote_request: { icon: FileText, color: "text-[hsl(var(--warning))]", label: "Quote Request" },
-  info: { icon: Info, color: "text-muted-foreground", label: "Info" },
+  quote_created: { icon: FileText, color: "text-primary", label: "Teklif Oluşturuldu" },
+  event_status: { icon: Calendar, color: "text-accent", label: "Etkinlik Güncelleme" },
+  quote_approved: { icon: CheckCircle, color: "text-[hsl(var(--success))]", label: "Teklif Onaylandı" },
+  quote_rejected: { icon: XCircle, color: "text-destructive", label: "Teklif Reddedildi" },
+  quote_request: { icon: FileText, color: "text-[hsl(var(--warning))]", label: "Teklif Talebi" },
+  info: { icon: Info, color: "text-muted-foreground", label: "Bilgi" },
 };
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "az önce";
+  if (mins < 60) return `${mins}dk önce`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}sa önce`;
   const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `${days}g önce`;
   return new Date(dateStr).toLocaleDateString("tr-TR");
 }
 
@@ -70,12 +70,11 @@ export default function NotificationsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Notifications</h1>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">Bildirimler</h1>
             <p className="text-sm text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"} · {notifications.length} total
+              {unreadCount > 0 ? `${unreadCount} okunmamış` : "Hepsi okundu"} · {notifications.length} toplam
             </p>
           </div>
           <div className="flex gap-2">
@@ -87,13 +86,12 @@ export default function NotificationsPage() {
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
               >
-                <CheckCheck className="h-4 w-4" /> Mark all read
+                <CheckCheck className="h-4 w-4" /> Tümünü okundu yap
               </Button>
             )}
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Card className="phantom-shadow border-border/50">
             <CardContent className="flex items-center gap-3 p-4">
@@ -101,7 +99,7 @@ export default function NotificationsPage() {
                 <Bell className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">Toplam</p>
                 <p className="text-lg font-semibold text-foreground">{notifications.length}</p>
               </div>
             </CardContent>
@@ -112,7 +110,7 @@ export default function NotificationsPage() {
                 <Eye className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Unread</p>
+                <p className="text-xs text-muted-foreground">Okunmamış</p>
                 <p className="text-lg font-semibold text-foreground">{unreadCount}</p>
               </div>
             </CardContent>
@@ -123,7 +121,7 @@ export default function NotificationsPage() {
                 <CheckCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Read</p>
+                <p className="text-xs text-muted-foreground">Okunmuş</p>
                 <p className="text-lg font-semibold text-foreground">{notifications.length - unreadCount}</p>
               </div>
             </CardContent>
@@ -134,21 +132,20 @@ export default function NotificationsPage() {
                 <Filter className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Showing</p>
+                <p className="text-xs text-muted-foreground">Gösterilen</p>
                 <p className="text-lg font-semibold text-foreground">{filtered.length}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder="Tür" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">Tüm Türler</SelectItem>
               {types.map((t) => (
                 <SelectItem key={t} value={t}>
                   {typeConfig[t]?.label || t}
@@ -158,31 +155,30 @@ export default function NotificationsPage() {
           </Select>
           <Select value={readFilter} onValueChange={setReadFilter}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="unread">Unread</SelectItem>
-              <SelectItem value="read">Read</SelectItem>
+              <SelectItem value="all">Tümü</SelectItem>
+              <SelectItem value="unread">Okunmamış</SelectItem>
+              <SelectItem value="read">Okunmuş</SelectItem>
             </SelectContent>
           </Select>
           {filtered.some((n) => !n.is_read) && (
             <Button variant="ghost" size="sm" className="text-xs" onClick={handleMarkSelected}>
-              Mark filtered as read
+              Filtrelenenleri okundu yap
             </Button>
           )}
         </div>
 
-        {/* List */}
         <Card className="phantom-shadow border-border/50">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">Loading notifications…</p>
+              <p className="text-sm text-muted-foreground">Bildirimler yükleniyor…</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12">
               <Bell className="h-10 w-10 text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground">No notifications found.</p>
+              <p className="text-sm text-muted-foreground">Bildirim bulunamadı.</p>
             </div>
           ) : (
             <ScrollArea className="max-h-[60vh]">

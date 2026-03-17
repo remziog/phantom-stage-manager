@@ -60,29 +60,27 @@ export default function EventsPage() {
   const completed = events.filter((e) => e.status === "Completed").length;
 
   const stats = [
-    { label: "Total Events", value: events.length, icon: CalendarDays, color: "text-primary" },
-    { label: "Upcoming", value: upcoming, icon: Clock, color: "text-accent" },
-    { label: "In Progress", value: inProgress, icon: Zap, color: "text-[hsl(var(--warning))]" },
-    { label: "Completed", value: completed, icon: CheckCircle2, color: "text-[hsl(var(--success))]" },
+    { label: "Toplam Etkinlik", value: events.length, icon: CalendarDays, color: "text-primary" },
+    { label: "Yaklaşan", value: upcoming, icon: Clock, color: "text-accent" },
+    { label: "Devam Eden", value: inProgress, icon: Zap, color: "text-[hsl(var(--warning))]" },
+    { label: "Tamamlanan", value: completed, icon: CheckCircle2, color: "text-[hsl(var(--success))]" },
   ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">
-              {isAdmin ? "Events" : "My Events"}
+              {isAdmin ? "Etkinlikler" : "Etkinliklerim"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isAdmin ? "Track active and upcoming events with resource assignments." : "View your event status and details."}
+              {isAdmin ? "Aktif ve yaklaşan etkinlikleri kaynak atamalarıyla takip edin." : "Etkinlik durumunuzu ve detaylarınızı görüntüleyin."}
             </p>
           </div>
           {isAdmin && <CreateEventDialog />}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
             <Card key={s.label} className="phantom-shadow border-border/50">
@@ -99,18 +97,17 @@ export default function EventsPage() {
           ))}
         </div>
 
-        {/* Filters + View Toggle */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search events…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Etkinlik ara…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
               {statuses.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -128,17 +125,16 @@ export default function EventsPage() {
           </Tabs>
         </div>
 
-        {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
-            <p className="text-sm text-muted-foreground">Loading events…</p>
+            <p className="text-sm text-muted-foreground">Etkinlikler yükleniyor…</p>
           </div>
         ) : view === "calendar" ? (
           <EventCalendar events={filtered} currentMonth={calMonth} onMonthChange={setCalMonth} />
         ) : filtered.length === 0 ? (
           <Card className="phantom-shadow border-border/50">
             <CardContent className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">No events found.</p>
+              <p className="text-sm text-muted-foreground">Etkinlik bulunamadı.</p>
             </CardContent>
           </Card>
         ) : (
@@ -173,7 +169,7 @@ export default function EventsPage() {
                             <CalendarDays className="h-3 w-3" />
                             {fmt(event.start_date)}
                             {event.start_date !== event.end_date && ` — ${fmt(event.end_date)}`}
-                            {" "}({days} day{days > 1 ? "s" : ""})
+                            {" "}({days} gün)
                           </span>
                         </div>
                       </div>

@@ -16,12 +16,12 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "az önce";
+  if (mins < 60) return `${mins}dk önce`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}sa önce`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${days}g önce`;
 }
 
 export function NotificationBell() {
@@ -54,13 +54,13 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0" sideOffset={8}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+          <h3 className="text-sm font-semibold text-foreground">Bildirimler</h3>
           {unreadCount > 0 && (
             <button
               onClick={() => markAllRead.mutate()}
               className="text-xs text-primary hover:underline"
             >
-              Mark all read
+              Tümünü okundu yap
             </button>
           )}
         </div>
@@ -68,7 +68,7 @@ export function NotificationBell() {
           {recent.length === 0 ? (
             <div className="py-8 text-center">
               <Bell className="mx-auto h-8 w-8 text-muted-foreground/30" />
-              <p className="mt-2 text-sm text-muted-foreground">No notifications yet</p>
+              <p className="mt-2 text-sm text-muted-foreground">Henüz bildirim yok</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -110,7 +110,7 @@ export function NotificationBell() {
               onClick={() => navigate("/notifications")}
               className="text-xs text-primary hover:underline w-full text-center"
             >
-              View all notifications
+              Tüm bildirimleri gör
             </button>
           </div>
         )}

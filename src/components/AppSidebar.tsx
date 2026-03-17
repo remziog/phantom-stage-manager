@@ -25,23 +25,23 @@ import {
 } from "@/components/ui/sidebar";
 
 const adminNavItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Equipment", url: "/equipment", icon: Package },
-  { title: "Team", url: "/team", icon: Users },
-  { title: "Logistics", url: "/logistics", icon: Truck },
-  { title: "Customers", url: "/customers", icon: Building2 },
-  { title: "Quotes", url: "/quotes", icon: FileText },
-  { title: "Events", url: "/events", icon: Calendar },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Panel", url: "/", icon: LayoutDashboard },
+  { title: "Ekipman", url: "/equipment", icon: Package },
+  { title: "Ekip", url: "/team", icon: Users },
+  { title: "Lojistik", url: "/logistics", icon: Truck },
+  { title: "Müşteriler", url: "/customers", icon: Building2 },
+  { title: "Teklifler", url: "/quotes", icon: FileText },
+  { title: "Etkinlikler", url: "/events", icon: Calendar },
+  { title: "Bildirimler", url: "/notifications", icon: Bell },
+  { title: "Ayarlar", url: "/settings", icon: Settings },
 ];
 
 const customerNavItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Request Quote", url: "/request-quote", icon: PenLine },
-  { title: "My Quotes", url: "/quotes", icon: FileText },
-  { title: "My Events", url: "/events", icon: Calendar },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Panel", url: "/", icon: LayoutDashboard },
+  { title: "Teklif İste", url: "/request-quote", icon: PenLine },
+  { title: "Tekliflerim", url: "/quotes", icon: FileText },
+  { title: "Etkinliklerim", url: "/events", icon: Calendar },
+  { title: "Bildirimler", url: "/notifications", icon: Bell },
 ];
 
 export function AppSidebar() {
@@ -94,10 +94,10 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="space-y-1">
               <p className="text-xs font-medium text-foreground truncate">
-                {profile?.full_name || "User"}
+                {profile?.full_name || "Kullanıcı"}
               </p>
               <p className="text-xs text-muted-foreground capitalize">
-                {role?.replace("_", " ") || "..."}
+                {role === "admin" ? "Yönetici" : role === "team_member" ? "Ekip Üyesi" : role === "customer" ? "Müşteri" : "..."}
               </p>
             </div>
           )}
@@ -105,7 +105,7 @@ export function AppSidebar() {
             onClick={signOut}
             className="text-xs text-muted-foreground hover:text-destructive transition-colors w-full text-left"
           >
-            {collapsed ? "×" : "Sign Out"}
+            {collapsed ? "×" : "Çıkış Yap"}
           </button>
         </div>
       </SidebarContent>

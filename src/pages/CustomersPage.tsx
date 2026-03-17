@@ -37,31 +37,28 @@ export default function CustomersPage() {
     return list;
   }, [customers, search, typeFilter, statusFilter]);
 
-  // Stats
   const totalRevenue = customers.reduce((s, c) => s + c.total_revenue, 0);
   const totalEvents = customers.reduce((s, c) => s + c.total_events, 0);
   const activeCount = customers.filter((c) => c.is_active).length;
 
   const stats = [
-    { label: "Total Customers", value: customers.length, icon: Users, color: "text-primary" },
-    { label: "Active", value: activeCount, icon: Building2, color: "text-[hsl(var(--success))]" },
-    { label: "Total Revenue", value: formatCurrency(totalRevenue), icon: TrendingUp, color: "text-[hsl(var(--warning))]" },
-    { label: "Total Events", value: totalEvents, icon: CalendarCheck, color: "text-accent" },
+    { label: "Toplam Müşteri", value: customers.length, icon: Users, color: "text-primary" },
+    { label: "Aktif", value: activeCount, icon: Building2, color: "text-[hsl(var(--success))]" },
+    { label: "Toplam Gelir", value: formatCurrency(totalRevenue), icon: TrendingUp, color: "text-[hsl(var(--warning))]" },
+    { label: "Toplam Etkinlik", value: totalEvents, icon: CalendarCheck, color: "text-accent" },
   ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Customers</h1>
-            <p className="text-sm text-muted-foreground">Manage your client relationships and track revenue.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">Müşteriler</h1>
+            <p className="text-sm text-muted-foreground">Müşteri ilişkilerinizi yönetin ve geliri takip edin.</p>
           </div>
           <AddCustomerDrawer />
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
             <Card key={s.label} className="phantom-shadow border-border/50">
@@ -78,12 +75,11 @@ export default function CustomersPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search customers…"
+              placeholder="Müşteri ara…"
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -91,10 +87,10 @@ export default function CustomersPage() {
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder="Tür" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">Tüm Türler</SelectItem>
               {["Corporate", "Agency", "Individual", "Government"].map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
@@ -102,38 +98,37 @@ export default function CustomersPage() {
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
+              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="inactive">Pasif</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Table */}
         <Card className="phantom-shadow border-border/50">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">Loading customers…</p>
+              <p className="text-sm text-muted-foreground">Müşteriler yükleniyor…</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-muted-foreground">No customers found.</p>
+              <p className="text-sm text-muted-foreground">Müşteri bulunamadı.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>City</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-center">Events</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Active</TableHead>
+                  <TableHead>Şirket</TableHead>
+                  <TableHead>İletişim</TableHead>
+                  <TableHead>Tür</TableHead>
+                  <TableHead>Şehir</TableHead>
+                  <TableHead className="text-right">Gelir</TableHead>
+                  <TableHead className="text-center">Etkinlik</TableHead>
+                  <TableHead>Durum</TableHead>
+                  <TableHead className="text-center">Aktif</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

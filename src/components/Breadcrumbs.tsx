@@ -10,16 +10,16 @@ import {
 import { Fragment } from "react";
 
 const routeLabels: Record<string, string> = {
-  "": "Dashboard",
-  equipment: "Equipment",
-  team: "Team",
-  logistics: "Logistics",
-  customers: "Customers",
-  quotes: "Quotes",
-  events: "Events",
-  settings: "Settings",
-  notifications: "Notifications",
-  "request-quote": "Request Quote",
+  "": "Panel",
+  equipment: "Ekipman",
+  team: "Ekip",
+  logistics: "Lojistik",
+  customers: "Müşteriler",
+  quotes: "Teklifler",
+  events: "Etkinlikler",
+  settings: "Ayarlar",
+  notifications: "Bildirimler",
+  "request-quote": "Teklif İste",
 };
 
 export function Breadcrumbs() {
@@ -31,7 +31,7 @@ export function Breadcrumbs() {
   const crumbs = segments.map((seg, i) => {
     const path = "/" + segments.slice(0, i + 1).join("/");
     const isLast = i === segments.length - 1;
-    const label = routeLabels[seg] || (seg.length > 8 ? "Details" : seg.charAt(0).toUpperCase() + seg.slice(1));
+    const label = routeLabels[seg] || (seg.length > 8 ? "Detay" : seg.charAt(0).toUpperCase() + seg.slice(1));
     return { path, label, isLast };
   });
 
@@ -40,7 +40,7 @@ export function Breadcrumbs() {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link to="/" className="text-muted-foreground hover:text-foreground">Dashboard</Link>
+            <Link to="/" className="text-muted-foreground hover:text-foreground">Panel</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {crumbs.map((crumb) => (

@@ -53,37 +53,35 @@ function VehicleCard({ vehicle, onToggle }: { vehicle: VehicleWithDriver; onTogg
       <div className="grid grid-cols-2 gap-2 text-xs">
         {vehicle.capacity_kg && (
           <div>
-            <span className="text-muted-foreground">Capacity:</span>{" "}
+            <span className="text-muted-foreground">Kapasite:</span>{" "}
             <span className="text-foreground tabular-nums">{vehicle.capacity_kg.toLocaleString()} kg</span>
           </div>
         )}
         {vehicle.capacity_volume_m3 && (
           <div>
-            <span className="text-muted-foreground">Volume:</span>{" "}
+            <span className="text-muted-foreground">Hacim:</span>{" "}
             <span className="text-foreground tabular-nums">{vehicle.capacity_volume_m3} m³</span>
           </div>
         )}
         <div>
-          <span className="text-muted-foreground">Cost/Day:</span>{" "}
+          <span className="text-muted-foreground">Günlük Maliyet:</span>{" "}
           <span className="text-foreground tabular-nums">{formatCurrency(vehicle.daily_cost)}</span>
         </div>
         <div>
-          <span className="text-muted-foreground">Type:</span>{" "}
+          <span className="text-muted-foreground">Tür:</span>{" "}
           <span className="text-foreground">{vehicle.type}</span>
         </div>
       </div>
 
-      {/* Driver */}
       <div className="flex items-center gap-2 text-xs">
         <User className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-muted-foreground">Driver:</span>
-        <span className="text-foreground">{vehicle.team_members?.full_name || "Unassigned"}</span>
+        <span className="text-muted-foreground">Sürücü:</span>
+        <span className="text-foreground">{vehicle.team_members?.full_name || "Atanmamış"}</span>
       </div>
 
-      {/* Availability toggle */}
       <div className="flex items-center justify-between pt-2 border-t border-border">
         <span className={cn("text-xs font-medium", vehicle.is_available ? "text-success" : "text-muted-foreground")}>
-          {vehicle.is_available ? "Available" : "Unavailable"}
+          {vehicle.is_available ? "Müsait" : "Müsait Değil"}
         </span>
         <Switch checked={vehicle.is_available} onCheckedChange={onToggle} />
       </div>
@@ -122,57 +120,57 @@ export default function LogisticsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-display text-foreground">Logistics</h1>
+            <h1 className="text-lg font-semibold tracking-display text-foreground">Lojistik</h1>
             <p className="text-sm text-muted-foreground">
-              {vehicles?.length ?? 0} vehicles. {vehicles?.filter((v) => v.is_available).length ?? 0} available.
+              {vehicles?.length ?? 0} araç. {vehicles?.filter((v) => v.is_available).length ?? 0} müsait.
             </p>
           </div>
           <Button onClick={() => setDrawerOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Add Vehicle
+            <Plus className="h-4 w-4 mr-1" /> Araç Ekle
           </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[140px] bg-input border-border"><SelectValue placeholder="Type" /></SelectTrigger>
+            <SelectTrigger className="w-[140px] bg-input border-border"><SelectValue placeholder="Tür" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">Tüm Türler</SelectItem>
               {vehicleTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] bg-input border-border"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="w-[160px] bg-input border-border"><SelectValue placeholder="Durum" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
               {vehicleStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={availFilter} onValueChange={setAvailFilter}>
-            <SelectTrigger className="w-[150px] bg-input border-border"><SelectValue placeholder="Availability" /></SelectTrigger>
+            <SelectTrigger className="w-[150px] bg-input border-border"><SelectValue placeholder="Müsaitlik" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="unavailable">Unavailable</SelectItem>
+              <SelectItem value="all">Tümü</SelectItem>
+              <SelectItem value="available">Müsait</SelectItem>
+              <SelectItem value="unavailable">Müsait Değil</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {isLoading ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">Loading vehicles...</p>
+            <p className="text-sm text-muted-foreground">Araçlar yükleniyor...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex flex-col items-center justify-center gap-3">
             <p className="text-sm text-muted-foreground">
-              {vehicles?.length === 0 ? "No vehicles in fleet." : "No vehicles match your filters."}
+              {vehicles?.length === 0 ? "Filoda araç yok." : "Filtrelere uygun araç bulunamadı."}
             </p>
             {vehicles?.length === 0 ? (
               <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Add Vehicle
+                <Plus className="h-4 w-4 mr-1" /> Araç Ekle
               </Button>
             ) : (
               <Button variant="outline" size="sm" onClick={() => { setTypeFilter("all"); setStatusFilter("all"); setAvailFilter("all"); }}>
-                Clear Filters
+                Filtreleri Temizle
               </Button>
             )}
           </div>

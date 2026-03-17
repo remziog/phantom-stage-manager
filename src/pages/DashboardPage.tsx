@@ -55,7 +55,6 @@ function AdminDashboard() {
   const { data: vehicles = [] } = useVehicles();
   const { data: customers = [] } = useCustomers();
 
-  // KPI calculations
   const equipmentValue = equipment.reduce((s, e) => s + e.gross_price_per_day * e.quantity_total, 0);
   const totalItems = equipment.reduce((s, e) => s + e.quantity_total, 0);
   const availableItems = equipment.reduce((s, e) => s + e.quantity_available, 0);
@@ -78,31 +77,31 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Precision engineering for every stage.</p>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">Panel</h1>
+        <p className="text-sm text-muted-foreground">Her sahne için hassas mühendislik.</p>
       </div>
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard title="Equipment Value" value={fmt(equipmentValue)} subtitle={`${totalItems} items · ${availableItems} available`} icon={Package} color="text-primary" />
-        <KpiCard title="Active Events" value={activeEvents.length} subtitle={`${events.length} total`} icon={Calendar} color="text-[hsl(var(--warning))]" />
-        <KpiCard title="Pipeline Value" value={fmt(pipelineValue)} subtitle={`${pipelineQuotes.length} open quotes`} icon={FileText} color="text-accent" />
-        <KpiCard title="Approved Revenue" value={fmt(approvedValue)} subtitle={`${quotes.filter((q) => q.status === "Approved").length} approved`} icon={TrendingUp} color="text-[hsl(var(--success))]" />
+        <KpiCard title="Ekipman Değeri" value={fmt(equipmentValue)} subtitle={`${totalItems} ürün · ${availableItems} müsait`} icon={Package} color="text-primary" />
+        <KpiCard title="Aktif Etkinlikler" value={activeEvents.length} subtitle={`${events.length} toplam`} icon={Calendar} color="text-[hsl(var(--warning))]" />
+        <KpiCard title="Beklenen Gelir" value={fmt(pipelineValue)} subtitle={`${pipelineQuotes.length} açık teklif`} icon={FileText} color="text-accent" />
+        <KpiCard title="Onaylanan Gelir" value={fmt(approvedValue)} subtitle={`${quotes.filter((q) => q.status === "Approved").length} onaylı`} icon={TrendingUp} color="text-[hsl(var(--success))]" />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard title="Team Members" value={team.length} subtitle={`${availableTeam} available`} icon={Users} color="text-[hsl(var(--success))]" />
-        <KpiCard title="Fleet" value={vehicles.length} subtitle={`${availableVehicles} available`} icon={Truck} color="text-[hsl(var(--warning))]" />
-        <KpiCard title="Active Customers" value={activeCustomers} subtitle={`${customers.length} total`} icon={Building2} color="text-primary" />
+        <KpiCard title="Ekip Üyeleri" value={team.length} subtitle={`${availableTeam} müsait`} icon={Users} color="text-[hsl(var(--success))]" />
+        <KpiCard title="Araç Filosu" value={vehicles.length} subtitle={`${availableVehicles} müsait`} icon={Truck} color="text-[hsl(var(--warning))]" />
+        <KpiCard title="Aktif Müşteriler" value={activeCustomers} subtitle={`${customers.length} toplam`} icon={Building2} color="text-primary" />
         <Card className="phantom-shadow border-border/50">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Team Utilization</p>
+              <p className="text-xs text-muted-foreground">Ekip Kullanımı</p>
               <span className="text-sm font-semibold text-foreground tabular-nums">{teamUtilization}%</span>
             </div>
             <Progress value={teamUtilization} className="h-2" />
-            <p className="text-xs text-muted-foreground">{team.length - availableTeam} assigned · {availableTeam} free</p>
+            <p className="text-xs text-muted-foreground">{team.length - availableTeam} atanmış · {availableTeam} boşta</p>
           </CardContent>
         </Card>
       </div>
@@ -116,12 +115,16 @@ function AdminDashboard() {
       {/* Category Availability */}
       {(() => {
         const categories = ["Light", "Sound", "Video/Image", "Truss", "Rigging", "Power/Cable", "Other"] as const;
+        const catLabels: Record<string, string> = {
+          Light: "Işık", Sound: "Ses", "Video/Image": "Video/Görüntü",
+          Truss: "Truss", Rigging: "Rigging", "Power/Cable": "Güç/Kablo", Other: "Diğer",
+        };
         const catData = categories.map((cat) => {
           const items = equipment.filter((e) => e.category === cat);
           const total = items.reduce((s, e) => s + e.quantity_total, 0);
           const available = items.reduce((s, e) => s + e.quantity_available, 0);
           const pct = total > 0 ? Math.round((available / total) * 100) : 0;
-          return { cat, total, available, pct };
+          return { cat, label: catLabels[cat] || cat, total, available, pct };
         }).filter((c) => c.total > 0);
 
         return catData.length > 0 ? (
@@ -129,22 +132,22 @@ function AdminDashboard() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <Package className="h-4 w-4 text-primary" /> Equipment Availability by Category
+                  <Package className="h-4 w-4 text-primary" /> Kategoriye Göre Ekipman Durumu
                 </CardTitle>
-                <button onClick={() => navigate("/equipment")} className="text-xs text-primary hover:underline">View all</button>
+                <button onClick={() => navigate("/equipment")} className="text-xs text-primary hover:underline">Tümünü gör</button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {catData.map((c) => (
                   <div key={c.cat} className="rounded-lg bg-secondary/50 p-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">{c.cat}</p>
+                    <p className="text-xs font-medium text-muted-foreground">{c.label}</p>
                     <p className="text-sm font-semibold text-foreground tabular-nums">
                       {c.available} <span className="text-muted-foreground font-normal">/ {c.total}</span>
                     </p>
                     <Progress value={c.pct} className="h-1.5" />
                     <p className={`text-xs tabular-nums ${c.pct < 20 ? "text-destructive" : c.pct < 50 ? "text-[hsl(var(--warning))]" : "text-[hsl(var(--success))]"}`}>
-                      {c.pct}% available
+                      %{c.pct} müsait
                     </p>
                   </div>
                 ))}
@@ -154,21 +157,21 @@ function AdminDashboard() {
         ) : null;
       })()}
 
-      {/* Bottom panels — 3 columns */}
+      {/* Bottom panels */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Upcoming Events */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-primary" /> Upcoming Events
+                <Calendar className="h-4 w-4 text-primary" /> Yaklaşan Etkinlikler
               </CardTitle>
-              <button onClick={() => navigate("/events")} className="text-xs text-primary hover:underline">View all</button>
+              <button onClick={() => navigate("/events")} className="text-xs text-primary hover:underline">Tümünü gör</button>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No upcoming events.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Yaklaşan etkinlik yok.</p>
             ) : (
               upcomingEvents.map((ev) => (
                 <div
@@ -179,7 +182,7 @@ function AdminDashboard() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{ev.name}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.venue || "TBD"}</span>
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.venue || "Belirsiz"}</span>
                       <span>{fmtDate(ev.start_date)}{ev.start_date !== ev.end_date && ` — ${fmtDate(ev.end_date)}`}</span>
                     </div>
                   </div>
@@ -195,14 +198,14 @@ function AdminDashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-sm">
-                <FileText className="h-4 w-4 text-accent" /> Recent Quotes
+                <FileText className="h-4 w-4 text-accent" /> Son Teklifler
               </CardTitle>
-              <button onClick={() => navigate("/quotes")} className="text-xs text-primary hover:underline">View all</button>
+              <button onClick={() => navigate("/quotes")} className="text-xs text-primary hover:underline">Tümünü gör</button>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {recentQuotes.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No quotes yet.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Henüz teklif yok.</p>
             ) : (
               recentQuotes.map((qt) => (
                 <div
@@ -251,16 +254,16 @@ function CustomerDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold tracking-tight text-foreground">
-          Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}
+          Hoş geldiniz{profile?.full_name ? `, ${profile.full_name}` : ""}
         </h1>
-        <p className="text-sm text-muted-foreground">View your quotes and event status.</p>
+        <p className="text-sm text-muted-foreground">Tekliflerinizi ve etkinlik durumunuzu görüntüleyin.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard title="My Quotes" value={quotes.length} icon={FileText} color="text-primary" />
-        <KpiCard title="Active Events" value={activeEvents.length} icon={Calendar} color="text-accent" />
-        <KpiCard title="Pending Quotes" value={pendingQuotes.length} icon={Clock} color="text-[hsl(var(--warning))]" />
-        <KpiCard title="Approved Value" value={fmt(approvedTotal)} icon={TrendingUp} color="text-[hsl(var(--success))]" />
+        <KpiCard title="Tekliflerim" value={quotes.length} icon={FileText} color="text-primary" />
+        <KpiCard title="Aktif Etkinlikler" value={activeEvents.length} icon={Calendar} color="text-accent" />
+        <KpiCard title="Bekleyen Teklifler" value={pendingQuotes.length} icon={Clock} color="text-[hsl(var(--warning))]" />
+        <KpiCard title="Onaylanan Değer" value={fmt(approvedTotal)} icon={TrendingUp} color="text-[hsl(var(--success))]" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -268,14 +271,14 @@ function CustomerDashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" /> My Quotes
+                <FileText className="h-4 w-4 text-primary" /> Tekliflerim
               </CardTitle>
-              <button onClick={() => navigate("/quotes")} className="text-xs text-primary hover:underline">View all</button>
+              <button onClick={() => navigate("/quotes")} className="text-xs text-primary hover:underline">Tümünü gör</button>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {quotes.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No quotes yet.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Henüz teklif yok.</p>
             ) : (
               quotes.slice(0, 5).map((qt) => (
                 <div
@@ -289,7 +292,7 @@ function CustomerDashboard() {
                       {qt.event_name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {qt.event_date ? fmtDate(qt.event_date) : "No date"}
+                      {qt.event_date ? fmtDate(qt.event_date) : "Tarih yok"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -306,14 +309,14 @@ function CustomerDashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-accent" /> My Events
+                <Calendar className="h-4 w-4 text-accent" /> Etkinliklerim
               </CardTitle>
-              <button onClick={() => navigate("/events")} className="text-xs text-primary hover:underline">View all</button>
+              <button onClick={() => navigate("/events")} className="text-xs text-primary hover:underline">Tümünü gör</button>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {events.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No events yet.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Henüz etkinlik yok.</p>
             ) : (
               events.slice(0, 5).map((ev) => (
                 <div
@@ -325,7 +328,7 @@ function CustomerDashboard() {
                     <p className="text-sm font-medium text-foreground truncate">{ev.name}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {ev.venue || "TBD"} · {fmtDate(ev.start_date)}
+                      {ev.venue || "Belirsiz"} · {fmtDate(ev.start_date)}
                     </p>
                   </div>
                   <EventStatusBadge status={ev.status} />

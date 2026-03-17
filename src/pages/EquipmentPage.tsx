@@ -51,26 +51,24 @@ export default function EquipmentPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-display text-foreground">Equipment</h1>
+            <h1 className="text-lg font-semibold tracking-display text-foreground">Ekipman</h1>
             <p className="text-sm text-muted-foreground">
-              {equipment?.length ?? 0} items across your inventory.
+              Envanterinizde {equipment?.length ?? 0} ürün bulunuyor.
             </p>
           </div>
           <Button onClick={() => setDrawerOpen(true)} size="sm">
             <Plus className="h-4 w-4 mr-1" />
-            Add Equipment
+            Ekipman Ekle
           </Button>
         </div>
 
-        {/* Filters Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search equipment..."
+              placeholder="Ekipman ara..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-input border-border"
@@ -78,10 +76,10 @@ export default function EquipmentPage() {
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[140px] bg-input border-border">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="Kategori" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">Tüm Kategoriler</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -89,10 +87,10 @@ export default function EquipmentPage() {
           </Select>
           <Select value={conditionFilter} onValueChange={setConditionFilter}>
             <SelectTrigger className="w-[140px] bg-input border-border">
-              <SelectValue placeholder="Condition" />
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Conditions</SelectItem>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
               {conditions.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -100,16 +98,15 @@ export default function EquipmentPage() {
           </Select>
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger className="w-[150px] bg-input border-border">
-              <SelectValue placeholder="Location" />
+              <SelectValue placeholder="Konum" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="all">Tüm Konumlar</SelectItem>
               {locations.map((l) => (
                 <SelectItem key={l} value={l}>{l}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {/* View toggle */}
           <div className="flex rounded-md border border-border overflow-hidden">
             <button
               onClick={() => setViewMode("table")}
@@ -126,22 +123,21 @@ export default function EquipmentPage() {
           </div>
         </div>
 
-        {/* Content */}
         {isLoading ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">Loading equipment...</p>
+            <p className="text-sm text-muted-foreground">Ekipman yükleniyor...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-lg bg-card p-12 phantom-shadow flex flex-col items-center justify-center gap-3">
             <p className="text-sm text-muted-foreground">
               {equipment?.length === 0
-                ? "No equipment in inventory."
-                : "No equipment matches your filters."}
+                ? "Envanterde ekipman yok."
+                : "Filtrelere uygun ekipman bulunamadı."}
             </p>
             {equipment?.length === 0 ? (
               <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />
-                Add New Item
+                Yeni Ürün Ekle
               </Button>
             ) : (
               <Button
@@ -154,7 +150,7 @@ export default function EquipmentPage() {
                   setLocationFilter("all");
                 }}
               >
-                Clear Filters
+                Filtreleri Temizle
               </Button>
             )}
           </div>

@@ -13,10 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Upload, Save, Loader2 } from "lucide-react";
 
 const CURRENCIES = [
-  { code: "TRY", symbol: "₺", label: "Turkish Lira (₺)" },
-  { code: "USD", symbol: "$", label: "US Dollar ($)" },
+  { code: "TRY", symbol: "₺", label: "Türk Lirası (₺)" },
+  { code: "USD", symbol: "$", label: "ABD Doları ($)" },
   { code: "EUR", symbol: "€", label: "Euro (€)" },
-  { code: "GBP", symbol: "£", label: "British Pound (£)" },
+  { code: "GBP", symbol: "£", label: "İngiliz Sterlini (£)" },
 ];
 
 export default function SettingsPage() {
@@ -98,20 +98,19 @@ export default function SettingsPage() {
       <div className="space-y-6 max-w-3xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Settings</h1>
-            <p className="text-sm text-muted-foreground">Manage your company profile and defaults.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">Ayarlar</h1>
+            <p className="text-sm text-muted-foreground">Şirket profilinizi ve varsayılan ayarları yönetin.</p>
           </div>
           <Button onClick={handleSave} disabled={isUpdating} size="sm">
             {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save Changes
+            Değişiklikleri Kaydet
           </Button>
         </div>
 
-        {/* Logo & Company Identity */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Company Identity</CardTitle>
-            <CardDescription>Your brand appears on quotes and documents.</CardDescription>
+            <CardTitle className="text-base">Şirket Kimliği</CardTitle>
+            <CardDescription>Markanız tekliflerde ve belgelerde görünür.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
@@ -136,9 +135,9 @@ export default function SettingsPage() {
                   disabled={uploading}
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                  Upload Logo
+                  Logo Yükle
                 </Button>
-                <p className="text-xs text-muted-foreground">PNG, JPG up to 2MB. Recommended 200×200px.</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG maks. 2MB. Önerilen 200×200px.</p>
               </div>
             </div>
 
@@ -146,59 +145,57 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Company Name</Label>
+                <Label>Şirket Adı</Label>
                 <Input value={form.company_name} onChange={(e) => handleChange("company_name", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Tax ID / VAT Number</Label>
-                <Input value={form.tax_id} onChange={(e) => handleChange("tax_id", e.target.value)} placeholder="e.g. TR1234567890" />
+                <Label>Vergi No / KDV No</Label>
+                <Input value={form.tax_id} onChange={(e) => handleChange("tax_id", e.target.value)} placeholder="ör. TR1234567890" />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={form.company_email} onChange={(e) => handleChange("company_email", e.target.value)} placeholder="info@company.com" />
+                <Label>E-posta</Label>
+                <Input type="email" value={form.company_email} onChange={(e) => handleChange("company_email", e.target.value)} placeholder="info@sirket.com" />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
+                <Label>Telefon</Label>
                 <Input value={form.company_phone} onChange={(e) => handleChange("company_phone", e.target.value)} placeholder="+90 ..." />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Address */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Address</CardTitle>
-            <CardDescription>Used in quotes and invoices.</CardDescription>
+            <CardTitle className="text-base">Adres</CardTitle>
+            <CardDescription>Tekliflerde ve faturalarda kullanılır.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Street Address</Label>
-              <Input value={form.company_address} onChange={(e) => handleChange("company_address", e.target.value)} placeholder="123 Main St" />
+              <Label>Sokak Adresi</Label>
+              <Input value={form.company_address} onChange={(e) => handleChange("company_address", e.target.value)} placeholder="Cadde / Sokak No" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>City</Label>
-                <Input value={form.company_city} onChange={(e) => handleChange("company_city", e.target.value)} placeholder="Istanbul" />
+                <Label>Şehir</Label>
+                <Input value={form.company_city} onChange={(e) => handleChange("company_city", e.target.value)} placeholder="İstanbul" />
               </div>
               <div className="space-y-2">
-                <Label>Country</Label>
-                <Input value={form.company_country} onChange={(e) => handleChange("company_country", e.target.value)} placeholder="Turkey" />
+                <Label>Ülke</Label>
+                <Input value={form.company_country} onChange={(e) => handleChange("company_country", e.target.value)} placeholder="Türkiye" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Financial Defaults */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Financial Defaults</CardTitle>
-            <CardDescription>Default values applied to new quotes.</CardDescription>
+            <CardTitle className="text-base">Finansal Varsayılanlar</CardTitle>
+            <CardDescription>Yeni tekliflere uygulanan varsayılan değerler.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Default Tax Rate (%)</Label>
+                <Label>Varsayılan KDV Oranı (%)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -208,7 +205,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label>Para Birimi</Label>
                 <Select value={form.currency} onValueChange={handleCurrencyChange}>
                   <SelectTrigger>
                     <SelectValue />
@@ -224,23 +221,21 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Notes */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Additional Notes</CardTitle>
-            <CardDescription>Internal notes or default terms for documents.</CardDescription>
+            <CardTitle className="text-base">Ek Notlar</CardTitle>
+            <CardDescription>İç notlar veya belgeler için varsayılan şartlar.</CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
               rows={4}
               value={form.notes}
               onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="e.g. default payment terms, insurance info..."
+              placeholder="ör. varsayılan ödeme koşulları, sigorta bilgileri..."
             />
           </CardContent>
         </Card>
 
-        {/* User Management */}
         <UserManagement />
       </div>
     </DashboardLayout>

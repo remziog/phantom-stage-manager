@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Clock, CheckCircle, XCircle } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
-  pending: { label: "Pending Review", variant: "secondary", icon: Clock },
-  reviewed: { label: "Reviewed", variant: "default", icon: CheckCircle },
-  converted: { label: "Quote Created", variant: "default", icon: FileText },
-  declined: { label: "Declined", variant: "destructive", icon: XCircle },
+  pending: { label: "İnceleme Bekliyor", variant: "secondary", icon: Clock },
+  reviewed: { label: "İncelendi", variant: "default", icon: CheckCircle },
+  converted: { label: "Teklif Oluşturuldu", variant: "default", icon: FileText },
+  declined: { label: "Reddedildi", variant: "destructive", icon: XCircle },
 };
 
 const fmtDate = (d: string | null) =>
@@ -22,24 +22,23 @@ export default function QuoteRequestPage() {
     <DashboardLayout>
       <div className="space-y-8 max-w-3xl mx-auto">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-foreground">Request a Quote</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">Teklif İste</h1>
           <p className="text-sm text-muted-foreground">
-            Tell us about your event and we'll prepare a custom proposal.
+            Etkinliğiniz hakkında bilgi verin, size özel bir teklif hazırlayalım.
           </p>
         </div>
 
         <QuoteRequestForm />
 
-        {/* Past Requests */}
         <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground">My Requests</h2>
+          <h2 className="text-base font-semibold text-foreground">Taleplerim</h2>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">Yükleniyor…</p>
           ) : requests.length === 0 ? (
             <Card className="phantom-shadow border-border/50">
               <CardContent className="flex flex-col items-center justify-center p-8">
                 <FileText className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No requests yet.</p>
+                <p className="text-sm text-muted-foreground">Henüz talep yok.</p>
               </CardContent>
             </Card>
           ) : (
@@ -57,7 +56,7 @@ export default function QuoteRequestPage() {
                         <p className="text-sm font-medium text-foreground truncate">{r.event_name}</p>
                         <p className="text-xs text-muted-foreground">
                           {r.event_type} · {fmtDate(r.start_date)}
-                          {r.services_needed.length > 0 && ` · ${r.services_needed.length} services`}
+                          {r.services_needed.length > 0 && ` · ${r.services_needed.length} hizmet`}
                         </p>
                       </div>
                       <Badge variant={config.variant} className="gap-1 shrink-0">
