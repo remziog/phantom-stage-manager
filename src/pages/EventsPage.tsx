@@ -33,7 +33,7 @@ export default function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
   const { role } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = role === "admin" || role === "team_member";
+  const isAdmin = role === "admin" || role === "team_member" || role === "sales";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"list" | "calendar">("list");
