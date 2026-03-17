@@ -26,6 +26,8 @@ const locations = Constants.public.Enums.equipment_location;
 
 export default function EquipmentPage() {
   const { data: equipment, isLoading } = useEquipment();
+  const { role } = useAuth();
+  const isCrew = role === "crew";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
