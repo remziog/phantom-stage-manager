@@ -135,7 +135,9 @@ export default function CustomersPage() {
               <TableBody>
                 {filtered.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium text-foreground">{c.company_name}</TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      <Link to={`/customers/${c.id}`} className="text-primary hover:underline">{c.company_name}</Link>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="text-sm text-foreground">{c.contact_name}</p>
