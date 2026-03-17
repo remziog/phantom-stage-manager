@@ -44,7 +44,7 @@ export function useCustomers() {
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "total_revenue" | "total_events">) => {
+    mutationFn: async (customer: Partial<Customer> & { company_name: string; contact_name: string }) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)
