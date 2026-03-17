@@ -1,5 +1,5 @@
 import type { Equipment } from "@/hooks/useEquipment";
-import { LocationBadge, CategoryBadge, AvailabilityDisplay } from "./EquipmentBadges";
+import { LocationBadge, CategoryBadge, AvailabilityDisplay, StatusDistribution, CaseCalculation } from "./EquipmentBadges";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
@@ -13,6 +13,7 @@ export function EquipmentGrid({ data, hidePrices = false }: { data: Equipment[];
             <div className="min-w-0">
               <h3 className="font-medium text-foreground truncate">{item.name}</h3>
               {item.subcategory && <p className="text-xs text-muted-foreground">{item.subcategory}</p>}
+              {item.qr_code && <p className="text-[10px] text-muted-foreground/60 font-mono">{item.qr_code}</p>}
             </div>
             <LocationBadge location={item.current_location} />
           </div>
@@ -20,6 +21,22 @@ export function EquipmentGrid({ data, hidePrices = false }: { data: Equipment[];
           {(item.brand || item.model) && (
             <p className="text-xs text-muted-foreground">{[item.brand, item.model].filter(Boolean).join(" ")}</p>
           )}
+
+          <StatusDistribution
+            warehouse={item.qty_in_warehouse ?? 0}
+            onRent={item.qty_on_rent ?? 0}
+            inRepair={item.qty_in_repair ?? 0}
+            outOfService={item.qty_out_of_service ?? 0}
+            total={item.quantity_total}
+          />
+
+          <CaseCalculation
+            quantity={item.quantity_total}
+            itemsPerCase={item.items_per_case ?? 1}
+            caseWeightKg={item.case_weight_kg ?? null}
+            caseVolumeM3={item.case_volume_m3 ?? null}
+          />
+
           <div className="flex items-end justify-between">
             <AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} />
             {!hidePrices && (

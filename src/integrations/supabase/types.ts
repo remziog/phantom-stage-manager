@@ -161,6 +161,8 @@ export type Database = {
       equipment: {
         Row: {
           brand: string | null
+          case_volume_m3: number | null
+          case_weight_kg: number | null
           category: Database["public"]["Enums"]["equipment_category"]
           condition: Database["public"]["Enums"]["equipment_condition"]
           created_at: string
@@ -168,10 +170,16 @@ export type Database = {
           gross_price_per_day: number
           id: string
           image_url: string | null
+          items_per_case: number | null
           model: string | null
           name: string
           notes: string | null
           power_consumption_watts: number | null
+          qr_code: string | null
+          qty_in_repair: number
+          qty_in_warehouse: number
+          qty_on_rent: number
+          qty_out_of_service: number
           quantity_available: number
           quantity_total: number
           serial_number: string | null
@@ -181,6 +189,8 @@ export type Database = {
         }
         Insert: {
           brand?: string | null
+          case_volume_m3?: number | null
+          case_weight_kg?: number | null
           category: Database["public"]["Enums"]["equipment_category"]
           condition?: Database["public"]["Enums"]["equipment_condition"]
           created_at?: string
@@ -188,10 +198,16 @@ export type Database = {
           gross_price_per_day?: number
           id?: string
           image_url?: string | null
+          items_per_case?: number | null
           model?: string | null
           name: string
           notes?: string | null
           power_consumption_watts?: number | null
+          qr_code?: string | null
+          qty_in_repair?: number
+          qty_in_warehouse?: number
+          qty_on_rent?: number
+          qty_out_of_service?: number
           quantity_available?: number
           quantity_total?: number
           serial_number?: string | null
@@ -201,6 +217,8 @@ export type Database = {
         }
         Update: {
           brand?: string | null
+          case_volume_m3?: number | null
+          case_weight_kg?: number | null
           category?: Database["public"]["Enums"]["equipment_category"]
           condition?: Database["public"]["Enums"]["equipment_condition"]
           created_at?: string
@@ -208,10 +226,16 @@ export type Database = {
           gross_price_per_day?: number
           id?: string
           image_url?: string | null
+          items_per_case?: number | null
           model?: string | null
           name?: string
           notes?: string | null
           power_consumption_watts?: number | null
+          qr_code?: string | null
+          qty_in_repair?: number
+          qty_in_warehouse?: number
+          qty_on_rent?: number
+          qty_out_of_service?: number
           quantity_available?: number
           quantity_total?: number
           serial_number?: string | null
