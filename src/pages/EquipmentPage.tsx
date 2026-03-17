@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEquipment } from "@/hooks/useEquipment";
+import { useAuth } from "@/contexts/AuthContext";
 import { EquipmentTable } from "@/components/equipment/EquipmentTable";
 import { EquipmentGrid } from "@/components/equipment/EquipmentGrid";
 import { AddEquipmentDrawer } from "@/components/equipment/AddEquipmentDrawer";
