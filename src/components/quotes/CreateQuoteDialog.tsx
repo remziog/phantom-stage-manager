@@ -45,20 +45,18 @@ export function CreateQuoteDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5">
-          <Plus className="h-4 w-4" /> New Quote
+          <Plus className="h-4 w-4" /> Yeni Teklif
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create New Quote</DialogTitle>
+          <DialogTitle>Yeni Teklif Oluştur</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
-            <Label htmlFor="customer_id">Customer</Label>
+            <Label htmlFor="customer_id">Müşteri</Label>
             <Select name="customer_id">
-              <SelectTrigger>
-                <SelectValue placeholder="Select a customer" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Müşteri seçin" /></SelectTrigger>
               <SelectContent>
                 {customers.filter((c) => c.is_active).map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.company_name}</SelectItem>
@@ -67,29 +65,29 @@ export function CreateQuoteDialog() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="event_name">Event Name *</Label>
+            <Label htmlFor="event_name">Etkinlik Adı *</Label>
             <Input id="event_name" name="event_name" required maxLength={200} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="event_date">Start Date</Label>
+              <Label htmlFor="event_date">Başlangıç Tarihi</Label>
               <Input id="event_date" name="event_date" type="date" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="event_end_date">End Date</Label>
+              <Label htmlFor="event_end_date">Bitiş Tarihi</Label>
               <Input id="event_end_date" name="event_end_date" type="date" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="venue">Venue</Label>
+            <Label htmlFor="venue">Mekan</Label>
             <Input id="venue" name="venue" maxLength={300} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notlar</Label>
             <Textarea id="notes" name="notes" rows={2} maxLength={1000} />
           </div>
           <Button type="submit" className="w-full" disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create & Add Line Items"}
+            {create.isPending ? "Oluşturuluyor…" : "Oluştur & Kalem Ekle"}
           </Button>
         </form>
       </DialogContent>

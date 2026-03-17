@@ -1,10 +1,5 @@
 import type { Equipment } from "@/hooks/useEquipment";
-import {
-  LocationBadge,
-  ConditionBadge,
-  CategoryBadge,
-  AvailabilityDisplay,
-} from "./EquipmentBadges";
+import { LocationBadge, ConditionBadge, CategoryBadge, AvailabilityDisplay } from "./EquipmentBadges";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
@@ -16,13 +11,13 @@ export function EquipmentTable({ data }: { data: Equipment[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-card">
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand / Model</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Price/Day</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Available</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Condition</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Location</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Ad</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Marka / Model</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Fiyat/Gün</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Müsait</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Durum</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Konum</th>
             </tr>
           </thead>
           <tbody>
@@ -35,29 +30,15 @@ export function EquipmentTable({ data }: { data: Equipment[] }) {
                 <td className="px-4 py-3">
                   <div>
                     <span className="font-medium text-foreground">{item.name}</span>
-                    {item.subcategory && (
-                      <span className="block text-xs text-muted-foreground">{item.subcategory}</span>
-                    )}
+                    {item.subcategory && <span className="block text-xs text-muted-foreground">{item.subcategory}</span>}
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <CategoryBadge category={item.category} />
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {[item.brand, item.model].filter(Boolean).join(" ") || "—"}
-                </td>
-                <td className="px-4 py-3 tabular-nums text-foreground">
-                  {formatCurrency(item.gross_price_per_day)}
-                </td>
-                <td className="px-4 py-3">
-                  <AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} />
-                </td>
-                <td className="px-4 py-3">
-                  <ConditionBadge condition={item.condition} />
-                </td>
-                <td className="px-4 py-3">
-                  <LocationBadge location={item.current_location} />
-                </td>
+                <td className="px-4 py-3"><CategoryBadge category={item.category} /></td>
+                <td className="px-4 py-3 text-muted-foreground">{[item.brand, item.model].filter(Boolean).join(" ") || "—"}</td>
+                <td className="px-4 py-3 tabular-nums text-foreground">{formatCurrency(item.gross_price_per_day)}</td>
+                <td className="px-4 py-3"><AvailabilityDisplay available={item.quantity_available} total={item.quantity_total} /></td>
+                <td className="px-4 py-3"><ConditionBadge condition={item.condition} /></td>
+                <td className="px-4 py-3"><LocationBadge location={item.current_location} /></td>
               </tr>
             ))}
           </tbody>

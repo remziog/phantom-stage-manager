@@ -4,12 +4,8 @@ import { AlertTriangle, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Equipment = {
-  id: string;
-  name: string;
-  category: string;
-  condition: string;
-  quantity_total: number;
-  quantity_available: number;
+  id: string; name: string; category: string; condition: string;
+  quantity_total: number; quantity_available: number;
 };
 
 export function EquipmentAlerts({ equipment }: { equipment: Equipment[] }) {
@@ -32,7 +28,7 @@ export function EquipmentAlerts({ equipment }: { equipment: Equipment[] }) {
     <Card className="phantom-shadow border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <AlertTriangle className="h-4 w-4 text-destructive" /> Equipment Alerts
+          <AlertTriangle className="h-4 w-4 text-destructive" /> Ekipman Uyarıları
           <Badge variant="destructive" className="ml-auto text-xs">{alerts.length}</Badge>
         </CardTitle>
       </CardHeader>
@@ -59,7 +55,7 @@ export function EquipmentAlerts({ equipment }: { equipment: Equipment[] }) {
               className="text-xs shrink-0"
             >
               {item.alertType === "repair"
-                ? "Needs Repair"
+                ? "Onarım Gerekli"
                 : `${item.quantity_available}/${item.quantity_total}`}
             </Badge>
           </div>

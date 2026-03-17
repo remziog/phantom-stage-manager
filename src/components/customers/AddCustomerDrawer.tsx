@@ -38,41 +38,41 @@ export function AddCustomerDrawer() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button size="sm" className="gap-1.5">
-          <Plus className="h-4 w-4" /> Add Customer
+          <Plus className="h-4 w-4" /> Müşteri Ekle
         </Button>
       </SheetTrigger>
       <SheetContent className="sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Add Customer</SheetTitle>
+          <SheetTitle>Müşteri Ekle</SheetTitle>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="company_name">Company Name *</Label>
+              <Label htmlFor="company_name">Şirket Adı *</Label>
               <Input id="company_name" name="company_name" required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="contact_name">Contact Name *</Label>
+              <Label htmlFor="contact_name">İletişim Kişisi *</Label>
               <Input id="contact_name" name="contact_name" required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-posta</Label>
               <Input id="email" name="email" type="email" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">Telefon</Label>
               <Input id="phone" name="phone" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">Şehir</Label>
               <Input id="city" name="city" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="customer_type">Type</Label>
+              <Label htmlFor="customer_type">Tür</Label>
               <Select name="customer_type" defaultValue="Corporate">
                 <SelectTrigger>
                   <SelectValue />
@@ -87,20 +87,20 @@ export function AddCustomerDrawer() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="tax_id">Tax ID</Label>
+              <Label htmlFor="tax_id">Vergi No</Label>
               <Input id="tax_id" name="tax_id" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">Adres</Label>
               <Input id="address" name="address" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notlar</Label>
             <Textarea id="notes" name="notes" rows={3} />
           </div>
           <Button type="submit" className="w-full" disabled={create.isPending}>
-            {create.isPending ? "Adding…" : "Add Customer"}
+            {create.isPending ? "Ekleniyor…" : "Müşteri Ekle"}
           </Button>
         </form>
       </SheetContent>

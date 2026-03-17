@@ -25,6 +25,13 @@ const typeColors: Record<LineItemType, string> = {
   Custom: "text-muted-foreground",
 };
 
+const typeLabels: Record<LineItemType, string> = {
+  Equipment: "Ekipman",
+  Personnel: "Personel",
+  Vehicle: "Araç",
+  Custom: "Özel",
+};
+
 interface Props {
   quoteId: string;
   initialItems: QuoteLineItem[];
@@ -40,40 +47,18 @@ export function LineItemEditor({ quoteId, initialItems, onSave, saving }: Props)
 
   useEffect(() => {
     if (initialItems.length > 0) {
-      setItems(
-        initialItems.map(({ id, created_at, ...rest }) => rest)
-      );
+      setItems(initialItems.map(({ id, created_at, ...rest }) => rest));
     }
   }, [initialItems]);
 
-  const recalcLine = (item: DraftItem): DraftItem => ({
-    ...item,
-    line_total: item.quantity * item.days * item.unit_price,
-  });
+  const recalcLine = (item: DraftItem): DraftItem => ({ ...item, line_total: item.quantity * item.days * item.unit_price });
 
   const updateItem = useCallback((index: number, updates: Partial<DraftItem>) => {
-    setItems((prev) => {
-      const copy = [...prev];
-      copy[index] = recalcLine({ ...copy[index], ...updates });
-      return copy;
-    });
+    setItems((prev) => { const copy = [...prev]; copy[index] = recalcLine({ ...copy[index], ...updates }); return copy; });
   }, []);
 
   const addItem = (type: LineItemType) => {
-    setItems((prev) => [
-      ...prev,
-      recalcLine({
-        quote_id: quoteId,
-        item_type: type,
-        source_id: null,
-        description: "",
-        quantity: 1,
-        days: 1,
-        unit_price: 0,
-        line_total: 0,
-        sort_order: prev.length,
-      }),
-    ]);
+    setItems((prev) => [...prev, recalcLine({ quote_id: quoteId, item_type: type, source_id: null, description: "", quantity: 1, days: 1, unit_price: 0, line_total: 0, sort_order: prev.length })]);
   };
 
   const removeItem = (index: number) => {
@@ -82,70 +67,48 @@ export function LineItemEditor({ quoteId, initialItems, onSave, saving }: Props)
 
   const addFromEquipment = (eqId: string, index: number) => {
     const eq = equipment.find((e) => e.id === eqId);
-    if (eq) {
-      updateItem(index, {
-        source_id: eqId,
-        description: `${eq.name}${eq.brand ? ` (${eq.brand})` : ""}`,
-        unit_price: eq.gross_price_per_day,
-      });
-    }
+    if (eq) updateItem(index, { source_id: eqId, description: `${eq.name}${eq.brand ? ` (${eq.brand})` : ""}`, unit_price: eq.gross_price_per_day });
   };
 
   const addFromTeam = (tmId: string, index: number) => {
     const tm = teamMembers.find((t) => t.id === tmId);
-    if (tm) {
-      updateItem(index, {
-        source_id: tmId,
-        description: `${tm.full_name} — ${tm.role}`,
-        unit_price: tm.daily_rate,
-      });
-    }
+    if (tm) updateItem(index, { source_id: tmId, description: `${tm.full_name} — ${tm.role}`, unit_price: tm.daily_rate });
   };
 
   const addFromVehicle = (vId: string, index: number) => {
     const v = vehicles.find((ve) => ve.id === vId);
-    if (v) {
-      updateItem(index, {
-        source_id: vId,
-        description: `${v.name} (${v.license_plate})`,
-        unit_price: v.daily_cost,
-      });
-    }
+    if (v) updateItem(index, { source_id: vId, description: `${v.name} (${v.license_plate})`, unit_price: v.daily_cost });
   };
 
   const subtotal = items.reduce((s, i) => s + i.line_total, 0);
-  const fmt = (v: number) =>
-    new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(v);
+  const fmt = (v: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(v);
 
   return (
     <div className="space-y-4">
-      {/* Add buttons */}
       <div className="flex flex-wrap gap-2">
         {(["Equipment", "Personnel", "Vehicle", "Custom"] as LineItemType[]).map((type) => (
           <Button key={type} variant="outline" size="sm" onClick={() => addItem(type)} className="gap-1.5">
             <span className={typeColors[type]}>{typeIcons[type]}</span>
-            Add {type}
+            {typeLabels[type]} Ekle
           </Button>
         ))}
       </div>
 
-      {/* Line items */}
       {items.length === 0 ? (
         <Card className="phantom-shadow border-border/50">
           <CardContent className="flex items-center justify-center p-8">
-            <p className="text-sm text-muted-foreground">No line items yet. Add items from the buttons above.</p>
+            <p className="text-sm text-muted-foreground">Henüz kalem yok. Yukarıdaki butonlardan ekleyin.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
-          {/* Header */}
           <div className="grid grid-cols-[auto_1fr_80px_60px_100px_100px_32px] gap-2 px-2 text-xs font-medium text-muted-foreground">
             <span className="w-8" />
-            <span>Description</span>
-            <span>Qty</span>
-            <span>Days</span>
-            <span>Unit ₺</span>
-            <span className="text-right">Total</span>
+            <span>Açıklama</span>
+            <span>Adet</span>
+            <span>Gün</span>
+            <span>Birim ₺</span>
+            <span className="text-right">Toplam</span>
             <span />
           </div>
 
@@ -153,118 +116,48 @@ export function LineItemEditor({ quoteId, initialItems, onSave, saving }: Props)
             <Card key={i} className="border-border/50">
               <CardContent className="p-2">
                 <div className="grid grid-cols-[auto_1fr_80px_60px_100px_100px_32px] gap-2 items-center">
-                  <span className={`w-8 flex justify-center ${typeColors[item.item_type]}`}>
-                    {typeIcons[item.item_type]}
-                  </span>
-
-                  {/* Description / Source selector */}
+                  <span className={`w-8 flex justify-center ${typeColors[item.item_type]}`}>{typeIcons[item.item_type]}</span>
                   <div className="min-w-0">
                     {item.item_type === "Equipment" ? (
-                      <Select
-                        value={item.source_id || ""}
-                        onValueChange={(v) => addFromEquipment(v, i)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Select equipment">{item.description || "Select equipment"}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {equipment.map((eq) => (
-                            <SelectItem key={eq.id} value={eq.id}>
-                              {eq.name} — {fmt(eq.gross_price_per_day)}/day
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                      <Select value={item.source_id || ""} onValueChange={(v) => addFromEquipment(v, i)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ekipman seçin">{item.description || "Ekipman seçin"}</SelectValue></SelectTrigger>
+                        <SelectContent>{equipment.map((eq) => <SelectItem key={eq.id} value={eq.id}>{eq.name} — {fmt(eq.gross_price_per_day)}/gün</SelectItem>)}</SelectContent>
                       </Select>
                     ) : item.item_type === "Personnel" ? (
-                      <Select
-                        value={item.source_id || ""}
-                        onValueChange={(v) => addFromTeam(v, i)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Select crew">{item.description || "Select crew"}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((tm) => (
-                            <SelectItem key={tm.id} value={tm.id}>
-                              {tm.full_name} — {tm.role}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                      <Select value={item.source_id || ""} onValueChange={(v) => addFromTeam(v, i)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ekip seçin">{item.description || "Ekip seçin"}</SelectValue></SelectTrigger>
+                        <SelectContent>{teamMembers.map((tm) => <SelectItem key={tm.id} value={tm.id}>{tm.full_name} — {tm.role}</SelectItem>)}</SelectContent>
                       </Select>
                     ) : item.item_type === "Vehicle" ? (
-                      <Select
-                        value={item.source_id || ""}
-                        onValueChange={(v) => addFromVehicle(v, i)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Select vehicle">{item.description || "Select vehicle"}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vehicles.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.name} — {fmt(v.daily_cost)}/day
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                      <Select value={item.source_id || ""} onValueChange={(v) => addFromVehicle(v, i)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Araç seçin">{item.description || "Araç seçin"}</SelectValue></SelectTrigger>
+                        <SelectContent>{vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.name} — {fmt(v.daily_cost)}/gün</SelectItem>)}</SelectContent>
                       </Select>
                     ) : (
-                      <Input
-                        className="h-8 text-xs"
-                        placeholder="Custom item description"
-                        value={item.description}
-                        maxLength={300}
-                        onChange={(e) => updateItem(i, { description: e.target.value })}
-                      />
+                      <Input className="h-8 text-xs" placeholder="Özel kalem açıklaması" value={item.description} maxLength={300} onChange={(e) => updateItem(i, { description: e.target.value })} />
                     )}
                   </div>
-
-                  <Input
-                    type="number"
-                    min={1}
-                    max={999}
-                    className="h-8 text-xs"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(i, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                  />
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    className="h-8 text-xs"
-                    value={item.days}
-                    onChange={(e) => updateItem(i, { days: Math.max(1, parseInt(e.target.value) || 1) })}
-                  />
-                  <Input
-                    type="number"
-                    min={0}
-                    className="h-8 text-xs"
-                    value={item.unit_price}
-                    onChange={(e) => updateItem(i, { unit_price: Math.max(0, parseFloat(e.target.value) || 0) })}
-                  />
-                  <div className="text-right text-sm font-medium text-foreground tabular-nums">
-                    {fmt(item.line_total)}
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(i)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <Input type="number" min={1} max={999} className="h-8 text-xs" value={item.quantity} onChange={(e) => updateItem(i, { quantity: Math.max(1, parseInt(e.target.value) || 1) })} />
+                  <Input type="number" min={1} max={365} className="h-8 text-xs" value={item.days} onChange={(e) => updateItem(i, { days: Math.max(1, parseInt(e.target.value) || 1) })} />
+                  <Input type="number" min={0} className="h-8 text-xs" value={item.unit_price} onChange={(e) => updateItem(i, { unit_price: Math.max(0, parseFloat(e.target.value) || 0) })} />
+                  <div className="text-right text-sm font-medium text-foreground tabular-nums">{fmt(item.line_total)}</div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(i)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </CardContent>
             </Card>
           ))}
 
-          {/* Subtotal */}
           <div className="flex justify-end pr-12 pt-2">
             <div className="text-sm text-muted-foreground">
-              Subtotal: <span className="font-semibold text-foreground">{fmt(subtotal)}</span>
+              Ara Toplam: <span className="font-semibold text-foreground">{fmt(subtotal)}</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Save */}
       <div className="flex justify-end">
         <Button onClick={() => onSave(items)} disabled={saving}>
-          {saving ? "Saving…" : "Save Line Items"}
+          {saving ? "Kaydediliyor…" : "Kalemleri Kaydet"}
         </Button>
       </div>
     </div>

@@ -39,7 +39,7 @@ export function AvailabilityIndicator({ available }: { available: boolean }) {
         "h-2 w-2 rounded-full",
         available ? "bg-success" : "bg-muted-foreground"
       )} />
-      {available ? "Available" : "Unavailable"}
+      {available ? "Müsait" : "Müsait Değil"}
     </span>
   );
 }
