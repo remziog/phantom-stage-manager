@@ -61,10 +61,12 @@ export default function EquipmentPage() {
               Envanterinizde {equipment?.length ?? 0} ürün bulunuyor.
             </p>
           </div>
-          <Button onClick={() => setDrawerOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Ekipman Ekle
-          </Button>
+          {!isCrew && (
+            <Button onClick={() => setDrawerOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Ekipman Ekle
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
