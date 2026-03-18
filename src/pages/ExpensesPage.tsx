@@ -127,6 +127,13 @@ export default function ExpensesPage() {
     );
   };
 
+  const handleDelete = () => {
+    if (!deleteDialog) return;
+    deleteExpense.mutate(deleteDialog.id, {
+      onSuccess: () => setDeleteDialog(null),
+    });
+  };
+
   const handleExportPdf = () => {
     if (filtered.length === 0) return;
     const label = [
