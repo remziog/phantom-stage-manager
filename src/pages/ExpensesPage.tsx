@@ -244,6 +244,17 @@ export default function ExpensesPage() {
               <SelectItem value="rejected">Reddedilen</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+            <SelectTrigger className="w-[140px] bg-input border-border">
+              <SelectValue placeholder="Tarih" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Tarihler</SelectItem>
+              <SelectItem value="this_month">Bu Ay</SelectItem>
+              <SelectItem value="last_3">Son 3 Ay</SelectItem>
+              <SelectItem value="last_6">Son 6 Ay</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[160px] bg-input border-border">
               <SelectValue placeholder="Kategori" />
