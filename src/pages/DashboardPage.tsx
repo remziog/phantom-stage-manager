@@ -154,9 +154,31 @@ function AdminDashboard() {
       </div>
 
       {/* Expense Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ExpenseBarChart expenses={expenses} />
-        <ExpenseCategoryPieChart expenses={expenses} />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-destructive" /> Masraf Analizi
+          </h2>
+          <div className="flex gap-1">
+            {([["1m", "Bu Ay"], ["3m", "3 Ay"], ["6m", "6 Ay"], ["1y", "Yıllık"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setExpenseRange(key)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  expenseRange === key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ExpenseBarChart expenses={filteredExpenses} monthCount={monthCount} />
+          <ExpenseCategoryPieChart expenses={filteredExpenses} />
+        </div>
       </div>
 
       {/* Category Availability */}
