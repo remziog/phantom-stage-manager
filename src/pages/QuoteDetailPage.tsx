@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useSaveLineItems } from "@/hooks/useQuotes";
+import { useEquipment } from "@/hooks/useEquipment";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { LineItemEditor } from "@/components/quotes/LineItemEditor";
@@ -29,6 +30,7 @@ export default function QuoteDetailPage() {
   const updateQuote = useUpdateQuote();
   const saveLines = useSaveLineItems();
   const { settings: company } = useCompanySettings();
+  const { data: equipment = [] } = useEquipment();
   const { role } = useAuth();
   const isAdmin = role === "admin" || role === "team_member" || role === "sales";
   const [discount, setDiscount] = useState(0);
@@ -90,7 +92,7 @@ export default function QuoteDetailPage() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={() => generateQuotePdf({ quote, lineItems, company })}
+            onClick={() => generateQuotePdf({ quote, lineItems, company, equipment })}
             disabled={lineItems.length === 0}
           >
             <Download className="h-4 w-4" /> PDF İndir
