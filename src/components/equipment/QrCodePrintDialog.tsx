@@ -70,6 +70,14 @@ export function QrCodePrintDialog({
     const printContent = printRef.current;
     if (!printContent) return;
 
+    // Clone and serialize SVGs to ensure they render in the print window
+    const clone = printContent.cloneNode(true) as HTMLElement;
+    
+    // Convert all SVG elements to have explicit xmlns for standalone rendering
+    clone.querySelectorAll("svg").forEach((svg) => {
+      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    });
+
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
@@ -97,7 +105,7 @@ export function QrCodePrintDialog({
             align-items: center;
             page-break-inside: avoid;
           }
-          .label svg { margin-bottom: 2mm; }
+          .label svg { margin-bottom: 2mm; display: block; }
           .qr-code { font-family: 'Courier New', monospace; font-size: 10px; font-weight: bold; margin-bottom: 1mm; }
           .eq-name { font-size: 9px; text-align: center; color: #333; margin-bottom: 1mm; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .eq-meta { font-size: 7px; color: #888; text-align: center; }
@@ -107,7 +115,7 @@ export function QrCodePrintDialog({
         </style>
       </head>
       <body>
-        ${printContent.innerHTML}
+        ${clone.innerHTML}
         <script>window.onload = function() { window.print(); window.close(); }<\/script>
       </body>
       </html>
@@ -185,7 +193,7 @@ export function QrCodePrintDialog({
         </div>
 
         {/* Print preview (hidden, used for print content) */}
-        <div className="sr-only">
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <div ref={printRef}>
             <div className="labels-grid">
               {selectedEquipment.map((eq) => (
@@ -193,8 +201,8 @@ export function QrCodePrintDialog({
                   <QRCodeSVG
                     value={eq.qr_code || eq.id}
                     size={size.qr}
-                    level="M"
-                    includeMargin={false}
+                    level="H"
+                    includeMargin={true}
                   />
                   <div className="qr-code">{eq.qr_code}</div>
                   <div className="eq-name">{eq.name}</div>

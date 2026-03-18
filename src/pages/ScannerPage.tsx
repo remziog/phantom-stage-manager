@@ -31,13 +31,27 @@ export default function ScannerPage() {
   const { user } = useAuth();
 
   const matchedEquipment = scannedCode
-    ? equipment.find((eq) => eq.qr_code === scannedCode || eq.id === scannedCode)
+    ? equipment.find((eq) => {
+        const code = scannedCode.trim();
+        return (
+          eq.qr_code === code ||
+          eq.id === code ||
+          eq.qr_code?.toUpperCase() === code.toUpperCase() ||
+          eq.id.toUpperCase() === code.toUpperCase()
+        );
+      })
     : null;
 
   const handleScan = useCallback((code: string) => {
-    setScannedCode(code);
+    const trimmed = code.trim();
+    setScannedCode(trimmed);
     setScanning(false);
-    const eq = equipment.find((e) => e.qr_code === code || e.id === code);
+    const eq = equipment.find((e) => 
+      e.qr_code === trimmed || 
+      e.id === trimmed ||
+      e.qr_code?.toUpperCase() === trimmed.toUpperCase() ||
+      e.id.toUpperCase() === trimmed.toUpperCase()
+    );
     if (eq) {
       toast.success(`Ekipman bulundu: ${eq.name}`);
     } else {
