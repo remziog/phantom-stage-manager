@@ -100,6 +100,21 @@ export function useUpdateExpenseStatus() {
   });
 }
 
+export function useDeleteExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Masraf silindi");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+}
+
 export async function uploadReceipt(file: File, expenseId: string) {
   const ext = file.name.split(".").pop();
   const path = `${expenseId}/${Date.now()}.${ext}`;
