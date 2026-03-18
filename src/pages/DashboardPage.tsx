@@ -113,10 +113,11 @@ function AdminDashboard() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <KpiCard title="Ekip Üyeleri" value={team.length} subtitle={`${availableTeam} müsait`} icon={Users} color="text-[hsl(var(--success))]" />
         <KpiCard title="Araç Filosu" value={vehicles.length} subtitle={`${availableVehicles} müsait`} icon={Truck} color="text-[hsl(var(--warning))]" />
         <KpiCard title="Aktif Müşteriler" value={activeCustomers} subtitle={`${customers.length} toplam`} icon={Building2} color="text-primary" />
+        <KpiCard title="Toplam Masraf" value={fmt(totalExpenses)} subtitle={`${expenses.length} kayıt`} icon={Receipt} color="text-destructive" />
         <Card className="phantom-shadow border-border/50">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
