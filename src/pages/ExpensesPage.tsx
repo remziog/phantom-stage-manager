@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useExpenses, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/contexts/AuthContext";
