@@ -35,10 +35,18 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
     });
     scannerRef.current = scanner;
 
+    const containerWidth = containerRef.current.clientWidth || 300;
+    const qrboxSize = Math.min(Math.floor(containerWidth * 0.7), 300);
+
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          fps: 15,
+          qrbox: { width: qrboxSize, height: qrboxSize },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
         (decodedText) => {
           onScan(decodedText);
         },
@@ -75,8 +83,8 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-black">
-      <div ref={containerRef} className="w-full" />
+    <div className="relative overflow-hidden rounded-lg border border-border bg-black" style={{ minHeight: 300 }}>
+      <div ref={containerRef} className="w-full" style={{ minHeight: 300 }} />
       {!started && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
           <p className="text-sm text-muted-foreground animate-pulse">Kamera başlatılıyor…</p>
