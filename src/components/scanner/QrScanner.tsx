@@ -35,10 +35,18 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
     });
     scannerRef.current = scanner;
 
+    const containerWidth = containerRef.current.clientWidth || 300;
+    const qrboxSize = Math.min(Math.floor(containerWidth * 0.7), 300);
+
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          fps: 15,
+          qrbox: { width: qrboxSize, height: qrboxSize },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
         (decodedText) => {
           onScan(decodedText);
         },
