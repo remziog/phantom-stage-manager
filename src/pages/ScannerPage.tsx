@@ -265,19 +265,44 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Manual input + empty state */}
         {!scanning && !scannedCode && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center p-12">
-              <ScanLine className="h-12 w-12 text-muted-foreground/40 mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">
-                Ekipman QR kodunu tarayarak bilgi görüntüleyin, arıza bildirin veya kamyona yükleyin.
-              </p>
-              <Button onClick={() => setScanning(true)} className="gap-2">
-                <Camera className="h-4 w-4" /> Taramayı Başlat
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground mb-3">QR kodunu elle girin</p>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleManualSearch(); }}
+                  className="flex gap-2"
+                >
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="PH-XXXXXX veya ekipman ID…"
+                      className="pl-9"
+                      value={manualCode}
+                      onChange={(e) => setManualCode(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={!manualCode.trim()}>
+                    Ara
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center p-12">
+                <ScanLine className="h-12 w-12 text-muted-foreground/40 mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  Ekipman QR kodunu tarayarak veya yukarıdaki alana yazarak arayın.
+                </p>
+                <Button onClick={() => setScanning(true)} className="gap-2">
+                  <Camera className="h-4 w-4" /> Kamera ile Tara
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
