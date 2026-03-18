@@ -22,6 +22,7 @@ import QuoteRequestPage from "./pages/QuoteRequestPage";
 import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
 import ScannerPage from "./pages/ScannerPage";
 import ExpensesPage from "./pages/ExpensesPage";
+import ExpenseDetailPage from "./pages/ExpenseDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
