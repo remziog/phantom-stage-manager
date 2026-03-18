@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useExpenses, useUpdateExpenseStatus } from "@/hooks/useExpenses";
+import { useExpenses, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddExpenseDrawer } from "@/components/expenses/AddExpenseDrawer";
 import {
