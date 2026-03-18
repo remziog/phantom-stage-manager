@@ -352,7 +352,8 @@ export default function ExpensesPage() {
                   {filtered.map((expense, index) => (
                     <tr
                       key={expense.id}
-                      className="border-b border-border last:border-0 hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+                      className="border-b border-border last:border-0 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer"
+                      onClick={() => navigate(`/expenses/${expense.id}`)}
                       style={
                         index % 2 === 1
                           ? { backgroundColor: "rgba(255,255,255,0.02)" }
@@ -412,7 +413,7 @@ export default function ExpensesPage() {
                         )}
                       </td>
                       {isAdmin && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex gap-1 justify-end">
                             {expense.status === "pending" && (
                               <>
