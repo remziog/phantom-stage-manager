@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { QRCodeSVG } from "qrcode.react";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEquipmentFaults, useUpdateFault } from "@/hooks/useEquipmentFaults";
 import { useAuth } from "@/contexts/AuthContext";
