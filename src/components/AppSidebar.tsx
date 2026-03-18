@@ -41,6 +41,7 @@ const allNavItems: (NavItem & { roles: AppRole[] })[] = [
   { title: "Teklifler", url: "/quotes", icon: FileText, roles: ["admin", "sales", "customer"] },
   { title: "Etkinlikler", url: "/events", icon: Calendar, roles: ["admin", "sales", "team_member", "crew"] },
   { title: "QR Tarayıcı", url: "/scanner", icon: ScanLine, roles: ["admin", "sales", "team_member", "crew"] },
+  { title: "Masraflar", url: "/expenses", icon: Receipt, roles: ["admin", "sales", "team_member", "crew"] },
   { title: "Teklif Talepleri", url: "/request-quote", icon: ClipboardList, roles: ["admin", "sales"] },
   { title: "Teklif İste", url: "/request-quote", icon: PenLine, roles: ["customer"] },
   { title: "Bildirimler", url: "/notifications", icon: Bell, roles: ["admin", "sales", "team_member", "crew", "customer"] },

@@ -66,6 +66,7 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         <Route path="/request-quote" element={<ProtectedRoute><QuoteRequestPage /></ProtectedRoute>} />
         <Route path="/scanner" element={<ProtectedRoute><ScannerPage /></ProtectedRoute>} />
+        <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
     </Routes>
   );
