@@ -109,6 +109,29 @@ export default function ExpensesPage() {
     );
   };
 
+  const handleExportPdf = () => {
+    if (filtered.length === 0) return;
+    const label = [
+      statusFilter !== "all" ? statusLabels[statusFilter] : null,
+      categoryFilter !== "all" ? (categoryLabels[categoryFilter] || categoryFilter) : null,
+      search ? `"${search}"` : null,
+    ].filter(Boolean).join(" · ");
+    generateExpensePdf({
+      expenses: filtered,
+      company: companySettings,
+      dateRange: { label: label || "Tüm Kayıtlar" },
+    });
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending: "Beklemede", approved: "Onaylı", rejected: "Reddedildi",
+  };
+  const categoryLabels: Record<string, string> = {
+    Transport: "Ulaşım", Accommodation: "Konaklama", Meals: "Yemek",
+    "Equipment Rental": "Ekipman Kiralama", Venue: "Mekan",
+    Personnel: "Personel", Marketing: "Pazarlama", Other: "Diğer",
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -123,9 +146,21 @@ export default function ExpensesPage() {
               Etkinlik bazında gider takibi ve onay yönetimi
             </p>
           </div>
-          <Button onClick={() => setDrawerOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Masraf Ekle
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={filtered.length === 0}
+            >
+              <FileDown className="h-4 w-4 mr-1" />
+              PDF İndir
+            </Button>
+            <Button onClick={() => setDrawerOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Masraf Ekle
+            </Button>
+          </div>
           </Button>
         </div>
 
