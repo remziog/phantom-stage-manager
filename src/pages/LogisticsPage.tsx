@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Truck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Constants } from "@/integrations/supabase/types";
+import { LoadingListsSection } from "@/components/logistics/LoadingListsSection";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
