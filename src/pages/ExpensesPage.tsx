@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useExpenses, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/contexts/AuthContext";
-import { AddExpenseDrawer } from "@/components/expenses/AddExpenseDrawer";
+import { ExpenseDrawer } from "@/components/expenses/ExpenseDrawer";
 import {
   ExpenseStatusBadge,
   ExpenseCategoryBadge,
