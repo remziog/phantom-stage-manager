@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useExpenses, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/contexts/AuthContext";
@@ -52,6 +53,7 @@ const formatCurrency = (amount: number) =>
   );
 
 export default function ExpensesPage() {
+  const navigate = useNavigate();
   const { data: expenses = [], isLoading } = useExpenses();
   const { settings: companySettings } = useCompanySettings();
   const { user, role } = useAuth();
@@ -363,7 +365,10 @@ export default function ExpensesPage() {
                         })}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-foreground">
+                        <span
+                          className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+                          onClick={() => navigate(`/expenses/${expense.id}`)}
+                        >
                           {expense.description}
                         </span>
                         {expense.notes && (

@@ -22,6 +22,7 @@ import QuoteRequestPage from "./pages/QuoteRequestPage";
 import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
 import ScannerPage from "./pages/ScannerPage";
 import ExpensesPage from "./pages/ExpensesPage";
+import ExpenseDetailPage from "./pages/ExpenseDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="/request-quote" element={<ProtectedRoute><QuoteRequestPage /></ProtectedRoute>} />
         <Route path="/scanner" element={<ProtectedRoute><ScannerPage /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
+        <Route path="/expenses/:id" element={<ProtectedRoute><ExpenseDetailPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
     </Routes>
   );

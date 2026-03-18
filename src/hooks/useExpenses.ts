@@ -41,6 +41,27 @@ export function useExpenses() {
   });
 }
 
+export function useExpense(id: string | undefined) {
+  return useQuery({
+    queryKey: ["expenses", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*, events(name)")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      const e = data as any;
+      return {
+        ...e,
+        event_name: e.events?.name ?? null,
+        events: undefined,
+      } as Expense;
+    },
+  });
+}
+
 export function useCreateExpense() {
   const qc = useQueryClient();
   return useMutation({
