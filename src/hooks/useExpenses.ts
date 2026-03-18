@@ -33,9 +33,24 @@ export function useExpenses() {
         .select("*, events(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
+
+      // Fetch approver names
+      const approverIds = [...new Set((data as any[]).map((e) => e.approved_by).filter(Boolean))];
+      let profileMap: Record<string, string> = {};
+      if (approverIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", approverIds);
+        if (profiles) {
+          profileMap = Object.fromEntries(profiles.map((p) => [p.user_id, p.full_name || ""]));
+        }
+      }
+
       return (data as any[]).map((e) => ({
         ...e,
         event_name: e.events?.name ?? null,
+        approved_by_name: e.approved_by ? (profileMap[e.approved_by] || null) : null,
         events: undefined,
       })) as Expense[];
     },
