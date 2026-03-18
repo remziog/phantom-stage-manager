@@ -186,7 +186,7 @@ export function QrCodePrintDialog({
                 </p>
               </div>
               <div className="shrink-0">
-                <QRCodeSVG value={eq.qr_code || eq.id} size={32} />
+                <QRCodeSVG value={`${window.location.origin}/scan/${eq.qr_code || eq.id}`} size={32} />
               </div>
             </label>
           ))}
