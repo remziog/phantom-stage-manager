@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { QrScanner } from "@/components/scanner/QrScanner";
 import { useEquipment } from "@/hooks/useEquipment";
@@ -9,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScanLine, Package, AlertTriangle, Truck, Eye, Camera, X } from "lucide-react";
+import { ScanLine, Package, AlertTriangle, Truck, Eye, Camera, X, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { FaultReportDialog } from "@/components/scanner/FaultReportDialog";
 import { LoadingWorkflow } from "@/components/scanner/LoadingWorkflow";
 import { toast } from "sonner";
@@ -22,42 +24,69 @@ const conditionColors: Record<string, string> = {
 };
 
 export default function ScannerPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [scanning, setScanning] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState("");
   const [activeTab, setActiveTab] = useState("view");
   const [faultDialogOpen, setFaultDialogOpen] = useState(false);
 
   const { data: equipment = [] } = useEquipment();
   const { user } = useAuth();
 
-  const matchedEquipment = scannedCode
-    ? equipment.find((eq) => {
-        const code = scannedCode.trim();
-        return (
-          eq.qr_code === code ||
-          eq.id === code ||
-          eq.qr_code?.toUpperCase() === code.toUpperCase() ||
-          eq.id.toUpperCase() === code.toUpperCase()
-        );
-      })
-    : null;
+  // Handle code from URL query param (from ScanRedirectPage)
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl && equipment.length > 0) {
+      setScannedCode(codeFromUrl);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, equipment]);
+
+  // Extract QR code from URL or raw code
+  const extractCode = (raw: string): string => {
+    const trimmed = raw.trim();
+    // If scanned a URL like https://domain.com/scan/PH-XXXXXX
+    const scanMatch = trimmed.match(/\/scan\/([^/?#]+)/);
+    if (scanMatch) return scanMatch[1];
+    return trimmed;
+  };
+
+  const findEquipment = (raw: string) => {
+    const code = extractCode(raw).toUpperCase();
+    return equipment.find(
+      (e) =>
+        e.qr_code?.toUpperCase() === code ||
+        e.id.toUpperCase() === code
+    );
+  };
+
+  const matchedEquipment = scannedCode ? findEquipment(scannedCode) : null;
 
   const handleScan = useCallback((code: string) => {
-    const trimmed = code.trim();
-    setScannedCode(trimmed);
+    const extracted = extractCode(code);
+    setScannedCode(extracted);
     setScanning(false);
-    const eq = equipment.find((e) => 
-      e.qr_code === trimmed || 
-      e.id === trimmed ||
-      e.qr_code?.toUpperCase() === trimmed.toUpperCase() ||
-      e.id.toUpperCase() === trimmed.toUpperCase()
-    );
+    const eq = findEquipment(extracted);
     if (eq) {
       toast.success(`Ekipman bulundu: ${eq.name}`);
     } else {
       toast.error("Eşleşen ekipman bulunamadı");
     }
   }, [equipment]);
+
+  const handleManualSearch = () => {
+    if (!manualCode.trim()) return;
+    const extracted = extractCode(manualCode);
+    setScannedCode(extracted);
+    setManualCode("");
+    const eq = findEquipment(extracted);
+    if (eq) {
+      toast.success(`Ekipman bulundu: ${eq.name}`);
+    } else {
+      toast.error("Eşleşen ekipman bulunamadı");
+    }
+  };
 
   const resetScan = () => {
     setScannedCode(null);
@@ -236,19 +265,44 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Manual input + empty state */}
         {!scanning && !scannedCode && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center p-12">
-              <ScanLine className="h-12 w-12 text-muted-foreground/40 mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">
-                Ekipman QR kodunu tarayarak bilgi görüntüleyin, arıza bildirin veya kamyona yükleyin.
-              </p>
-              <Button onClick={() => setScanning(true)} className="gap-2">
-                <Camera className="h-4 w-4" /> Taramayı Başlat
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground mb-3">QR kodunu elle girin</p>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleManualSearch(); }}
+                  className="flex gap-2"
+                >
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="PH-XXXXXX veya ekipman ID…"
+                      className="pl-9"
+                      value={manualCode}
+                      onChange={(e) => setManualCode(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={!manualCode.trim()}>
+                    Ara
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center p-12">
+                <ScanLine className="h-12 w-12 text-muted-foreground/40 mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  Ekipman QR kodunu tarayarak veya yukarıdaki alana yazarak arayın.
+                </p>
+                <Button onClick={() => setScanning(true)} className="gap-2">
+                  <Camera className="h-4 w-4" /> Kamera ile Tara
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
