@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { QrScanner } from "@/components/scanner/QrScanner";
 import { useEquipment } from "@/hooks/useEquipment";
