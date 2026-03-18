@@ -21,6 +21,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import QuoteRequestPage from "./pages/QuoteRequestPage";
 import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
 import ScannerPage from "./pages/ScannerPage";
+import ScanRedirectPage from "./pages/ScanRedirectPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import ExpenseDetailPage from "./pages/ExpenseDetailPage";
 import NotFound from "./pages/NotFound";
