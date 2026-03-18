@@ -52,7 +52,7 @@ export default function CustomersPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">Müşteriler</h1>
             <p className="text-sm text-muted-foreground">Müşteri ilişkilerinizi yönetin ve geliri takip edin.</p>
