@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { RevenueBarChart, EquipmentUtilizationPieChart } from "@/components/dashboard/DashboardCharts";
+import { RevenueBarChart, EquipmentUtilizationPieChart, ExpenseBarChart, ExpenseCategoryPieChart } from "@/components/dashboard/DashboardCharts";
 import { EquipmentAlerts } from "@/components/dashboard/EquipmentAlerts";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useEquipment } from "@/hooks/useEquipment";
@@ -9,13 +9,14 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useExpenses } from "@/hooks/useExpenses";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Package, Calendar, FileText, TrendingUp, Users, Truck,
-  Building2, Clock, MapPin,
+  Building2, Clock, MapPin, Receipt,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -73,6 +74,7 @@ function AdminDashboard() {
   const { data: team = [] } = useTeamMembers();
   const { data: vehicles = [] } = useVehicles();
   const { data: customers = [] } = useCustomers();
+  const { data: expenses = [] } = useExpenses();
 
   const equipmentValue = equipment.reduce((s, e) => s + e.gross_price_per_day * e.quantity_total, 0);
   const totalItems = equipment.reduce((s, e) => s + e.quantity_total, 0);
@@ -92,6 +94,8 @@ function AdminDashboard() {
 
   const availableVehicles = vehicles.filter((v) => v.is_available).length;
   const activeCustomers = customers.filter((c) => c.is_active).length;
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const pendingExpenses = expenses.filter((e) => e.status === "pending").reduce((s, e) => s + e.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -109,10 +113,11 @@ function AdminDashboard() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <KpiCard title="Ekip Üyeleri" value={team.length} subtitle={`${availableTeam} müsait`} icon={Users} color="text-[hsl(var(--success))]" />
         <KpiCard title="Araç Filosu" value={vehicles.length} subtitle={`${availableVehicles} müsait`} icon={Truck} color="text-[hsl(var(--warning))]" />
         <KpiCard title="Aktif Müşteriler" value={activeCustomers} subtitle={`${customers.length} toplam`} icon={Building2} color="text-primary" />
+        <KpiCard title="Toplam Masraf" value={fmt(totalExpenses)} subtitle={`${expenses.length} kayıt`} icon={Receipt} color="text-destructive" />
         <Card className="phantom-shadow border-border/50">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -125,10 +130,16 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Revenue Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RevenueBarChart quotes={quotes} />
         <EquipmentUtilizationPieChart equipment={equipment} />
+      </div>
+
+      {/* Expense Charts */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ExpenseBarChart expenses={expenses} />
+        <ExpenseCategoryPieChart expenses={expenses} />
       </div>
 
       {/* Category Availability */}
