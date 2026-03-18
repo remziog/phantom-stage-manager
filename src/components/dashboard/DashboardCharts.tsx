@@ -21,6 +21,7 @@ const locationLabels: Record<string, string> = {
 
 type Quote = { status: string; total: number; created_at: string };
 type Equipment = { quantity_total: number; current_location: string };
+type Expense = { amount: number; category: string; status: string; expense_date: string };
 
 export function RevenueBarChart({ quotes }: { quotes: Quote[] }) {
   const data = useMemo(() => {
