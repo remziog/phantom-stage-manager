@@ -64,6 +64,7 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [dateRangeFilter, setDateRangeFilter] = useState("all");
   const [rejectDialog, setRejectDialog] = useState<Expense | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<Expense | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const dateRangeLabels: Record<string, string> = {
