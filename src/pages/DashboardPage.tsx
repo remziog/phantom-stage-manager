@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { RevenueBarChart, EquipmentUtilizationPieChart } from "@/components/dashboard/DashboardCharts";
+import { RevenueBarChart, EquipmentUtilizationPieChart, ExpenseBarChart, ExpenseCategoryPieChart } from "@/components/dashboard/DashboardCharts";
 import { EquipmentAlerts } from "@/components/dashboard/EquipmentAlerts";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useEquipment } from "@/hooks/useEquipment";
