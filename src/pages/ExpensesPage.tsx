@@ -464,7 +464,14 @@ export default function ExpensesPage() {
         )}
       </div>
 
-      <AddExpenseDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+      <ExpenseDrawer
+        open={drawerOpen}
+        onOpenChange={(o) => {
+          setDrawerOpen(o);
+          if (!o) setEditingExpense(null);
+        }}
+        expense={editingExpense}
+      />
 
       {/* Rejection dialog */}
       <Dialog
