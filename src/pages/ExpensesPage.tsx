@@ -161,7 +161,6 @@ export default function ExpensesPage() {
               Masraf Ekle
             </Button>
           </div>
-          </Button>
         </div>
 
         {/* Summary cards */}
