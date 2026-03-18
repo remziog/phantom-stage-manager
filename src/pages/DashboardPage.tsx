@@ -9,6 +9,7 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useExpenses } from "@/hooks/useExpenses";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { QuoteStatusBadge } from "@/components/quotes/QuoteStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
