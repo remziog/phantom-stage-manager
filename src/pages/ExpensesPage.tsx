@@ -486,6 +486,31 @@ export default function ExpensesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={!!deleteDialog}
+        onOpenChange={(o) => !o && setDeleteDialog(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Masrafı Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            <strong>{deleteDialog?.description}</strong> —{" "}
+            {deleteDialog && formatCurrency(deleteDialog.amount)} masrafını silmek
+            istediğinize emin misiniz? Bu işlem geri alınamaz.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Sil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
