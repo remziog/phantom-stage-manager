@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { Equipment } from "@/hooks/useEquipment";
 import { LocationBadge, ConditionBadge, CategoryBadge, AvailabilityDisplay, StatusDistribution } from "./EquipmentBadges";
 
