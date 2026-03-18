@@ -74,6 +74,7 @@ function AdminDashboard() {
   const { data: team = [] } = useTeamMembers();
   const { data: vehicles = [] } = useVehicles();
   const { data: customers = [] } = useCustomers();
+  const { data: expenses = [] } = useExpenses();
 
   const equipmentValue = equipment.reduce((s, e) => s + e.gross_price_per_day * e.quantity_total, 0);
   const totalItems = equipment.reduce((s, e) => s + e.quantity_total, 0);
