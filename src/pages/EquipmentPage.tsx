@@ -64,10 +64,16 @@ export default function EquipmentPage() {
             </p>
           </div>
           {!isCrew && (
-            <Button onClick={() => setDrawerOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Ekipman Ekle
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)} disabled={!equipment?.length}>
+                <QrCode className="h-4 w-4 mr-1" />
+                QR Yazdır
+              </Button>
+              <Button onClick={() => setDrawerOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Ekipman Ekle
+              </Button>
+            </div>
           )}
         </div>
 
