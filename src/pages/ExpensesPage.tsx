@@ -406,28 +406,39 @@ export default function ExpensesPage() {
                       </td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-right">
-                          {expense.status === "pending" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
-                                onClick={() => handleApprove(expense)}
-                                title="Onayla"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setRejectDialog(expense)}
-                                title="Reddet"
-                              >
-                                <Ban className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 justify-end">
+                            {expense.status === "pending" && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
+                                  onClick={() => handleApprove(expense)}
+                                  title="Onayla"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => setRejectDialog(expense)}
+                                  title="Reddet"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => setDeleteDialog(expense)}
+                              title="Sil"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       )}
                     </tr>
