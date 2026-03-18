@@ -567,6 +567,71 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          description: string
+          event_id: string | null
+          expense_date: string
+          id: string
+          notes: string | null
+          receipt_name: string | null
+          receipt_url: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["expense_status"]
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          description: string
+          event_id?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          receipt_name?: string | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          description?: string
+          event_id?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          receipt_name?: string | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loading_list_items: {
         Row: {
           equipment_id: string
@@ -1087,6 +1152,16 @@ export type Database = {
         | "In Progress"
         | "Completed"
         | "Cancelled"
+      expense_category:
+        | "Transport"
+        | "Accommodation"
+        | "Meals"
+        | "Equipment Rental"
+        | "Venue"
+        | "Personnel"
+        | "Marketing"
+        | "Other"
+      expense_status: "pending" | "approved" | "rejected"
       line_item_type: "Equipment" | "Personnel" | "Vehicle" | "Custom"
       quote_status: "Draft" | "Sent" | "Approved" | "Rejected" | "Cancelled"
       team_role:
@@ -1256,6 +1331,17 @@ export const Constants = {
         "Completed",
         "Cancelled",
       ],
+      expense_category: [
+        "Transport",
+        "Accommodation",
+        "Meals",
+        "Equipment Rental",
+        "Venue",
+        "Personnel",
+        "Marketing",
+        "Other",
+      ],
+      expense_status: ["pending", "approved", "rejected"],
       line_item_type: ["Equipment", "Personnel", "Vehicle", "Custom"],
       quote_status: ["Draft", "Sent", "Approved", "Rejected", "Cancelled"],
       team_role: [
