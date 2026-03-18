@@ -193,7 +193,7 @@ export function QrCodePrintDialog({
         </div>
 
         {/* Print preview (hidden, used for print content) */}
-        <div className="sr-only">
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <div ref={printRef}>
             <div className="labels-grid">
               {selectedEquipment.map((eq) => (
@@ -201,8 +201,8 @@ export function QrCodePrintDialog({
                   <QRCodeSVG
                     value={eq.qr_code || eq.id}
                     size={size.qr}
-                    level="M"
-                    includeMargin={false}
+                    level="H"
+                    includeMargin={true}
                   />
                   <div className="qr-code">{eq.qr_code}</div>
                   <div className="eq-name">{eq.name}</div>
