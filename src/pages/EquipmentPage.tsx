@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, LayoutGrid, List, QrCode } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { QrCodePrintDialog } from "@/components/equipment/QrCodePrintDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type ViewMode = "table" | "grid";
@@ -29,6 +30,7 @@ export default function EquipmentPage() {
   const { role } = useAuth();
   const isCrew = role === "crew";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -62,10 +64,16 @@ export default function EquipmentPage() {
             </p>
           </div>
           {!isCrew && (
-            <Button onClick={() => setDrawerOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Ekipman Ekle
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)} disabled={!equipment?.length}>
+                <QrCode className="h-4 w-4 mr-1" />
+                QR Yazdır
+              </Button>
+              <Button onClick={() => setDrawerOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Ekipman Ekle
+              </Button>
+            </div>
           )}
         </div>
 
@@ -167,6 +175,13 @@ export default function EquipmentPage() {
       </div>
 
       <AddEquipmentDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+      {equipment && equipment.length > 0 && (
+        <QrCodePrintDialog
+          open={qrDialogOpen}
+          onOpenChange={setQrDialogOpen}
+          equipment={filtered.length > 0 ? filtered : equipment}
+        />
+      )}
     </DashboardLayout>
   );
 }
