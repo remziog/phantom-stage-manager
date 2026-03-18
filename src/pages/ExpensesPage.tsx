@@ -434,6 +434,18 @@ export default function ExpensesPage() {
                             <Button
                               size="icon"
                               variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-primary"
+                              onClick={() => {
+                                setEditingExpense(expense);
+                                setDrawerOpen(true);
+                              }}
+                              title="Düzenle"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               onClick={() => setDeleteDialog(expense)}
                               title="Sil"
