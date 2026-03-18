@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { QRCodeSVG } from "qrcode.react";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEquipmentFaults, useUpdateFault } from "@/hooks/useEquipmentFaults";
 import { useAuth } from "@/contexts/AuthContext";
@@ -147,9 +148,15 @@ export default function EquipmentDetailPage() {
               </Badge>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">QR Kod</p>
-            <p className="text-sm font-mono text-foreground">{item.qr_code || "—"}</p>
+          <div className="text-right flex flex-col items-end gap-1">
+            <QRCodeSVG
+              value={`${window.location.origin}/scan/${item.qr_code || item.id}`}
+              size={64}
+              level="H"
+              includeMargin={false}
+              className="rounded"
+            />
+            <p className="text-xs font-mono text-muted-foreground">{item.qr_code || "—"}</p>
           </div>
         </div>
 
