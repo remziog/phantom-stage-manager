@@ -89,11 +89,11 @@ const EXPENSE_COLORS = [
   "hsl(330, 81%, 60%)",
 ];
 
-export function ExpenseBarChart({ expenses }: { expenses: Expense[] }) {
+export function ExpenseBarChart({ expenses, monthCount = 6 }: { expenses: Expense[]; monthCount?: number }) {
   const data = useMemo(() => {
     const months: Record<string, number> = {};
     const now = new Date();
-    for (let i = 5; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = d.toLocaleDateString("tr-TR", { month: "short", year: "2-digit" });
       months[key] = 0;
@@ -104,12 +104,12 @@ export function ExpenseBarChart({ expenses }: { expenses: Expense[] }) {
       if (key in months) months[key] += e.amount;
     });
     return Object.entries(months).map(([month, amount]) => ({ month, amount }));
-  }, [expenses]);
+  }, [expenses, monthCount]);
 
   return (
     <Card className="phantom-shadow border-border/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-foreground">Aylık Masraflar (Son 6 Ay)</CardTitle>
+        <CardTitle className="text-sm font-medium text-foreground">Aylık Masraflar</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[260px]">

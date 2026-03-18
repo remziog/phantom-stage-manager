@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { RevenueBarChart, EquipmentUtilizationPieChart, ExpenseBarChart, ExpenseCategoryPieChart } from "@/components/dashboard/DashboardCharts";
@@ -97,6 +98,22 @@ function AdminDashboard() {
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const pendingExpenses = expenses.filter((e) => e.status === "pending").reduce((s, e) => s + e.amount, 0);
 
+  const [expenseRange, setExpenseRange] = useState<string>("6m");
+  const filteredExpenses = useMemo(() => {
+    const now = new Date();
+    let cutoff: Date;
+    switch (expenseRange) {
+      case "1m": cutoff = new Date(now.getFullYear(), now.getMonth(), 1); break;
+      case "3m": cutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1); break;
+      case "6m": cutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1); break;
+      case "1y": cutoff = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1); break;
+      default: cutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    }
+    return expenses.filter((e) => new Date(e.expense_date) >= cutoff);
+  }, [expenses, expenseRange]);
+
+  const monthCount = expenseRange === "1m" ? 1 : expenseRange === "3m" ? 3 : expenseRange === "1y" ? 12 : 6;
+
   return (
     <div className="space-y-6">
       <div>
@@ -137,9 +154,31 @@ function AdminDashboard() {
       </div>
 
       {/* Expense Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ExpenseBarChart expenses={expenses} />
-        <ExpenseCategoryPieChart expenses={expenses} />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-destructive" /> Masraf Analizi
+          </h2>
+          <div className="flex gap-1">
+            {([["1m", "Bu Ay"], ["3m", "3 Ay"], ["6m", "6 Ay"], ["1y", "Yıllık"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setExpenseRange(key)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  expenseRange === key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ExpenseBarChart expenses={filteredExpenses} monthCount={monthCount} />
+          <ExpenseCategoryPieChart expenses={filteredExpenses} />
+        </div>
       </div>
 
       {/* Category Availability */}
