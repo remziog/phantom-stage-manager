@@ -413,7 +413,7 @@ export default function ExpensesPage() {
                         )}
                       </td>
                       {isAdmin && (
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex gap-1 justify-end">
                             {expense.status === "pending" && (
                               <>
