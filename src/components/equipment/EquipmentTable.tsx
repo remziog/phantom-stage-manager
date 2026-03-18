@@ -31,7 +31,9 @@ export function EquipmentTable({ data, hidePrices = false }: { data: Equipment[]
               >
                 <td className="px-4 py-3">
                   <div>
-                    <span className="font-medium text-foreground">{item.name}</span>
+                    <Link to={`/equipment/${item.id}`} className="font-medium text-foreground hover:text-primary hover:underline transition-colors">
+                      {item.name}
+                    </Link>
                     {item.subcategory && <span className="block text-xs text-muted-foreground">{item.subcategory}</span>}
                     {item.qr_code && <span className="block text-[10px] text-muted-foreground/60 font-mono">{item.qr_code}</span>}
                   </div>
