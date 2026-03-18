@@ -179,6 +179,11 @@ export default function ExpenseDetailPage() {
       ),
     },
     {
+      icon: User,
+      label: "Gönderen",
+      value: <span className="text-sm text-foreground">{submitterName || "—"}</span>,
+    },
+    {
       icon: Clock,
       label: "Durum",
       value: <ExpenseStatusBadge status={expense.status} />,
