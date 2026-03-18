@@ -101,7 +101,11 @@ export function QrScanner({ onScan, onError, active = true, cameraDeviceId }: Qr
         return;
       }
 
-      activeScanner.clear().catch(() => {});
+      try {
+        activeScanner.clear();
+      } catch {
+        // ignore cleanup errors
+      }
     };
   }, [active, cameraDeviceId, onScan, onError]);
 
