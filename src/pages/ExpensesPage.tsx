@@ -184,7 +184,7 @@ export default function ExpensesPage() {
               <FileDown className="h-4 w-4 mr-1" />
               PDF İndir
             </Button>
-            <Button onClick={() => setDrawerOpen(true)} size="sm">
+            <Button onClick={() => { setEditingExpense(null); setDrawerOpen(true); }} size="sm">
               <Plus className="h-4 w-4 mr-1" />
               Masraf Ekle
             </Button>
