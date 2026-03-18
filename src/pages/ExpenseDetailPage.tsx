@@ -1,5 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useExpense, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
@@ -63,6 +65,20 @@ export default function ExpenseDetailPage() {
   const updateStatus = useUpdateExpenseStatus();
   const deleteExpense = useDeleteExpense();
   const isAdmin = role === "admin";
+
+  // Fetch approver profile name
+  const { data: approverName } = useQuery({
+    queryKey: ["profile", expense?.approved_by],
+    enabled: !!expense?.approved_by,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", expense!.approved_by!)
+        .single();
+      return data?.full_name || null;
+    },
+  });
 
   const [editOpen, setEditOpen] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
@@ -153,6 +169,24 @@ export default function ExpenseDetailPage() {
       label: "Durum",
       value: <ExpenseStatusBadge status={expense.status} />,
     },
+    ...(expense.approved_by
+      ? [
+          {
+            icon: User,
+            label: expense.status === "rejected" ? "Reddeden" : "Onaylayan",
+            value: (
+              <span className="text-sm text-foreground">
+                {approverName || "—"}
+                {expense.approved_at && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({format(new Date(expense.approved_at), "dd MMM yyyy HH:mm", { locale: tr })})
+                  </span>
+                )}
+              </span>
+            ),
+          },
+        ]
+      : []),
     {
       icon: CalendarDays,
       label: "Oluşturulma",
