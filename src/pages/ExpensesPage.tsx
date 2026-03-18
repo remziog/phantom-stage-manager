@@ -37,6 +37,7 @@ import {
   Clock,
   Ban,
   FileDown,
+  Trash2,
 } from "lucide-react";
 import { format, subMonths, startOfMonth } from "date-fns";
 import { tr } from "date-fns/locale";
