@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useExpenses, useUpdateExpenseStatus } from "@/hooks/useExpenses";
+import { useExpenses, useUpdateExpenseStatus, useDeleteExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddExpenseDrawer } from "@/components/expenses/AddExpenseDrawer";
 import {
@@ -37,6 +37,7 @@ import {
   Clock,
   Ban,
   FileDown,
+  Trash2,
 } from "lucide-react";
 import { format, subMonths, startOfMonth } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -54,6 +55,7 @@ export default function ExpensesPage() {
   const { settings: companySettings } = useCompanySettings();
   const { user, role } = useAuth();
   const updateStatus = useUpdateExpenseStatus();
+  const deleteExpense = useDeleteExpense();
   const isAdmin = role === "admin";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -62,6 +64,7 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [dateRangeFilter, setDateRangeFilter] = useState("all");
   const [rejectDialog, setRejectDialog] = useState<Expense | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<Expense | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const dateRangeLabels: Record<string, string> = {
@@ -122,6 +125,13 @@ export default function ExpensesPage() {
       },
       { onSuccess: () => { setRejectDialog(null); setRejectionReason(""); } }
     );
+  };
+
+  const handleDelete = () => {
+    if (!deleteDialog) return;
+    deleteExpense.mutate(deleteDialog.id, {
+      onSuccess: () => setDeleteDialog(null),
+    });
   };
 
   const handleExportPdf = () => {
@@ -396,28 +406,39 @@ export default function ExpensesPage() {
                       </td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-right">
-                          {expense.status === "pending" && (
-                            <div className="flex gap-1 justify-end">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
-                                onClick={() => handleApprove(expense)}
-                                title="Onayla"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setRejectDialog(expense)}
-                                title="Reddet"
-                              >
-                                <Ban className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 justify-end">
+                            {expense.status === "pending" && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
+                                  onClick={() => handleApprove(expense)}
+                                  title="Onayla"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => setRejectDialog(expense)}
+                                  title="Reddet"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => setDeleteDialog(expense)}
+                              title="Sil"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -461,6 +482,31 @@ export default function ExpensesPage() {
             </Button>
             <Button variant="destructive" onClick={handleReject}>
               Reddet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={!!deleteDialog}
+        onOpenChange={(o) => !o && setDeleteDialog(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Masrafı Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            <strong>{deleteDialog?.description}</strong> —{" "}
+            {deleteDialog && formatCurrency(deleteDialog.amount)} masrafını silmek
+            istediğinize emin misiniz? Bu işlem geri alınamaz.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Sil
             </Button>
           </DialogFooter>
         </DialogContent>
