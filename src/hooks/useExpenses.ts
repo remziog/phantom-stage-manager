@@ -22,6 +22,7 @@ export interface Expense {
   // joined
   event_name?: string;
   approved_by_name?: string | null;
+  submitted_by_name?: string | null;
 }
 
 export function useExpenses() {
@@ -34,14 +35,19 @@ export function useExpenses() {
         .order("created_at", { ascending: false });
       if (error) throw error;
 
-      // Fetch approver names
-      const approverIds = [...new Set((data as any[]).map((e) => e.approved_by).filter(Boolean))];
+      // Fetch profile names for approvers and submitters
+      const allUserIds = [
+        ...new Set([
+          ...(data as any[]).map((e) => e.approved_by).filter(Boolean),
+          ...(data as any[]).map((e) => e.submitted_by).filter(Boolean),
+        ]),
+      ];
       let profileMap: Record<string, string> = {};
-      if (approverIds.length > 0) {
+      if (allUserIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, full_name")
-          .in("user_id", approverIds);
+          .in("user_id", allUserIds);
         if (profiles) {
           profileMap = Object.fromEntries(profiles.map((p) => [p.user_id, p.full_name || ""]));
         }
@@ -51,6 +57,7 @@ export function useExpenses() {
         ...e,
         event_name: e.events?.name ?? null,
         approved_by_name: e.approved_by ? (profileMap[e.approved_by] || null) : null,
+        submitted_by_name: e.submitted_by ? (profileMap[e.submitted_by] || null) : null,
         events: undefined,
       })) as Expense[];
     },

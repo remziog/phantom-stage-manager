@@ -80,6 +80,20 @@ export default function ExpenseDetailPage() {
     },
   });
 
+  // Fetch submitter profile name
+  const { data: submitterName } = useQuery({
+    queryKey: ["profile", expense?.submitted_by],
+    enabled: !!expense?.submitted_by,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", expense!.submitted_by!)
+        .single();
+      return data?.full_name || null;
+    },
+  });
+
   const [editOpen, setEditOpen] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
@@ -163,6 +177,11 @@ export default function ExpenseDetailPage() {
       ) : (
         <span className="text-muted-foreground">—</span>
       ),
+    },
+    {
+      icon: User,
+      label: "Gönderen",
+      value: <span className="text-sm text-foreground">{submitterName || "—"}</span>,
     },
     {
       icon: Clock,
