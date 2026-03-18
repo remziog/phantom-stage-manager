@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Clock,
   Ban,
+  FileDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
