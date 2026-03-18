@@ -38,7 +38,7 @@ import {
   Ban,
   FileDown,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth } from "date-fns";
 import { tr } from "date-fns/locale";
 import type { Expense } from "@/hooks/useExpenses";
 import { generateExpensePdf } from "@/components/expenses/generateExpensePdf";
