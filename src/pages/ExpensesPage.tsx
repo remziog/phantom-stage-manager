@@ -60,6 +60,7 @@ export default function ExpensesPage() {
   const isAdmin = role === "admin";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
