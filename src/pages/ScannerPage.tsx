@@ -43,34 +43,50 @@ export default function ScannerPage() {
     }
   }, [searchParams, equipment]);
 
-  const matchedEquipment = scannedCode
-    ? equipment.find((eq) => {
-        const code = scannedCode.trim();
-        return (
-          eq.qr_code === code ||
-          eq.id === code ||
-          eq.qr_code?.toUpperCase() === code.toUpperCase() ||
-          eq.id.toUpperCase() === code.toUpperCase()
-        );
-      })
-    : null;
+  // Extract QR code from URL or raw code
+  const extractCode = (raw: string): string => {
+    const trimmed = raw.trim();
+    // If scanned a URL like https://domain.com/scan/PH-XXXXXX
+    const scanMatch = trimmed.match(/\/scan\/([^/?#]+)/);
+    if (scanMatch) return scanMatch[1];
+    return trimmed;
+  };
+
+  const findEquipment = (raw: string) => {
+    const code = extractCode(raw).toUpperCase();
+    return equipment.find(
+      (e) =>
+        e.qr_code?.toUpperCase() === code ||
+        e.id.toUpperCase() === code
+    );
+  };
+
+  const matchedEquipment = scannedCode ? findEquipment(scannedCode) : null;
 
   const handleScan = useCallback((code: string) => {
-    const trimmed = code.trim();
-    setScannedCode(trimmed);
+    const extracted = extractCode(code);
+    setScannedCode(extracted);
     setScanning(false);
-    const eq = equipment.find((e) => 
-      e.qr_code === trimmed || 
-      e.id === trimmed ||
-      e.qr_code?.toUpperCase() === trimmed.toUpperCase() ||
-      e.id.toUpperCase() === trimmed.toUpperCase()
-    );
+    const eq = findEquipment(extracted);
     if (eq) {
       toast.success(`Ekipman bulundu: ${eq.name}`);
     } else {
       toast.error("Eşleşen ekipman bulunamadı");
     }
   }, [equipment]);
+
+  const handleManualSearch = () => {
+    if (!manualCode.trim()) return;
+    const extracted = extractCode(manualCode);
+    setScannedCode(extracted);
+    setManualCode("");
+    const eq = findEquipment(extracted);
+    if (eq) {
+      toast.success(`Ekipman bulundu: ${eq.name}`);
+    } else {
+      toast.error("Eşleşen ekipman bulunamadı");
+    }
+  };
 
   const resetScan = () => {
     setScannedCode(null);
