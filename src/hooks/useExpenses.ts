@@ -100,6 +100,37 @@ export function useUpdateExpenseStatus() {
   });
 }
 
+export function useUpdateExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...fields
+    }: {
+      id: string;
+      event_id?: string | null;
+      category?: string;
+      description?: string;
+      amount?: number;
+      receipt_url?: string | null;
+      receipt_name?: string | null;
+      notes?: string | null;
+      expense_date?: string;
+    }) => {
+      const { error } = await supabase
+        .from("expenses")
+        .update(fields as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Masraf güncellendi");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+}
+
 export function useDeleteExpense() {
   const qc = useQueryClient();
   return useMutation({
