@@ -51,7 +51,7 @@ const formatCurrency = (amount: number) =>
 
 export default function ExpensesPage() {
   const { data: expenses = [], isLoading } = useExpenses();
-  const { data: companySettings } = useCompanySettings();
+  const { settings: companySettings } = useCompanySettings();
   const { user, role } = useAuth();
   const updateStatus = useUpdateExpenseStatus();
   const isAdmin = role === "admin";
