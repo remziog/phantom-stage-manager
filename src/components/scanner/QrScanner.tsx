@@ -31,6 +31,7 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
         Html5QrcodeSupportedFormats.AZTEC,
         Html5QrcodeSupportedFormats.PDF_417,
       ],
+      verbose: false,
     });
     scannerRef.current = scanner;
 
