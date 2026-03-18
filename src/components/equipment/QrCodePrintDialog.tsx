@@ -199,7 +199,7 @@ export function QrCodePrintDialog({
               {selectedEquipment.map((eq) => (
                 <div key={eq.id} className="label">
                   <QRCodeSVG
-                    value={eq.qr_code || eq.id}
+                    value={`${window.location.origin}/scan/${eq.qr_code || eq.id}`}
                     size={size.qr}
                     level="H"
                     includeMargin={true}
