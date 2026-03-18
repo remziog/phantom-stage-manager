@@ -55,6 +55,7 @@ export default function ExpensesPage() {
   const { settings: companySettings } = useCompanySettings();
   const { user, role } = useAuth();
   const updateStatus = useUpdateExpenseStatus();
+  const deleteExpense = useDeleteExpense();
   const isAdmin = role === "admin";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
