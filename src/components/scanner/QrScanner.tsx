@@ -1,0 +1,66 @@
+import { useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+
+interface QrScannerProps {
+  onScan: (code: string) => void;
+  onError?: (error: string) => void;
+  active?: boolean;
+}
+
+export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [started, setStarted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!active || !containerRef.current) return;
+
+    const scannerId = "qr-reader-" + Math.random().toString(36).slice(2);
+    containerRef.current.id = scannerId;
+
+    const scanner = new Html5Qrcode(scannerId);
+    scannerRef.current = scanner;
+
+    scanner
+      .start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          onScan(decodedText);
+        },
+        () => {} // ignore scan failures
+      )
+      .then(() => setStarted(true))
+      .catch((err) => {
+        const msg = typeof err === "string" ? err : err?.message || "Kamera açılamadı";
+        setError(msg);
+        onError?.(msg);
+      });
+
+    return () => {
+      if (scannerRef.current?.isScanning) {
+        scannerRef.current.stop().catch(() => {});
+      }
+    };
+  }, [active]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-destructive/30 bg-destructive/5 p-8">
+        <p className="text-sm text-destructive">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-border bg-black">
+      <div ref={containerRef} className="w-full" />
+      {!started && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+          <p className="text-sm text-muted-foreground animate-pulse">Kamera başlatılıyor…</p>
+        </div>
+      )}
+    </div>
+  );
+}
