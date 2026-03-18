@@ -67,6 +67,115 @@ export function RevenueBarChart({ quotes }: { quotes: Quote[] }) {
   );
 }
 
+const categoryLabels: Record<string, string> = {
+  Transport: "Ulaşım",
+  Accommodation: "Konaklama",
+  Meals: "Yemek",
+  "Equipment Rental": "Ekipman Kiralama",
+  Venue: "Mekan",
+  Personnel: "Personel",
+  Marketing: "Pazarlama",
+  Other: "Diğer",
+};
+
+const EXPENSE_COLORS = [
+  "hsl(221, 83%, 53%)",
+  "hsl(142, 71%, 45%)",
+  "hsl(38, 92%, 50%)",
+  "hsl(0, 84%, 60%)",
+  "hsl(262, 83%, 58%)",
+  "hsl(199, 89%, 48%)",
+  "hsl(24, 95%, 53%)",
+  "hsl(330, 81%, 60%)",
+];
+
+export function ExpenseBarChart({ expenses }: { expenses: Expense[] }) {
+  const data = useMemo(() => {
+    const months: Record<string, number> = {};
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleDateString("tr-TR", { month: "short", year: "2-digit" });
+      months[key] = 0;
+    }
+    expenses.forEach((e) => {
+      const d = new Date(e.expense_date);
+      const key = d.toLocaleDateString("tr-TR", { month: "short", year: "2-digit" });
+      if (key in months) months[key] += e.amount;
+    });
+    return Object.entries(months).map(([month, amount]) => ({ month, amount }));
+  }, [expenses]);
+
+  return (
+    <Card className="phantom-shadow border-border/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-foreground">Aylık Masraflar (Son 6 Ay)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 18%)" />
+              <XAxis dataKey="month" tick={{ fill: "hsl(215, 20%, 55%)", fontSize: 11 }} axisLine={{ stroke: "hsl(222, 30%, 18%)" }} tickLine={false} />
+              <YAxis tick={{ fill: "hsl(215, 20%, 55%)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+              <Tooltip
+                contentStyle={{ backgroundColor: "hsl(222, 47%, 9%)", border: "1px solid hsl(222, 30%, 18%)", borderRadius: "8px", color: "hsl(210, 40%, 98%)", fontSize: 12 }}
+                formatter={(value: number) => [new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(value), "Masraf"]}
+              />
+              <Bar dataKey="amount" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ExpenseCategoryPieChart({ expenses }: { expenses: Expense[] }) {
+  const data = useMemo(() => {
+    const counts: Record<string, number> = {};
+    expenses.forEach((e) => {
+      counts[e.category] = (counts[e.category] || 0) + e.amount;
+    });
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name: categoryLabels[name] || name, value }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [expenses]);
+
+  const total = data.reduce((s, d) => s + d.value, 0);
+
+  return (
+    <Card className="phantom-shadow border-border/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-foreground">Masraf Kategori Dağılımı</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[260px]">
+          {total === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-muted-foreground">Masraf verisi yok</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={data} cx="50%" cy="45%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3} stroke="none">
+                  {data.map((_, i) => <Cell key={i} fill={EXPENSE_COLORS[i % EXPENSE_COLORS.length]} />)}
+                </Pie>
+                <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value) => <span style={{ color: "hsl(215, 20%, 55%)", fontSize: 11 }}>{value}</span>} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "hsl(222, 47%, 9%)", border: "1px solid hsl(222, 30%, 18%)", borderRadius: "8px", color: "hsl(210, 40%, 98%)", fontSize: 12 }}
+                  formatter={(value: number) => [new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(value), ""]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function EquipmentUtilizationPieChart({ equipment }: { equipment: Equipment[] }) {
   const data = useMemo(() => {
     const counts: Record<string, number> = { Warehouse: 0, "On Event": 0, "In Transit": 0, "Under Maintenance": 0 };
