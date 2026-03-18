@@ -22,6 +22,7 @@ export interface Expense {
   // joined
   event_name?: string;
   approved_by_name?: string | null;
+  submitted_by_name?: string | null;
 }
 
 export function useExpenses() {
