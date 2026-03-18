@@ -315,170 +315,172 @@ export default function ExpensesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="rounded-lg border border-border overflow-hidden phantom-shadow">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-card">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Açıklama
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Kategori
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Etkinlik
-                    </th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tutar
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Makbuz
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Gönderen
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Durum
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Onaylayan
-                    </th>
-                    {isAdmin && (
-                      <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        İşlem
-                      </th>
+          <>
+            {/* Mobile card view */}
+            <div className="md:hidden space-y-3">
+              {filtered.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="rounded-lg border border-border bg-card p-4 space-y-3 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] transition-colors phantom-shadow"
+                  onClick={() => navigate(`/expenses/${expense.id}`)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground truncate">{expense.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(expense.expense_date), "dd MMM yyyy", { locale: tr })}
+                      </p>
+                    </div>
+                    <span className="text-base font-semibold text-foreground tabular-nums ml-3 shrink-0">
+                      {formatCurrency(expense.amount)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ExpenseCategoryBadge category={expense.category} />
+                    <ExpenseStatusBadge status={expense.status} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    {expense.event_name && (
+                      <div>
+                        <span className="text-muted-foreground">Etkinlik: </span>
+                        <span className="text-foreground">{expense.event_name}</span>
+                      </div>
                     )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((expense, index) => (
-                    <tr
-                      key={expense.id}
-                      className="border-b border-border last:border-0 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer"
-                      onClick={() => navigate(`/expenses/${expense.id}`)}
-                      style={
-                        index % 2 === 1
-                          ? { backgroundColor: "rgba(255,255,255,0.02)" }
-                          : {}
-                      }
-                    >
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {format(new Date(expense.expense_date), "dd MMM yyyy", {
-                          locale: tr,
-                        })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
-                          onClick={() => navigate(`/expenses/${expense.id}`)}
-                        >
-                          {expense.description}
-                        </span>
-                        {expense.notes && (
-                          <span className="block text-xs text-muted-foreground mt-0.5 truncate max-w-[200px]">
-                            {expense.notes}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <ExpenseCategoryBadge category={expense.category} />
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {expense.event_name || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">
-                        {formatCurrency(expense.amount)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {expense.receipt_url ? (
-                          <a
-                            href={expense.receipt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            {expense.receipt_name || "Görüntüle"}
-                          </a>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                        {expense.submitted_by_name || "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <ExpenseStatusBadge status={expense.status} />
-                        {expense.rejection_reason && (
-                          <span className="block text-[10px] text-destructive mt-0.5 truncate max-w-[120px]">
-                            {expense.rejection_reason}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                        {expense.approved_by_name || "—"}
-                      </td>
+                    {expense.submitted_by_name && (
+                      <div>
+                        <span className="text-muted-foreground">Gönderen: </span>
+                        <span className="text-foreground">{expense.submitted_by_name}</span>
+                      </div>
+                    )}
+                    {expense.approved_by_name && (
+                      <div>
+                        <span className="text-muted-foreground">Onaylayan: </span>
+                        <span className="text-foreground">{expense.approved_by_name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {expense.rejection_reason && (
+                    <p className="text-[10px] text-destructive truncate">
+                      Red: {expense.rejection_reason}
+                    </p>
+                  )}
+
+                  {isAdmin && (
+                    <div className="flex gap-1 pt-2 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                      {expense.status === "pending" && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-[hsl(var(--success))]" onClick={() => handleApprove(expense)}>
+                            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Onayla
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => setRejectDialog(expense)}>
+                            <Ban className="h-3.5 w-3.5 mr-1" /> Reddet
+                          </Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground ml-auto" onClick={() => { setEditingExpense(expense); setDrawerOpen(true); }}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> Düzenle
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => setDeleteDialog(expense)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden md:block rounded-lg border border-border overflow-hidden phantom-shadow">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-card">
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Tarih</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Açıklama</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Kategori</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Etkinlik</th>
+                      <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Tutar</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Makbuz</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Gönderen</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Durum</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Onaylayan</th>
                       {isAdmin && (
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex gap-1 justify-end">
-                            {expense.status === "pending" && (
-                              <>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]"
-                                  onClick={() => handleApprove(expense)}
-                                  title="Onayla"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => setRejectDialog(expense)}
-                                  title="Reddet"
-                                >
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-muted-foreground hover:text-primary"
-                              onClick={() => {
-                                setEditingExpense(expense);
-                                setDrawerOpen(true);
-                              }}
-                              title="Düzenle"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                              onClick={() => setDeleteDialog(expense)}
-                              title="Sil"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
+                        <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">İşlem</th>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filtered.map((expense, index) => (
+                      <tr
+                        key={expense.id}
+                        className="border-b border-border last:border-0 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer"
+                        onClick={() => navigate(`/expenses/${expense.id}`)}
+                        style={index % 2 === 1 ? { backgroundColor: "rgba(255,255,255,0.02)" } : {}}
+                      >
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {format(new Date(expense.expense_date), "dd MMM yyyy", { locale: tr })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline">
+                            {expense.description}
+                          </span>
+                          {expense.notes && (
+                            <span className="block text-xs text-muted-foreground mt-0.5 truncate max-w-[200px]">{expense.notes}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3"><ExpenseCategoryBadge category={expense.category} /></td>
+                        <td className="px-4 py-3 text-muted-foreground">{expense.event_name || "—"}</td>
+                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">{formatCurrency(expense.amount)}</td>
+                        <td className="px-4 py-3">
+                          {expense.receipt_url ? (
+                            <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                              <ExternalLink className="h-3 w-3" />
+                              {expense.receipt_name || "Görüntüle"}
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{expense.submitted_by_name || "—"}</td>
+                        <td className="px-4 py-3">
+                          <ExpenseStatusBadge status={expense.status} />
+                          {expense.rejection_reason && (
+                            <span className="block text-[10px] text-destructive mt-0.5 truncate max-w-[120px]">{expense.rejection_reason}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{expense.approved_by_name || "—"}</td>
+                        {isAdmin && (
+                          <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1 justify-end">
+                              {expense.status === "pending" && (
+                                <>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-[hsl(var(--success))] hover:text-[hsl(var(--success))]" onClick={() => handleApprove(expense)} title="Onayla">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setRejectDialog(expense)} title="Reddet">
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingExpense(expense); setDrawerOpen(true); }} title="Düzenle">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setDeleteDialog(expense)} title="Sil">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
