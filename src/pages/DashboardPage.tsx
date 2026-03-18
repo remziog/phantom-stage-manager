@@ -130,10 +130,16 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Revenue Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RevenueBarChart quotes={quotes} />
         <EquipmentUtilizationPieChart equipment={equipment} />
+      </div>
+
+      {/* Expense Charts */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ExpenseBarChart expenses={expenses} />
+        <ExpenseCategoryPieChart expenses={expenses} />
       </div>
 
       {/* Category Availability */}
