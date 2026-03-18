@@ -19,7 +19,19 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
     const scannerId = "qr-reader-" + Math.random().toString(36).slice(2);
     containerRef.current.id = scannerId;
 
-    const scanner = new Html5Qrcode(scannerId);
+    const scanner = new Html5Qrcode(scannerId, {
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+        Html5QrcodeSupportedFormats.AZTEC,
+        Html5QrcodeSupportedFormats.PDF_417,
+      ],
+    });
     scannerRef.current = scanner;
 
     scanner
