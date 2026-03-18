@@ -127,6 +127,7 @@ export default function ExpensesPage() {
   const handleExportPdf = () => {
     if (filtered.length === 0) return;
     const label = [
+      dateRangeFilter !== "all" ? dateRangeLabels[dateRangeFilter] : null,
       statusFilter !== "all" ? statusLabels[statusFilter] : null,
       categoryFilter !== "all" ? (categoryLabels[categoryFilter] || categoryFilter) : null,
       search ? `"${search}"` : null,
