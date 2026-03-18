@@ -53,6 +53,7 @@ const formatCurrency = (amount: number) =>
   );
 
 export default function ExpensesPage() {
+  const navigate = useNavigate();
   const { data: expenses = [], isLoading } = useExpenses();
   const { settings: companySettings } = useCompanySettings();
   const { user, role } = useAuth();
