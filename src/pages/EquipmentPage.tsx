@@ -175,6 +175,13 @@ export default function EquipmentPage() {
       </div>
 
       <AddEquipmentDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+      {equipment && equipment.length > 0 && (
+        <QrCodePrintDialog
+          open={qrDialogOpen}
+          onOpenChange={setQrDialogOpen}
+          equipment={filtered.length > 0 ? filtered : equipment}
+        />
+      )}
     </DashboardLayout>
   );
 }
