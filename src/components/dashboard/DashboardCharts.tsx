@@ -109,7 +109,7 @@ export function ExpenseBarChart({ expenses, monthCount = 6 }: { expenses: Expens
   return (
     <Card className="phantom-shadow border-border/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-foreground">Aylık Masraflar (Son 6 Ay)</CardTitle>
+        <CardTitle className="text-sm font-medium text-foreground">Aylık Masraflar</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[260px]">
