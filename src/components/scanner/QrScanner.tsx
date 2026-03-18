@@ -33,7 +33,15 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
       )
       .then(() => setStarted(true))
       .catch((err) => {
-        const msg = typeof err === "string" ? err : err?.message || "Kamera açılamadı";
+        const raw = typeof err === "string" ? err : err?.message || "";
+        let msg = "Kamera açılamadı";
+        if (raw.includes("NotFoundError") || raw.includes("Requested device not found")) {
+          msg = "Kamera bulunamadı. Lütfen cihazınızda kamera olduğundan emin olun.";
+        } else if (raw.includes("NotAllowedError") || raw.includes("Permission")) {
+          msg = "Kamera erişim izni verilmedi. Lütfen tarayıcı ayarlarından izin verin.";
+        } else if (raw.includes("NotReadableError")) {
+          msg = "Kamera başka bir uygulama tarafından kullanılıyor.";
+        }
         setError(msg);
         onError?.(msg);
       });
