@@ -305,6 +305,72 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_faults: {
+        Row: {
+          created_at: string
+          description: string
+          equipment_id: string
+          event_id: string | null
+          fault_type: string
+          id: string
+          photo_urls: string[] | null
+          reported_by: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          equipment_id: string
+          event_id?: string | null
+          fault_type?: string
+          id?: string
+          photo_urls?: string[] | null
+          reported_by: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          event_id?: string | null
+          fault_type?: string
+          id?: string
+          photo_urls?: string[] | null
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_faults_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_faults_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_equipment: {
         Row: {
           equipment_id: string
@@ -497,6 +563,105 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loading_list_items: {
+        Row: {
+          equipment_id: string
+          id: string
+          loading_list_id: string
+          notes: string | null
+          quantity: number
+          scanned_at: string
+          scanned_by: string
+        }
+        Insert: {
+          equipment_id: string
+          id?: string
+          loading_list_id: string
+          notes?: string | null
+          quantity?: number
+          scanned_at?: string
+          scanned_by: string
+        }
+        Update: {
+          equipment_id?: string
+          id?: string
+          loading_list_id?: string
+          notes?: string | null
+          quantity?: number
+          scanned_at?: string
+          scanned_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loading_list_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loading_list_items_loading_list_id_fkey"
+            columns: ["loading_list_id"]
+            isOneToOne: false
+            referencedRelation: "loading_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loading_lists: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          direction: string
+          event_id: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          direction?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          direction?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loading_lists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loading_lists_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
