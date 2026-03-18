@@ -364,7 +364,10 @@ export default function ExpensesPage() {
                         })}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-foreground">
+                        <span
+                          className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+                          onClick={() => navigate(`/expenses/${expense.id}`)}
+                        >
                           {expense.description}
                         </span>
                         {expense.notes && (
