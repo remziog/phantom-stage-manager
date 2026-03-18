@@ -64,7 +64,20 @@ export default function ExpensesPage() {
   const [rejectDialog, setRejectDialog] = useState<Expense | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  const dateRangeLabels: Record<string, string> = {
+    all: "Tüm Tarihler",
+    this_month: "Bu Ay",
+    last_3: "Son 3 Ay",
+    last_6: "Son 6 Ay",
+  };
+
   const filtered = useMemo(() => {
+    const now = new Date();
+    let dateFrom: Date | null = null;
+    if (dateRangeFilter === "this_month") dateFrom = startOfMonth(now);
+    else if (dateRangeFilter === "last_3") dateFrom = startOfMonth(subMonths(now, 2));
+    else if (dateRangeFilter === "last_6") dateFrom = startOfMonth(subMonths(now, 5));
+
     return expenses.filter((e) => {
       const matchSearch =
         !search ||
@@ -73,9 +86,10 @@ export default function ExpensesPage() {
       const matchStatus = statusFilter === "all" || e.status === statusFilter;
       const matchCategory =
         categoryFilter === "all" || e.category === categoryFilter;
-      return matchSearch && matchStatus && matchCategory;
+      const matchDate = !dateFrom || new Date(e.expense_date) >= dateFrom;
+      return matchSearch && matchStatus && matchCategory && matchDate;
     });
-  }, [expenses, search, statusFilter, categoryFilter]);
+  }, [expenses, search, statusFilter, categoryFilter, dateRangeFilter]);
 
   const totals = useMemo(() => {
     const all = expenses.reduce((s, e) => s + e.amount, 0);
