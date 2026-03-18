@@ -94,6 +94,8 @@ function AdminDashboard() {
 
   const availableVehicles = vehicles.filter((v) => v.is_available).length;
   const activeCustomers = customers.filter((c) => c.is_active).length;
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const pendingExpenses = expenses.filter((e) => e.status === "pending").reduce((s, e) => s + e.amount, 0);
 
   return (
     <div className="space-y-6">
