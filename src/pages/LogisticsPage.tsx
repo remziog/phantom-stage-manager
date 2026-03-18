@@ -183,6 +183,8 @@ export default function LogisticsPage() {
           </div>
         )}
       </div>
+        <LoadingListsSection />
+      </div>
       <AddVehicleDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
     </DashboardLayout>
   );
