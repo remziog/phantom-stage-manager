@@ -415,6 +415,9 @@ export default function ExpensesPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                        {expense.approved_by_name || "—"}
+                      </td>
                       {isAdmin && (
                         <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex gap-1 justify-end">
