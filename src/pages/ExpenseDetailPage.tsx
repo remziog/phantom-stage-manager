@@ -169,6 +169,24 @@ export default function ExpenseDetailPage() {
       label: "Durum",
       value: <ExpenseStatusBadge status={expense.status} />,
     },
+    ...(expense.approved_by
+      ? [
+          {
+            icon: User,
+            label: expense.status === "rejected" ? "Reddeden" : "Onaylayan",
+            value: (
+              <span className="text-sm text-foreground">
+                {approverName || "—"}
+                {expense.approved_at && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({format(new Date(expense.approved_at), "dd MMM yyyy HH:mm", { locale: tr })})
+                  </span>
+                )}
+              </span>
+            ),
+          },
+        ]
+      : []),
     {
       icon: CalendarDays,
       label: "Oluşturulma",
