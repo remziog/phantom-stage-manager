@@ -83,8 +83,8 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-black">
-      <div ref={containerRef} className="w-full" />
+    <div className="relative overflow-hidden rounded-lg border border-border bg-black" style={{ minHeight: 300 }}>
+      <div ref={containerRef} className="w-full" style={{ minHeight: 300 }} />
       {!started && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
           <p className="text-sm text-muted-foreground animate-pulse">Kamera başlatılıyor…</p>
