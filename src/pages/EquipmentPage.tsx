@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,7 @@ import {
 import { Plus, Search, LayoutGrid, List, QrCode } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { QrCodePrintDialog } from "@/components/equipment/QrCodePrintDialog";
+import { CategoryBadge, ConditionBadge, LocationBadge } from "@/components/equipment/EquipmentBadges";
 import type { Database } from "@/integrations/supabase/types";
 
 type ViewMode = "table" | "grid";
@@ -24,6 +26,9 @@ type ViewMode = "table" | "grid";
 const categories = Constants.public.Enums.equipment_category;
 const conditions = Constants.public.Enums.equipment_condition;
 const locations = Constants.public.Enums.equipment_location;
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(amount);
 
 export default function EquipmentPage() {
   const { data: equipment, isLoading } = useEquipment();
@@ -56,7 +61,7 @@ export default function EquipmentPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-display text-foreground">Ekipman</h1>
             <p className="text-sm text-muted-foreground">
@@ -120,7 +125,7 @@ export default function EquipmentPage() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex rounded-md border border-border overflow-hidden">
+          <div className="hidden md:flex rounded-md border border-border overflow-hidden">
             <button
               onClick={() => setViewMode("table")}
               className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-input text-muted-foreground hover:text-foreground"}`}
@@ -167,10 +172,56 @@ export default function EquipmentPage() {
               </Button>
             )}
           </div>
-        ) : viewMode === "table" ? (
-          <EquipmentTable data={filtered} hidePrices={isCrew} />
         ) : (
-          <EquipmentGrid data={filtered} hidePrices={isCrew} />
+          <>
+            {/* Mobile card view */}
+            <div className="md:hidden space-y-3">
+              {filtered.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/equipment/${item.id}`}
+                  className="block rounded-lg bg-card p-4 phantom-shadow hover:bg-surface-hover transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <h3 className="font-medium text-foreground truncate">{item.name}</h3>
+                      {item.qr_code && (
+                        <p className="text-[10px] text-muted-foreground/60 font-mono">{item.qr_code}</p>
+                      )}
+                    </div>
+                    {!isCrew && (
+                      <span className="text-sm font-medium text-foreground tabular-nums whitespace-nowrap">
+                        {formatCurrency(item.gross_price_per_day)}/gün
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <CategoryBadge category={item.category} />
+                    <ConditionBadge condition={item.condition} />
+                    <LocationBadge location={item.current_location} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Marka/Model: </span>
+                      <span className="text-foreground">{[item.brand, item.model].filter(Boolean).join(" ") || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Müsait: </span>
+                      <span className="text-foreground">{item.quantity_available} / {item.quantity_total}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            {/* Desktop table/grid view */}
+            <div className="hidden md:block">
+              {viewMode === "table" ? (
+                <EquipmentTable data={filtered} hidePrices={isCrew} />
+              ) : (
+                <EquipmentGrid data={filtered} hidePrices={isCrew} />
+              )}
+            </div>
+          </>
         )}
       </div>
 
