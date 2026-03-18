@@ -60,6 +60,7 @@ export default function ExpensesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [dateRangeFilter, setDateRangeFilter] = useState("all");
   const [rejectDialog, setRejectDialog] = useState<Expense | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
