@@ -3,8 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { QrScanner } from "@/components/scanner/QrScanner";
 import { useEquipment } from "@/hooks/useEquipment";
-import { useEvents } from "@/hooks/useEvents";
-import { useVehicles } from "@/hooks/useVehicles";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +28,7 @@ export default function ScannerPage() {
   const [manualCode, setManualCode] = useState("");
   const [activeTab, setActiveTab] = useState("view");
   const [faultDialogOpen, setFaultDialogOpen] = useState(false);
+  const [cameraDeviceId, setCameraDeviceId] = useState<string | undefined>();
 
   const { data: equipment = [] } = useEquipment();
   const { user } = useAuth();
@@ -41,7 +40,7 @@ export default function ScannerPage() {
       setScannedCode(codeFromUrl);
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, equipment]);
+  }, [searchParams, equipment, setSearchParams]);
 
   // Extract QR code from URL or raw code
   const extractCode = (raw: string): string => {
@@ -57,11 +56,51 @@ export default function ScannerPage() {
     return equipment.find(
       (e) =>
         e.qr_code?.toUpperCase() === code ||
-        e.id.toUpperCase() === code
+        e.id.toUpperCase() === code,
     );
   };
 
   const matchedEquipment = scannedCode ? findEquipment(scannedCode) : null;
+
+  const resetScan = useCallback(() => {
+    setScannedCode(null);
+    setActiveTab("view");
+  }, []);
+
+  const handleStartScanning = useCallback(async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error("Bu tarayıcı kamera erişimini desteklemiyor.");
+        return;
+      }
+
+      // CRITICAL: camera permission request in direct click handler for mobile browsers
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+
+      const [videoTrack] = stream.getVideoTracks();
+      const detectedDeviceId = videoTrack?.getSettings().deviceId;
+      stream.getTracks().forEach((track) => track.stop());
+
+      setCameraDeviceId(detectedDeviceId || undefined);
+      resetScan();
+      setScanning(true);
+    } catch (error) {
+      if (error instanceof Error && error.name === "NotAllowedError") {
+        toast.error("Kamera izni reddedildi. Tarayıcı ayarlarından izin verin.");
+        return;
+      }
+
+      if (error instanceof Error && error.name === "NotReadableError") {
+        toast.error("Kamera başka bir uygulama tarafından kullanılıyor.");
+        return;
+      }
+
+      toast.error("Kamera başlatılamadı.");
+    }
+  }, [resetScan]);
 
   const handleScan = useCallback((code: string) => {
     const extracted = extractCode(code);
@@ -88,11 +127,6 @@ export default function ScannerPage() {
     }
   };
 
-  const resetScan = () => {
-    setScannedCode(null);
-    setActiveTab("view");
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -108,7 +142,7 @@ export default function ScannerPage() {
             </p>
           </div>
           {!scanning && (
-            <Button onClick={() => { setScanning(true); resetScan(); }} className="gap-2">
+            <Button onClick={handleStartScanning} className="gap-2">
               <Camera className="h-4 w-4" /> Tara
             </Button>
           )}
@@ -124,7 +158,7 @@ export default function ScannerPage() {
               </Button>
             </CardHeader>
             <CardContent className="p-0">
-              <QrScanner onScan={handleScan} active={scanning} />
+              <QrScanner onScan={handleScan} active={scanning} cameraDeviceId={cameraDeviceId} />
             </CardContent>
           </Card>
         )}
@@ -136,7 +170,7 @@ export default function ScannerPage() {
               <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
               <p className="text-sm text-destructive font-medium">Eşleşen ekipman bulunamadı</p>
               <p className="text-xs text-muted-foreground mt-1">Kod: {scannedCode}</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => { setScanning(true); resetScan(); }}>
+              <Button variant="outline" size="sm" className="mt-4" onClick={handleStartScanning}>
                 Tekrar Tara
               </Button>
             </CardContent>
@@ -233,7 +267,7 @@ export default function ScannerPage() {
                       <Button variant="outline" size="sm" onClick={() => setFaultDialogOpen(true)} className="gap-1.5">
                         <AlertTriangle className="h-3.5 w-3.5" /> Arıza Bildir
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => { setScanning(true); resetScan(); }} className="gap-1.5">
+                      <Button variant="outline" size="sm" onClick={handleStartScanning} className="gap-1.5">
                         <ScanLine className="h-3.5 w-3.5" /> Yeni Tara
                       </Button>
                     </div>
@@ -297,7 +331,7 @@ export default function ScannerPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Ekipman QR kodunu tarayarak veya yukarıdaki alana yazarak arayın.
                 </p>
-                <Button onClick={() => setScanning(true)} className="gap-2">
+                <Button onClick={handleStartScanning} className="gap-2">
                   <Camera className="h-4 w-4" /> Kamera ile Tara
                 </Button>
               </CardContent>
