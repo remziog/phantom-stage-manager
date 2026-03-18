@@ -92,7 +92,7 @@ export default function QuoteDetailPage() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={() => generateQuotePdf({ quote, lineItems, company })}
+            onClick={() => generateQuotePdf({ quote, lineItems, company, equipment })}
             disabled={lineItems.length === 0}
           >
             <Download className="h-4 w-4" /> PDF İndir
