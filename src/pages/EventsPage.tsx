@@ -138,55 +138,97 @@ export default function EventsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {filtered.map((event) => {
-              const days = Math.max(1, Math.ceil((new Date(event.end_date).getTime() - new Date(event.start_date).getTime()) / 86400000) + 1);
-              return (
-                <Card
-                  key={event.id}
-                  className={`phantom-shadow border-border/50 border-l-4 ${statusColors[event.status]} cursor-pointer transition-colors hover:bg-secondary/50`}
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground truncate">{event.name}</h3>
-                          <EventStatusBadge status={event.status} />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Building2 className="h-3 w-3" />
-                            {event.customer_name}
-                          </span>
-                          {event.venue && (
+          <>
+            {/* Desktop list */}
+            <div className="hidden md:block space-y-3">
+              {filtered.map((event) => {
+                const days = Math.max(1, Math.ceil((new Date(event.end_date).getTime() - new Date(event.start_date).getTime()) / 86400000) + 1);
+                return (
+                  <Card
+                    key={event.id}
+                    className={`phantom-shadow border-border/50 border-l-4 ${statusColors[event.status]} cursor-pointer transition-colors hover:bg-secondary/50`}
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground truncate">{event.name}</h3>
+                            <EventStatusBadge status={event.status} />
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.venue}
+                              <Building2 className="h-3 w-3" />
+                              {event.customer_name}
                             </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <CalendarDays className="h-3 w-3" />
-                            {fmt(event.start_date)}
-                            {event.start_date !== event.end_date && ` — ${fmt(event.end_date)}`}
-                            {" "}({days} gün)
+                            {event.venue && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {event.venue}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <CalendarDays className="h-3 w-3" />
+                              {fmt(event.start_date)}
+                              {event.start_date !== event.end_date && ` — ${fmt(event.end_date)}`}
+                              {" "}({days} gün)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {fmtFull(event.start_date)}
                           </span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground hidden sm:block">
-                          {fmtFull(event.start_date)}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Mobile card view */}
+            <div className="md:hidden space-y-3">
+              {filtered.map((event) => {
+                const days = Math.max(1, Math.ceil((new Date(event.end_date).getTime() - new Date(event.start_date).getTime()) / 86400000) + 1);
+                return (
+                  <div
+                    key={event.id}
+                    className={`rounded-lg bg-card p-4 phantom-shadow border-l-4 ${statusColors[event.status]} cursor-pointer hover:bg-secondary/50 transition-colors`}
+                    onClick={() => navigate(`/events/${event.id}`)}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-medium text-foreground truncate">{event.name}</h3>
+                      <EventStatusBadge status={event.status} />
+                    </div>
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{event.customer_name}</span>
+                      </div>
+                      {event.venue && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{event.venue}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <CalendarDays className="h-3 w-3 shrink-0" />
+                        <span>
+                          {fmt(event.start_date)}
+                          {event.start_date !== event.end_date && ` — ${fmt(event.end_date)}`}
+                          {" "}({days} gün)
                         </span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </DashboardLayout>
