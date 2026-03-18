@@ -30,6 +30,7 @@ export default function EquipmentPage() {
   const { role } = useAuth();
   const isCrew = role === "crew";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
