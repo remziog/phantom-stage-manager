@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { RevenueBarChart, EquipmentUtilizationPieChart, ExpenseBarChart, ExpenseCategoryPieChart } from "@/components/dashboard/DashboardCharts";
 import { EquipmentAlerts } from "@/components/dashboard/EquipmentAlerts";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { PendingExpensesAlert } from "@/components/dashboard/PendingExpensesAlert";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEvents } from "@/hooks/useEvents";
 import { useQuotes } from "@/hooks/useQuotes";
