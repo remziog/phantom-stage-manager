@@ -66,6 +66,20 @@ export default function ExpenseDetailPage() {
   const deleteExpense = useDeleteExpense();
   const isAdmin = role === "admin";
 
+  // Fetch approver profile name
+  const { data: approverName } = useQuery({
+    queryKey: ["profile", expense?.approved_by],
+    enabled: !!expense?.approved_by,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", expense!.approved_by!)
+        .single();
+      return data?.full_name || null;
+    },
+  });
+
   const [editOpen, setEditOpen] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
