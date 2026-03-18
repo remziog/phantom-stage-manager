@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Package, Calendar, FileText, TrendingUp, Users, Truck,
-  Building2, Clock, MapPin,
+  Building2, Clock, MapPin, Receipt,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
