@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { RevenueBarChart, EquipmentUtilizationPieChart, ExpenseBarChart, ExpenseCategoryPieChart } from "@/components/dashboard/DashboardCharts";
 import { EquipmentAlerts } from "@/components/dashboard/EquipmentAlerts";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { PendingExpensesAlert } from "@/components/dashboard/PendingExpensesAlert";
 import { useEquipment } from "@/hooks/useEquipment";
 import { useEvents } from "@/hooks/useEvents";
 import { useQuotes } from "@/hooks/useQuotes";
@@ -227,7 +228,9 @@ function AdminDashboard() {
       })()}
 
       {/* Bottom panels */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {/* Pending Expenses Alert */}
+        <PendingExpensesAlert expenses={expenses} />
         {/* Upcoming Events */}
         <Card className="phantom-shadow border-border/50">
           <CardHeader className="pb-3">
