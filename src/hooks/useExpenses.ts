@@ -21,6 +21,7 @@ export interface Expense {
   updated_at: string;
   // joined
   event_name?: string;
+  approved_by_name?: string | null;
 }
 
 export function useExpenses() {
