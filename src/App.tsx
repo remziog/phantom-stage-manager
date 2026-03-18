@@ -70,6 +70,7 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         <Route path="/request-quote" element={<ProtectedRoute><QuoteRequestPage /></ProtectedRoute>} />
         <Route path="/scanner" element={<ProtectedRoute><ScannerPage /></ProtectedRoute>} />
+        <Route path="/scan/:code" element={<ProtectedRoute><ScanRedirectPage /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
         <Route path="/expenses/:id" element={<ProtectedRoute><ExpenseDetailPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />

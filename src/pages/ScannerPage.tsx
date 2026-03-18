@@ -24,13 +24,24 @@ const conditionColors: Record<string, string> = {
 };
 
 export default function ScannerPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [scanning, setScanning] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState("");
   const [activeTab, setActiveTab] = useState("view");
   const [faultDialogOpen, setFaultDialogOpen] = useState(false);
 
   const { data: equipment = [] } = useEquipment();
   const { user } = useAuth();
+
+  // Handle code from URL query param (from ScanRedirectPage)
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl && equipment.length > 0) {
+      setScannedCode(codeFromUrl);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, equipment]);
 
   const matchedEquipment = scannedCode
     ? equipment.find((eq) => {
