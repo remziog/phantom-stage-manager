@@ -60,7 +60,7 @@ export default function QuotesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-tight text-foreground">
               {isAdmin ? "Teklifler & Teklifnameler" : "Tekliflerim"}
@@ -111,7 +111,8 @@ export default function QuotesPage() {
           </Select>
         </div>
 
-        <Card className="phantom-shadow border-border/50">
+        {/* Desktop table */}
+        <Card className="phantom-shadow border-border/50 hidden md:block">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
               <p className="text-sm text-muted-foreground">Teklifler yükleniyor…</p>
@@ -200,6 +201,93 @@ export default function QuotesPage() {
             </Table>
           )}
         </Card>
+
+        {/* Mobile card view */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="rounded-lg bg-card p-12 phantom-shadow flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">Teklifler yükleniyor…</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-lg bg-card p-12 phantom-shadow flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">Teklif bulunamadı.</p>
+            </div>
+          ) : (
+            filtered.map((q) => (
+              <div
+                key={q.id}
+                onClick={() => navigate(`/quotes/${q.id}`)}
+                className="rounded-lg bg-card p-4 phantom-shadow hover:bg-surface-hover transition-colors cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm text-primary">{q.quote_number}</p>
+                    <h3 className="font-medium text-foreground truncate">{q.customer_name}</h3>
+                  </div>
+                  <span className="text-sm font-medium text-foreground tabular-nums whitespace-nowrap">
+                    {fmt(q.total)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  <QuoteStatusBadge status={q.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div>
+                    <span className="text-muted-foreground">Etkinlik: </span>
+                    <span className="text-foreground">{q.event_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Tarih: </span>
+                    <span className="text-foreground">{fmtDate(q.event_date)}</span>
+                  </div>
+                </div>
+                {/* Actions */}
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  {isAdmin && q.status === "Draft" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => update.mutate({ id: q.id, status: "Sent" })}
+                    >
+                      Gönder
+                    </Button>
+                  )}
+                  {isAdmin && q.status === "Sent" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs text-[hsl(var(--success))]"
+                      onClick={() => update.mutate({ id: q.id, status: "Approved" })}
+                    >
+                      Onayla
+                    </Button>
+                  )}
+                  {!isAdmin && q.status === "Sent" && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs text-[hsl(var(--success))] border-[hsl(var(--success))]/30 hover:bg-[hsl(var(--success))]/10"
+                        onClick={() => update.mutate({ id: q.id, status: "Approved" })}
+                      >
+                        Onayla
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => update.mutate({ id: q.id, status: "Rejected" })}
+                      >
+                        Reddet
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
