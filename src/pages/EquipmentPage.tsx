@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, LayoutGrid, List, QrCode } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { QrCodePrintDialog } from "@/components/equipment/QrCodePrintDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type ViewMode = "table" | "grid";
