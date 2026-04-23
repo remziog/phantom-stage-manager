@@ -114,6 +114,9 @@ export default function OnboardingWizard() {
     const result = classify(description);
     setDetected({ industry: result.industry, confidence: result.confidence });
     setIndustry(result.industry);
+    // Reset modules to the detected industry's defaults (detection should override prior edits)
+    setEnabledModules(INDUSTRIES.find((i) => i.id === result.industry)?.modules ?? []);
+    setModulesTouched(false);
     // Pre-fill recommended tracks
     if (result.industry === "rental") setTracks(["assets", "reservations", "customers", "invoices"]);
     if (result.industry === "warehouse") setTracks(["assets", "customers", "invoices"]);
@@ -127,7 +130,7 @@ export default function OnboardingWizard() {
     try {
       await completeOnboarding(company.id, industry, {
         description, detected_industry: detected?.industry, detection_confidence: detected?.confidence,
-        locations, users, tracks, recommended_tier: recommended.name,
+        locations, users, tracks, enabled_modules: enabledModules, recommended_tier: recommended.name,
       });
       await refreshCompany();
       toast({ title: "Welcome aboard!", description: `Your ${selectedIndustry.label.toLowerCase()} workspace is ready.` });
