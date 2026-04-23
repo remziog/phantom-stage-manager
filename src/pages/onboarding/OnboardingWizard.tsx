@@ -84,12 +84,28 @@ export default function OnboardingWizard() {
   const [locations, setLocations] = useState<number>(1);
   const [users, setUsers] = useState<number>(1);
   const [tracks, setTracks] = useState<string[]>(["assets", "customers"]);
+  const [enabledModules, setEnabledModules] = useState<string[]>(INDUSTRIES[0].modules);
+  const [modulesTouched, setModulesTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const totalSteps = 6;
   const progress = (step / totalSteps) * 100;
   const recommended = recommendTier(users);
   const selectedIndustry = useMemo(() => INDUSTRIES.find((i) => i.id === industry)!, [industry]);
+
+  // When industry changes (and user hasn't manually edited modules yet), reset modules to the industry default.
+  const handleIndustryChange = (next: IndustryType) => {
+    setIndustry(next);
+    if (!modulesTouched) {
+      const defaults = INDUSTRIES.find((i) => i.id === next)?.modules ?? [];
+      setEnabledModules(defaults);
+    }
+  };
+
+  const toggleModule = (m: string) => {
+    setModulesTouched(true);
+    setEnabledModules((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]));
+  };
 
   const toggleTrack = (id: string) =>
     setTracks((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
