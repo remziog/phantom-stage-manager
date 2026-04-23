@@ -269,12 +269,45 @@ export default function OnboardingWizard() {
                   <p className="text-sm text-muted-foreground mt-1">{recommended.reason}</p>
                 </div>
                 <div className="border-t border-primary/20 pt-4">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Modules we'll enable</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedIndustry.modules.map((m) => (
-                      <Badge key={m} variant="secondary">{m}</Badge>
-                    ))}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Detected modules</div>
+                    {modulesTouched && (
+                      <button
+                        type="button"
+                        onClick={() => { setEnabledModules(selectedIndustry.modules); setModulesTouched(false); }}
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        Reset to defaults
+                      </button>
+                    )}
                   </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Toggle modules on or off — only enabled ones will appear in your sidebar.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {selectedIndustry.modules.map((m) => {
+                      const on = enabledModules.includes(m);
+                      return (
+                        <Label
+                          key={m}
+                          htmlFor={`mod-${m}`}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-md border cursor-pointer transition-colors ${
+                            on ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted/50"
+                          }`}
+                        >
+                          <Checkbox
+                            id={`mod-${m}`}
+                            checked={on}
+                            onCheckedChange={() => toggleModule(m)}
+                          />
+                          <span className={`text-sm ${on ? "" : "text-muted-foreground line-through"}`}>{m}</span>
+                        </Label>
+                      );
+                    })}
+                  </div>
+                  {enabledModules.length === 0 && (
+                    <p className="text-xs text-destructive mt-2">Enable at least one module to continue.</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm border-t border-primary/20 pt-4">
                   <div><span className="text-muted-foreground">Industry:</span> <span className="capitalize">{industry}</span></div>
