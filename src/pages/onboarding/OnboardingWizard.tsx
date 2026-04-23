@@ -189,7 +189,7 @@ export default function OnboardingWizard() {
                   ? `Detected from your description with ${Math.round(detected.confidence * 100)}% confidence. Confirm or pick another.`
                   : "We couldn't tell from the description — pick the option that fits best."}
               </CardDescription>
-              <RadioGroup value={industry} onValueChange={(v) => setIndustry(v as IndustryType)} className="grid gap-3">
+              <RadioGroup value={industry} onValueChange={(v) => handleIndustryChange(v as IndustryType)} className="grid gap-3">
                 {INDUSTRIES.map((opt) => {
                   const isDetected = detected?.industry === opt.id && detected.confidence > 0;
                   return (
