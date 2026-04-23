@@ -84,12 +84,28 @@ export default function OnboardingWizard() {
   const [locations, setLocations] = useState<number>(1);
   const [users, setUsers] = useState<number>(1);
   const [tracks, setTracks] = useState<string[]>(["assets", "customers"]);
+  const [enabledModules, setEnabledModules] = useState<string[]>(INDUSTRIES[0].modules);
+  const [modulesTouched, setModulesTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const totalSteps = 6;
   const progress = (step / totalSteps) * 100;
   const recommended = recommendTier(users);
   const selectedIndustry = useMemo(() => INDUSTRIES.find((i) => i.id === industry)!, [industry]);
+
+  // When industry changes (and user hasn't manually edited modules yet), reset modules to the industry default.
+  const handleIndustryChange = (next: IndustryType) => {
+    setIndustry(next);
+    if (!modulesTouched) {
+      const defaults = INDUSTRIES.find((i) => i.id === next)?.modules ?? [];
+      setEnabledModules(defaults);
+    }
+  };
+
+  const toggleModule = (m: string) => {
+    setModulesTouched(true);
+    setEnabledModules((p) => (p.includes(m) ? p.filter((x) => x !== m) : [...p, m]));
+  };
 
   const toggleTrack = (id: string) =>
     setTracks((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
@@ -98,6 +114,9 @@ export default function OnboardingWizard() {
     const result = classify(description);
     setDetected({ industry: result.industry, confidence: result.confidence });
     setIndustry(result.industry);
+    // Reset modules to the detected industry's defaults (detection should override prior edits)
+    setEnabledModules(INDUSTRIES.find((i) => i.id === result.industry)?.modules ?? []);
+    setModulesTouched(false);
     // Pre-fill recommended tracks
     if (result.industry === "rental") setTracks(["assets", "reservations", "customers", "invoices"]);
     if (result.industry === "warehouse") setTracks(["assets", "customers", "invoices"]);
@@ -111,7 +130,7 @@ export default function OnboardingWizard() {
     try {
       await completeOnboarding(company.id, industry, {
         description, detected_industry: detected?.industry, detection_confidence: detected?.confidence,
-        locations, users, tracks, recommended_tier: recommended.name,
+        locations, users, tracks, enabled_modules: enabledModules, recommended_tier: recommended.name,
       });
       await refreshCompany();
       toast({ title: "Welcome aboard!", description: `Your ${selectedIndustry.label.toLowerCase()} workspace is ready.` });
@@ -170,7 +189,7 @@ export default function OnboardingWizard() {
                   ? `Detected from your description with ${Math.round(detected.confidence * 100)}% confidence. Confirm or pick another.`
                   : "We couldn't tell from the description — pick the option that fits best."}
               </CardDescription>
-              <RadioGroup value={industry} onValueChange={(v) => setIndustry(v as IndustryType)} className="grid gap-3">
+              <RadioGroup value={industry} onValueChange={(v) => handleIndustryChange(v as IndustryType)} className="grid gap-3">
                 {INDUSTRIES.map((opt) => {
                   const isDetected = detected?.industry === opt.id && detected.confidence > 0;
                   return (
@@ -250,12 +269,45 @@ export default function OnboardingWizard() {
                   <p className="text-sm text-muted-foreground mt-1">{recommended.reason}</p>
                 </div>
                 <div className="border-t border-primary/20 pt-4">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Modules we'll enable</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedIndustry.modules.map((m) => (
-                      <Badge key={m} variant="secondary">{m}</Badge>
-                    ))}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Detected modules</div>
+                    {modulesTouched && (
+                      <button
+                        type="button"
+                        onClick={() => { setEnabledModules(selectedIndustry.modules); setModulesTouched(false); }}
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        Reset to defaults
+                      </button>
+                    )}
                   </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Toggle modules on or off — only enabled ones will appear in your sidebar.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {selectedIndustry.modules.map((m) => {
+                      const on = enabledModules.includes(m);
+                      return (
+                        <Label
+                          key={m}
+                          htmlFor={`mod-${m}`}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-md border cursor-pointer transition-colors ${
+                            on ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted/50"
+                          }`}
+                        >
+                          <Checkbox
+                            id={`mod-${m}`}
+                            checked={on}
+                            onCheckedChange={() => toggleModule(m)}
+                          />
+                          <span className={`text-sm ${on ? "" : "text-muted-foreground line-through"}`}>{m}</span>
+                        </Label>
+                      );
+                    })}
+                  </div>
+                  {enabledModules.length === 0 && (
+                    <p className="text-xs text-destructive mt-2">Enable at least one module to continue.</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm border-t border-primary/20 pt-4">
                   <div><span className="text-muted-foreground">Industry:</span> <span className="capitalize">{industry}</span></div>
@@ -279,7 +331,7 @@ export default function OnboardingWizard() {
           ) : step < totalSteps ? (
             <Button onClick={() => setStep((s) => s + 1)}>Next</Button>
           ) : (
-            <Button onClick={finish} disabled={submitting}>
+            <Button onClick={finish} disabled={submitting || enabledModules.length === 0}>
               {submitting ? "Setting up…" : "Enter my workspace"}
             </Button>
           )}
