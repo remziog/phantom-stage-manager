@@ -1,24 +1,16 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ApexLogo } from "@/components/ApexLogo";
 
-const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
-
+export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Sayfa bulunamadı</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Ana Sayfaya Dön
-        </a>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gradient-hero p-6">
+      <ApexLogo size="lg" />
+      <h1 className="text-6xl font-bold tracking-display mt-8">404</h1>
+      <p className="text-muted-foreground mt-2">This page doesn't exist.</p>
+      <Button asChild className="mt-6">
+        <Link to="/">Back to home</Link>
+      </Button>
     </div>
   );
-};
-
-export default NotFound;
+}
