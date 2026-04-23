@@ -13,6 +13,7 @@ import { ApexLogo } from "@/components/ApexLogo";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { completeOnboarding, type IndustryType } from "@/services/companies";
+import { logModuleChanges } from "@/services/moduleLog";
 import { Boxes, Warehouse, Truck, Sparkles, Wand2, CheckCircle2 } from "lucide-react";
 
 const TRACK_OPTIONS = [
@@ -74,7 +75,7 @@ function recommendTier(users: number): { name: string; reason: string } {
 
 export default function OnboardingWizard() {
   const navigate = useNavigate();
-  const { company, refreshCompany } = useAuth();
+  const { user, company, refreshCompany } = useAuth();
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -132,6 +133,15 @@ export default function OnboardingWizard() {
         description, detected_industry: detected?.industry, detection_confidence: detected?.confidence,
         locations, users, tracks, enabled_modules: enabledModules, recommended_tier: recommended.name,
       });
+      // Audit: every module the user finished onboarding with counts as "enabled" from a baseline of nothing.
+      await logModuleChanges({
+        companyId: company.id,
+        userId: user?.id ?? null,
+        userEmail: user?.email ?? null,
+        before: [],
+        after: enabledModules,
+        source: "onboarding",
+      }).catch((e) => console.error("Failed to log module changes:", e));
       await refreshCompany();
       toast({ title: "Welcome aboard!", description: `Your ${selectedIndustry.label.toLowerCase()} workspace is ready.` });
       navigate("/app");

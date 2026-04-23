@@ -326,6 +326,39 @@ export type Database = {
           },
         ]
       }
+      module_change_log: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          id: string
+          module: string
+          source: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          id?: string
+          module: string
+          source: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          module?: string
+          source?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
