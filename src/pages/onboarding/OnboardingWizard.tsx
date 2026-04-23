@@ -331,7 +331,7 @@ export default function OnboardingWizard() {
           ) : step < totalSteps ? (
             <Button onClick={() => setStep((s) => s + 1)}>Next</Button>
           ) : (
-            <Button onClick={finish} disabled={submitting}>
+            <Button onClick={finish} disabled={submitting || enabledModules.length === 0}>
               {submitting ? "Setting up…" : "Enter my workspace"}
             </Button>
           )}
