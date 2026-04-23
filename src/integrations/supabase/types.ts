@@ -525,6 +525,7 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      minute_bucket: { Args: { ts: string }; Returns: string }
     }
     Enums: {
       asset_status:

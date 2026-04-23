@@ -78,7 +78,16 @@ export async function logModuleChanges(input: {
 
   if (rows.length === 0) return;
 
-  const { error } = await supabase.from("module_change_log").insert(rows);
+  // The DB has a partial unique index `module_change_log_dedupe_idx` on
+  // (company_id, user_id, module, action, source, minute_bucket(created_at)).
+  // `ignoreDuplicates` makes any rapid duplicate insert a silent no-op, which
+  // belt-and-braces matches the client-side dedupe above.
+  const { error } = await supabase
+    .from("module_change_log")
+    .upsert(rows, {
+      onConflict: "company_id,user_id,module,action,source,minute_bucket",
+      ignoreDuplicates: true,
+    });
   if (error) throw error;
 }
 
