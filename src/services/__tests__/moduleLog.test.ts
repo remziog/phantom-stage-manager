@@ -38,7 +38,16 @@ function makeQuery(rows: Row[]) {
       this._rows = this._rows.filter((r) => vals.includes(r[col] as never));
       return this;
     },
-    order() { return this; },
+    order(col: keyof Row, opts?: { ascending?: boolean }) {
+      const asc = opts?.ascending ?? true;
+      this._rows = [...this._rows].sort((a, b) => {
+        const av = a[col] as string;
+        const bv = b[col] as string;
+        if (av === bv) return 0;
+        return asc ? (av < bv ? -1 : 1) : (av < bv ? 1 : -1);
+      });
+      return this;
+    },
     limit() { return this; },
     then(resolve: (v: { data: Row[]; error: null }) => void) {
       resolve({ data: this._rows, error: null });
