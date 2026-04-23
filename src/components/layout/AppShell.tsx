@@ -13,51 +13,67 @@ import {
   Settings, LogOut, Truck, Warehouse, MapPinned,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { getEnabledModules } from "@/lib/modules";
 
 type Industry = Database["public"]["Enums"]["industry_type"];
 
-type NavItem = { to: string; icon: React.ComponentType<{ className?: string }>; label: string; end?: boolean };
+type NavItem = {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  end?: boolean;
+  /** Module key (matches values stored in `company.settings.enabled_modules`). */
+  module?: string;
+};
 
-function navItems(industry: Industry | null | undefined): NavItem[] {
+/** All possible nav items per industry, each tagged with the module that gates it. */
+function allNavItems(industry: Industry | null | undefined): NavItem[] {
   const dash: NavItem = { to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true };
-  const customers: NavItem = { to: "/app/customers", icon: Users, label: "Customers" };
-  const reports: NavItem = { to: "/app/reports", icon: BarChart3, label: "Reports" };
+  const customers: NavItem = { to: "/app/customers", icon: Users, label: "Customers", module: "Customers" };
+  const reports: NavItem = { to: "/app/reports", icon: BarChart3, label: "Reports", module: "Reports" };
 
   if (industry === "warehouse") {
     return [
       dash,
-      { to: "/app/assets", icon: Warehouse, label: "Inventory" },
-      { to: "/app/reservations", icon: Boxes, label: "Movements" },
+      { to: "/app/assets", icon: Warehouse, label: "Inventory", module: "Inventory" },
+      { to: "/app/reservations", icon: Boxes, label: "Movements", module: "Movements" },
       customers,
-      { to: "/app/invoices", icon: FileText, label: "Orders" },
+      { to: "/app/invoices", icon: FileText, label: "Orders", module: "Orders" },
       reports,
     ];
   }
   if (industry === "logistics") {
     return [
       dash,
-      { to: "/app/reservations", icon: Truck, label: "Deliveries" },
-      { to: "/app/assets", icon: MapPinned, label: "Routes" },
+      { to: "/app/reservations", icon: Truck, label: "Deliveries", module: "Deliveries" },
+      { to: "/app/assets", icon: MapPinned, label: "Routes", module: "Routes" },
       customers,
-      { to: "/app/invoices", icon: FileText, label: "Invoices" },
+      { to: "/app/invoices", icon: FileText, label: "Invoices", module: "Invoices" },
       reports,
     ];
   }
   // default rental + mixed
   return [
     dash,
-    { to: "/app/assets", icon: Boxes, label: "Assets" },
-    { to: "/app/reservations", icon: CalendarRange, label: "Reservations" },
+    { to: "/app/assets", icon: Boxes, label: "Assets", module: "Assets" },
+    { to: "/app/reservations", icon: CalendarRange, label: "Reservations", module: "Reservations" },
     customers,
-    { to: "/app/invoices", icon: FileText, label: "Invoices" },
+    { to: "/app/invoices", icon: FileText, label: "Invoices", module: "Invoices" },
     reports,
   ];
+}
+
+/** Filter nav items by the modules the user enabled during onboarding. */
+function navItems(industry: Industry | null | undefined, enabled: string[]): NavItem[] {
+  const enabledSet = new Set(enabled);
+  return allNavItems(industry).filter((item) => !item.module || enabledSet.has(item.module));
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, profile, company, signOut } = useAuth();
   const location = useLocation();
-  const items = navItems(company?.industry_type);
+  const enabledModules = getEnabledModules(company?.settings, company?.industry_type);
+  const items = navItems(company?.industry_type, enabledModules);
 
   const initials = (profile?.full_name || user?.email || "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
