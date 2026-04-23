@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
+import { getEnabledModules, getEnabledPaths } from "@/lib/modules";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -39,7 +40,16 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function ProtectedRoute({ children, requiresCompany = true }: { children: React.ReactNode; requiresCompany?: boolean }) {
+function ProtectedRoute({
+  children,
+  requiresCompany = true,
+  path,
+}: {
+  children: React.ReactNode;
+  requiresCompany?: boolean;
+  /** When set, the route is only accessible if its path is in the company's enabled modules. */
+  path?: string;
+}) {
   const { user, loading, company } = useAuth();
   if (loading) {
     return (
@@ -52,6 +62,11 @@ function ProtectedRoute({ children, requiresCompany = true }: { children: React.
   if (requiresCompany && !company) return <Navigate to="/create-company" replace />;
   if (requiresCompany && company && !company.onboarding_completed) {
     return <Navigate to="/onboarding" replace />;
+  }
+  // Module gating — only check after onboarding is complete and a path is provided.
+  if (path && company?.onboarding_completed) {
+    const enabled = getEnabledPaths(getEnabledModules(company.settings, company.industry_type));
+    if (!enabled.has(path)) return <Navigate to="/app" replace />;
   }
   return <>{children}</>;
 }
@@ -71,11 +86,11 @@ function AppRoutes() {
 
       {/* App */}
       <Route path="/app" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/app/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
-      <Route path="/app/reservations" element={<ProtectedRoute><ReservationsPage /></ProtectedRoute>} />
-      <Route path="/app/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-      <Route path="/app/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
-      <Route path="/app/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      <Route path="/app/assets" element={<ProtectedRoute path="/app/assets"><AssetsPage /></ProtectedRoute>} />
+      <Route path="/app/reservations" element={<ProtectedRoute path="/app/reservations"><ReservationsPage /></ProtectedRoute>} />
+      <Route path="/app/customers" element={<ProtectedRoute path="/app/customers"><CustomersPage /></ProtectedRoute>} />
+      <Route path="/app/invoices" element={<ProtectedRoute path="/app/invoices"><InvoicesPage /></ProtectedRoute>} />
+      <Route path="/app/reports" element={<ProtectedRoute path="/app/reports"><ReportsPage /></ProtectedRoute>} />
       <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
