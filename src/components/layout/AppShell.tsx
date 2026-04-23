@@ -16,10 +16,12 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Industry = Database["public"]["Enums"]["industry_type"];
 
-function navItems(industry: Industry | null | undefined) {
-  const dash = { to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true };
-  const customers = { to: "/app/customers", icon: Users, label: "Customers" };
-  const reports = { to: "/app/reports", icon: BarChart3, label: "Reports" };
+type NavItem = { to: string; icon: React.ComponentType<{ className?: string }>; label: string; end?: boolean };
+
+function navItems(industry: Industry | null | undefined): NavItem[] {
+  const dash: NavItem = { to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true };
+  const customers: NavItem = { to: "/app/customers", icon: Users, label: "Customers" };
+  const reports: NavItem = { to: "/app/reports", icon: BarChart3, label: "Reports" };
 
   if (industry === "warehouse") {
     return [

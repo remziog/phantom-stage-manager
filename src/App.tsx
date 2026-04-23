@@ -4,76 +4,81 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import EquipmentPage from "./pages/EquipmentPage";
-import EquipmentDetailPage from "./pages/EquipmentDetailPage";
-import TeamPage from "./pages/TeamPage";
-import LogisticsPage from "./pages/LogisticsPage";
-import CustomersPage from "./pages/CustomersPage";
-import CustomerDetailPage from "./pages/CustomerDetailPage";
-import QuotesPage from "./pages/QuotesPage";
-import QuoteDetailPage from "./pages/QuoteDetailPage";
-import EventsPage from "./pages/EventsPage";
-import EventDetailPage from "./pages/EventDetailPage";
-import SettingsPage from "./pages/SettingsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import QuoteRequestPage from "./pages/QuoteRequestPage";
-import PublicQuoteRequestPage from "./pages/PublicQuoteRequestPage";
-import ScannerPage from "./pages/ScannerPage";
-import ScanRedirectPage from "./pages/ScanRedirectPage";
-import ExpensesPage from "./pages/ExpensesPage";
-import ExpenseDetailPage from "./pages/ExpenseDetailPage";
+import { useEffect } from "react";
+
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import CreateCompanyPage from "./pages/onboarding/CreateCompanyPage";
+import OnboardingWizard from "./pages/onboarding/OnboardingWizard";
+import DashboardPage from "./pages/app/DashboardPage";
+import AssetsPage from "./pages/app/rental/AssetsPage";
+import ReservationsPage from "./pages/app/rental/ReservationsPage";
+import CustomersPage from "./pages/app/rental/CustomersPage";
+import InvoicesPage from "./pages/app/rental/InvoicesPage";
+import ReportsPage from "./pages/app/rental/ReportsPage";
+import SettingsPage from "./pages/app/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-  
-  if (!user) return <Navigate to="/login" replace />;
+function ApplyTheme({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const stored = localStorage.getItem("apex-theme");
+    const dark = stored ? stored === "dark" : true;
+    document.documentElement.classList.toggle("dark", dark);
+  }, []);
   return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/app" replace />;
+  return <>{children}</>;
+}
+
+function ProtectedRoute({ children, requiresCompany = true }: { children: React.ReactNode; requiresCompany?: boolean }) {
+  const { user, loading, company } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (requiresCompany && !company) return <Navigate to="/create-company" replace />;
+  if (requiresCompany && company && !company.onboarding_completed) {
+    return <Navigate to="/onboarding" replace />;
+  }
   return <>{children}</>;
 }
 
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/request-quote-public" element={<PublicQuoteRequestPage />} />
-      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/equipment" element={<ProtectedRoute><EquipmentPage /></ProtectedRoute>} />
-      <Route path="/equipment/:id" element={<ProtectedRoute><EquipmentDetailPage /></ProtectedRoute>} />
-      <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
-      <Route path="/logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-      <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetailPage /></ProtectedRoute>} />
-      <Route path="/quotes" element={<ProtectedRoute><QuotesPage /></ProtectedRoute>} />
-      <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetailPage /></ProtectedRoute>} />
-      <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
-      <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-      <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-        <Route path="/request-quote" element={<ProtectedRoute><QuoteRequestPage /></ProtectedRoute>} />
-        <Route path="/scanner" element={<ProtectedRoute><ScannerPage /></ProtectedRoute>} />
-        <Route path="/scan/:code" element={<ProtectedRoute><ScanRedirectPage /></ProtectedRoute>} />
-        <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
-        <Route path="/expenses/:id" element={<ProtectedRoute><ExpenseDetailPage /></ProtectedRoute>} />
-        <Route path="*" element={<NotFound />} />
+      <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Onboarding (logged-in but no company / wizard incomplete) */}
+      <Route path="/create-company" element={<ProtectedRoute requiresCompany={false}><CreateCompanyPage /></ProtectedRoute>} />
+      <Route path="/onboarding" element={<ProtectedRoute requiresCompany={false}><OnboardingWizard /></ProtectedRoute>} />
+
+      {/* App */}
+      <Route path="/app" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/app/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
+      <Route path="/app/reservations" element={<ProtectedRoute><ReservationsPage /></ProtectedRoute>} />
+      <Route path="/app/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
+      <Route path="/app/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+      <Route path="/app/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
@@ -81,13 +86,15 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+      <ApplyTheme>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </ApplyTheme>
     </TooltipProvider>
   </QueryClientProvider>
 );
