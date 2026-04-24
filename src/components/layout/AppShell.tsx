@@ -77,6 +77,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const enabledModules = getEnabledModules(company?.settings, company?.industry_type);
   const items = navItems(company?.industry_type, enabledModules);
 
+  // Resolve the caller's role inside the current company so we can show
+  // admin-only nav links (e.g. CSV analytics). RLS still enforces access
+  // on the page itself — this is purely UX.
+  const { data: role } = useQuery({
+    queryKey: ["company-role", company?.id ?? "", user?.id ?? ""],
+    queryFn: () => fetchCurrentMemberRole(company!.id, user!.id),
+    enabled: !!company?.id && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+  const isAdmin = role === "owner" || role === "admin";
+
   const initials = (profile?.full_name || user?.email || "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
