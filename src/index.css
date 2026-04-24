@@ -128,4 +128,16 @@
     -webkit-text-fill-color: transparent;
   }
   .tracking-display { letter-spacing: -0.02em; }
+
+  /* Brief flash highlight used to draw the eye to a CSV cell after an
+     undo/redo or a "Jump to cell" action from a toast. */
+  @keyframes csv-cell-flash {
+    0%   { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); background-color: hsl(var(--primary) / 0); }
+    15%  { box-shadow: 0 0 0 4px hsl(var(--primary) / 0.45); background-color: hsl(var(--primary) / 0.18); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); background-color: hsl(var(--primary) / 0); }
+  }
+  .csv-cell-flash {
+    animation: csv-cell-flash 1.2s ease-out;
+    border-radius: 0.375rem;
+  }
 }
