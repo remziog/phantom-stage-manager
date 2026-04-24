@@ -37,8 +37,9 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download,
 } from "lucide-react";
+import { rowsToCsv, type CsvRow } from "@/lib/csv";
 
 type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
 
@@ -432,6 +433,53 @@ export default function AdminUpdateRequestsPage() {
 
   const clearSelection = () => setSelected(new Set());
 
+  /**
+   * Build a CSV from the selected requests and trigger a browser download.
+   * Includes customer info, status, the requested values per editable field,
+   * the customer message, and metadata so the file is self-contained for
+   * offline review.
+   */
+  const exportSelectedCsv = () => {
+    if (selectedRequests.length === 0) return;
+    const headers = [
+      "request_id",
+      "submitted_at",
+      "status",
+      "customer_name",
+      "customer_email",
+      ...EDITABLE_FIELDS.map((f) => `requested_${f}`),
+      "message",
+    ];
+    const rows: CsvRow[] = selectedRequests.map((r) => {
+      const row: CsvRow = {
+        request_id: r.id,
+        submitted_at: new Date(r.created_at).toISOString(),
+        status: r.status,
+        customer_name: r.customer?.name ?? "",
+        customer_email: r.customer?.email ?? "",
+        message: r.message ?? "",
+      };
+      for (const f of EDITABLE_FIELDS) {
+        row[`requested_${f}`] = (r[f] as string | null) ?? "";
+      }
+      return row;
+    });
+    const csv = rowsToCsv(headers, rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `update-requests-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({
+      title: `Exported ${selectedRequests.length} request${selectedRequests.length === 1 ? "" : "s"}`,
+    });
+  };
+
   // Bulk approve/reject — runs items in parallel and reports a combined result.
   const bulkMut = useMutation({
     mutationFn: async (action: "approve" | "reject") => {
@@ -563,6 +611,15 @@ export default function AdminUpdateRequestsPage() {
                       Clear
                     </Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={exportSelectedCsv}
+                    disabled={bulkBusy || selectedCount === 0}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Export CSV
+                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"
