@@ -23,6 +23,7 @@ import ReportsPage from "./pages/app/rental/ReportsPage";
 import SettingsPage from "./pages/app/SettingsPage";
 import CsvAnalyticsPage from "./pages/app/admin/CsvAnalyticsPage";
 import CsvFieldDetailPage from "./pages/app/admin/CsvFieldDetailPage";
+import CustomerPortalPage from "./pages/app/portal/CustomerPortalPage";
 import NotFound from "./pages/NotFound";
 import { RoleGate } from "@/components/RoleGate";
 
