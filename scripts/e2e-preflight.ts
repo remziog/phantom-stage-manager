@@ -25,6 +25,27 @@ const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/s
 const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
 
 /**
+ * Which kinds of baseline-diff changes should fail CI.
+ *
+ *   PREFLIGHT_FAIL_ON=any            → fail on ANY diff (added/removed/regressed/fixed)
+ *   PREFLIGHT_FAIL_ON=regressions    → fail only on missing tables/columns/enums (DEFAULT)
+ *   PREFLIGHT_FAIL_ON=removed        → fail only on tables/columns/enums removed vs baseline
+ *   PREFLIGHT_FAIL_ON=regressions,removed → combine multiple categories with commas
+ *   PREFLIGHT_FAIL_ON=none           → never fail on the diff (live-schema errors still fail)
+ *
+ * The hard live-schema check (missing tables/columns/enums in the CURRENT DB)
+ * always exits non-zero regardless of this setting.
+ */
+type FailMode = "any" | "regressions" | "removed" | "none";
+const FAIL_ON: Set<FailMode> = new Set(
+  (process.env.PREFLIGHT_FAIL_ON ?? "regressions")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is FailMode => ["any", "regressions", "removed", "none"].includes(s)),
+);
+if (FAIL_ON.size === 0) FAIL_ON.add("regressions");
+
+/**
  * Sanitize the Supabase URL for the snapshot — keeps the project ref so you can
  * tell snapshots apart, but drops anything that could leak credentials.
  */
@@ -380,9 +401,44 @@ function logDiffToConsole(d: SchemaDiff, baselinePath: string): void {
   log("fixed", d.nowFixed);
 }
 
+/**
+ * Decide whether the diff should fail CI based on PREFLIGHT_FAIL_ON.
+ * Returns a list of human-readable reasons (empty = don't fail).
+ */
+function evaluateDiffFailures(d: SchemaDiff): string[] {
+  if (FAIL_ON.has("none")) return [];
+  const reasons: string[] = [];
+  const matches = (mode: FailMode) => FAIL_ON.has("any") || FAIL_ON.has(mode);
+
+  if (matches("regressions") && d.newlyMissing.length > 0) {
+    reasons.push(`${d.newlyMissing.length} regression(s): ${d.newlyMissing.join(", ")}`);
+  }
+  if (matches("removed")) {
+    if (d.removedTables.length > 0) {
+      reasons.push(`${d.removedTables.length} removed table(s): ${d.removedTables.join(", ")}`);
+    }
+    if (d.removedColumns.length > 0) {
+      reasons.push(`${d.removedColumns.length} removed column(s): ${d.removedColumns.join(", ")}`);
+    }
+    if (d.removedEnums.length > 0) {
+      reasons.push(`${d.removedEnums.length} removed enum value(s): ${d.removedEnums.join(", ")}`);
+    }
+  }
+  if (FAIL_ON.has("any")) {
+    if (d.addedTables.length) reasons.push(`${d.addedTables.length} added table(s)`);
+    if (d.addedColumns.length) reasons.push(`${d.addedColumns.length} added column(s)`);
+    if (d.addedEnums.length) reasons.push(`${d.addedEnums.length} added enum value(s)`);
+  }
+  return reasons;
+}
+
 // ─────────────────────────────────────────────────────────────────
 
-function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
+function writeStepSummary(
+  snapshotPath: string,
+  diffLines: string[],
+  diffFailureReasons: string[],
+): void {
   if (!STEP_SUMMARY) return;
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");
@@ -390,6 +446,7 @@ function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
   lines.push("## E2E preflight — schema check");
   lines.push("");
   lines.push(`Project: \`${sanitizeUrl(SUPABASE_URL)}\``);
+  lines.push(`Fail mode: \`PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")}\``);
   lines.push("");
   if (findings.length === 0) {
     lines.push("✅ All required tables, columns, and enum values are present.");
@@ -414,6 +471,11 @@ function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
   if (diffLines.length > 0) {
     lines.push("");
     lines.push(...diffLines);
+  }
+  if (diffFailureReasons.length > 0) {
+    lines.push("");
+    lines.push(`### 🛑 CI failure triggered by diff (\`PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")}\`)`);
+    for (const r of diffFailureReasons) lines.push(`- ${r}`);
   }
   appendFileSync(STEP_SUMMARY, lines.join("\n") + "\n");
 }
@@ -449,14 +511,16 @@ async function main(): Promise<void> {
 
   // Optional: diff against a previous snapshot artifact if the user provided one.
   let diffLines: string[] = [];
+  let diffFailureReasons: string[] = [];
   const baseline = loadBaseline(BASELINE_PATH);
   if (baseline) {
     const diff = diffSnapshots(baseline, buildCurrentSnapshot());
     logDiffToConsole(diff, BASELINE_PATH);
     diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+    diffFailureReasons = evaluateDiffFailures(diff);
   }
 
-  writeStepSummary(snapshotPath, diffLines);
+  writeStepSummary(snapshotPath, diffLines, diffFailureReasons);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
@@ -470,6 +534,15 @@ async function main(): Promise<void> {
       "or run a migration to restore the expected columns/enums.",
     );
     console.error(`\nSnapshot for local diff: ${snapshotPath}`);
+    process.exit(1);
+  }
+
+  if (diffFailureReasons.length > 0) {
+    console.error(
+      `\n[preflight] ❌ Failing because PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")} matched:`,
+    );
+    for (const r of diffFailureReasons) console.error(`  - ${r}`);
+    console.error(`\nSnapshot: ${snapshotPath}`);
     process.exit(1);
   }
 
