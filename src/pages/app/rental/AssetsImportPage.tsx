@@ -985,7 +985,7 @@ export default function AssetsImportPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto" data-csv-editor="true">
+                  <div className="overflow-x-auto" data-csv-editor="true" onKeyDown={handleEditorKeyDown}>
                     <Table>
                       <TableHeader>
                         <TableRow>
