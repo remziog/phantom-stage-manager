@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { listCustomers, createCustomer, deleteCustomer } from "@/services/customers";
 import { Plus, Search, Trash2 } from "lucide-react";
+import { PermissionGate } from "@/components/PermissionGate";
 
 export default function CustomersPage() {
   const { user, company } = useAuth();
@@ -74,7 +75,11 @@ export default function CustomersPage() {
             <p className="text-sm text-muted-foreground">{customers.length} total</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New customer</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <PermissionGate permission="manage:customers">
+                <Button><Plus className="h-4 w-4 mr-2" />New customer</Button>
+              </PermissionGate>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Add customer</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-3">
@@ -121,9 +126,11 @@ export default function CustomersPage() {
                     <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{c.tax_id || "—"}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => deleteMut.mutate(c.id)} aria-label="Delete">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <PermissionGate permission="manage:customers" hideWhenDenied>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMut.mutate(c.id)} aria-label="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </PermissionGate>
                     </TableCell>
                   </TableRow>
                 ))}
