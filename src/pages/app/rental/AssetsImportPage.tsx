@@ -219,7 +219,7 @@ export default function AssetsImportPage() {
   /** Re-feed the just-failed rows back into the importer as a synthesized
    * CSV file. Uses only the original headers so re-validation runs cleanly
    * (the diagnostic `_line`/`_error` columns from the download are dropped). */
-  const reuploadFailedRows = () => {
+  const reuploadFailedRows = async () => {
     const s = lastRunSummary;
     if (!s || s.failedRows.length === 0) return;
     const csv = rowsToCsv(
@@ -230,7 +230,16 @@ export default function AssetsImportPage() {
     const file = new File([csv], `${base}-failed-rows.csv`, { type: "text/csv" });
     // Clear the summary so it doesn't shadow the new upload state.
     setLastRunSummary(null);
-    void handleFile(file);
+    await handleFile(file);
+    // Wait for the next paint so the freshly-mounted preview has dimensions,
+    // then scroll the import step into view and move keyboard focus to it
+    // so screen readers and keyboard users land on the revalidated rows.
+    requestAnimationFrame(() => {
+      const el = importStepRef.current;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.focus({ preventScroll: true });
+    });
   };
 
   const handleCancel = () => {
