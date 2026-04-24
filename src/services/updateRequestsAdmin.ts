@@ -13,20 +13,32 @@ export interface UpdateRequestWithCustomer extends UpdateRequest {
   customer: { id: string; name: string; email: string | null } | null;
 }
 
-/** List requests for a company, optionally filtered by status. */
+/** List requests for a company, optionally filtered by status. Customer
+ *  info is fetched in a second query (no FK relationship is defined, so
+ *  PostgREST joins aren't available). */
 export async function listUpdateRequests(
   companyId: string,
   status?: UpdateRequestStatus,
 ): Promise<UpdateRequestWithCustomer[]> {
   let q = supabase
     .from("customer_update_requests")
-    .select("*, customer:customers(id, name, email)")
+    .select("*")
     .eq("company_id", companyId)
     .order("created_at", { ascending: false });
   if (status) q = q.eq("status", status);
-  const { data, error } = await q;
+  const { data: requests, error } = await q;
   if (error) throw error;
-  return (data ?? []) as UpdateRequestWithCustomer[];
+  if (!requests || requests.length === 0) return [];
+
+  const customerIds = Array.from(new Set(requests.map((r) => r.customer_id)));
+  const { data: customers, error: cErr } = await supabase
+    .from("customers")
+    .select("id, name, email")
+    .in("id", customerIds);
+  if (cErr) throw cErr;
+
+  const byId = new Map((customers ?? []).map((c) => [c.id, c]));
+  return requests.map((r) => ({ ...r, customer: byId.get(r.customer_id) ?? null }));
 }
 
 /** Fields a customer can request changes to. Mirrors the portal page. */
