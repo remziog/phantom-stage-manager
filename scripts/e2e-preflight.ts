@@ -470,14 +470,16 @@ async function main(): Promise<void> {
 
   // Optional: diff against a previous snapshot artifact if the user provided one.
   let diffLines: string[] = [];
+  let diffFailureReasons: string[] = [];
   const baseline = loadBaseline(BASELINE_PATH);
   if (baseline) {
     const diff = diffSnapshots(baseline, buildCurrentSnapshot());
     logDiffToConsole(diff, BASELINE_PATH);
     diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+    diffFailureReasons = evaluateDiffFailures(diff);
   }
 
-  writeStepSummary(snapshotPath, diffLines);
+  writeStepSummary(snapshotPath, diffLines, diffFailureReasons);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
@@ -491,6 +493,15 @@ async function main(): Promise<void> {
       "or run a migration to restore the expected columns/enums.",
     );
     console.error(`\nSnapshot for local diff: ${snapshotPath}`);
+    process.exit(1);
+  }
+
+  if (diffFailureReasons.length > 0) {
+    console.error(
+      `\n[preflight] ❌ Failing because PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")} matched:`,
+    );
+    for (const r of diffFailureReasons) console.error(`  - ${r}`);
+    console.error(`\nSnapshot: ${snapshotPath}`);
     process.exit(1);
   }
 
