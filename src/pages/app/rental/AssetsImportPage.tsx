@@ -65,6 +65,11 @@ export default function AssetsImportPage() {
   // Summary of the most recent completed import. When `wasResume` is true we
   // render a breakdown that separates rows saved in the previous (cancelled)
   // run from rows saved in the just-finished resumed run.
+  interface FailedRowSnapshot {
+    lineNumber: number;
+    raw: Record<string, string>;
+    message: string;
+  }
   interface RunSummary {
     wasResume: boolean;
     previousInserted: number;
@@ -74,6 +79,10 @@ export default function AssetsImportPage() {
     failed: number;
     skipped: number;
     fileName: string;
+    /** Headers captured at the time of the run, used for CSV export. */
+    headers: string[];
+    /** Per-row failures from the just-finished run, with error messages. */
+    failedRows: FailedRowSnapshot[];
   }
   const [lastRunSummary, setLastRunSummary] = useState<RunSummary | null>(null);
 
@@ -152,6 +161,17 @@ export default function AssetsImportPage() {
         failed: res.failed.length,
         skipped,
         fileName: fileName ?? "import.csv",
+        headers,
+        failedRows: res.failed.map((f) => {
+          // `f.index` is relative to the slice handed to importAssets — translate
+          // back to the original validRows index so we can recover the raw CSV row.
+          const source = validRows[res.startIndex + f.index];
+          return {
+            lineNumber: source?.lineNumber ?? -1,
+            raw: source?.raw ?? {},
+            message: f.message,
+          };
+        }),
       });
       setResume(null);
       toast({
@@ -173,6 +193,26 @@ export default function AssetsImportPage() {
       toast({ title: "Import failed", description: (e as Error).message, variant: "destructive" });
     },
   });
+
+  /** Download the failed rows from the most recent run as a CSV, preserving
+   * the original columns and appending `_line` and `_error` for diagnosis. */
+  const downloadFailedRows = () => {
+    const s = lastRunSummary;
+    if (!s || s.failedRows.length === 0) return;
+    const cols = [...s.headers, "_line", "_error"];
+    const csv = rowsToCsv(
+      cols,
+      s.failedRows.map((r) => ({ ...r.raw, _line: String(r.lineNumber), _error: r.message })),
+    );
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const base = s.fileName.replace(/\.csv$/i, "");
+    a.href = url;
+    a.download = `${base}-failed-rows.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
@@ -577,6 +617,12 @@ export default function AssetsImportPage() {
                       <Button size="sm" onClick={() => navigate("/app/assets")}>
                         Go to assets
                       </Button>
+                      {s.failedRows.length > 0 && (
+                        <Button size="sm" variant="outline" onClick={downloadFailedRows}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download failed rows ({s.failedRows.length})
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => setLastRunSummary(null)}>
                         Dismiss
                       </Button>
