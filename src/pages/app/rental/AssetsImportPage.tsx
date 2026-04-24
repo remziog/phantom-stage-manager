@@ -96,6 +96,8 @@ export default function AssetsImportPage() {
     mutationFn: (startIndex: number = 0) => {
       const controller = new AbortController();
       abortRef.current = controller;
+      // Clear any prior summary so it doesn't appear stale during the new run.
+      setLastRunSummary(null);
       const slice = validRows.slice(startIndex).map((r) => r.parsed);
       return importAssets(cid, user!.id, slice, {
         onProgress: (p) => setProgress(p),
