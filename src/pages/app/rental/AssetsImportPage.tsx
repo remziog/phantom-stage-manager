@@ -45,6 +45,11 @@ export default function AssetsImportPage() {
   // time a file is validated. Used to power the per-row and global "Undo
   // edits" actions on the Row errors card.
   const originalRawByLine = useRef<Map<number, Record<string, string>>>(new Map());
+  // Stack of inline edits in the order they were made. Each entry captures
+  // the value *before* the change so Cmd/Ctrl+Z can step back one edit at a
+  // time. Cleared whenever a new file is loaded or all edits are reverted.
+  interface EditHistoryEntry { lineNumber: number; field: string; prevValue: string; }
+  const editHistory = useRef<EditHistoryEntry[]>([]);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
