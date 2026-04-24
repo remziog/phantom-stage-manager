@@ -481,14 +481,19 @@ export default function AssetsImportPage() {
 
   // Keyboard shortcuts for the inline editor:
   //   Cmd/Ctrl+Z         → undo the most recent inline edit
-  //   Shift+Cmd/Ctrl+Z   → revert all inline edits to the originally-uploaded values
+  //   Cmd/Ctrl+Y         → redo the last undone edit
+  //   Shift+Cmd/Ctrl+Z   → also redo (matches standard editor conventions)
   // Only active while there are invalid rows being edited and we're not in
   // the middle of an import.
   useEffect(() => {
     if (invalidRows.length === 0 || isImporting) return;
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod || e.key.toLowerCase() !== "z") return;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      const isUndoKey = key === "z" && !e.shiftKey;
+      const isRedoKey = key === "y" || (key === "z" && e.shiftKey);
+      if (!isUndoKey && !isRedoKey) return;
       // Ignore when focus is on a non-editor field (e.g. another text input
       // outside the row-errors table) so we don't hijack the browser's
       // native undo elsewhere on the page.
@@ -496,10 +501,16 @@ export default function AssetsImportPage() {
       const insideEditor = !!target?.closest('[data-csv-editor="true"]');
       const onBody = target === document.body;
       if (!insideEditor && !onBody) return;
-      if (e.shiftKey) {
-        if (!hasAnyEdits) return;
+      if (isRedoKey) {
+        if (redoHistory.current.length === 0) return;
         e.preventDefault();
-        undoAllEdits();
+        const redone = redoLastEdit();
+        if (redone) {
+          toast({
+            title: "Edit redone",
+            description: `${redoHistory.current.length} undone edit${redoHistory.current.length === 1 ? "" : "s"} remain available to redo.`,
+          });
+        }
       } else {
         if (editHistory.current.length === 0) return;
         e.preventDefault();
@@ -515,7 +526,7 @@ export default function AssetsImportPage() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invalidRows.length, isImporting, hasAnyEdits]);
+  }, [invalidRows.length, isImporting]);
 
   const canImport =
     !!cid &&
