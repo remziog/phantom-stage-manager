@@ -514,7 +514,28 @@ export default function AssetsImportPage() {
     });
   };
 
-  const handleCancel = () => {
+  /** Find the first invalid input rendered inside the editor (DOM order
+   * mirrors row → cell order, which is row-then-column), scroll it into
+   * view, and move keyboard focus to it. The visual focus ring + the
+   * existing inline error badge make the target unmistakable. */
+  const goToFirstError = () => {
+    if (invalidRows.length === 0) return;
+    // Defer to the next frame so any pending re-validation has finished
+    // committing to the DOM before we query.
+    requestAnimationFrame(() => {
+      const editor = document.querySelector('[data-csv-editor="true"]');
+      const target = editor?.querySelector<HTMLInputElement>(
+        'input[aria-invalid="true"]',
+      );
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+      // Place the caret at the end so users can immediately start fixing.
+      const len = target.value.length;
+      try { target.setSelectionRange(len, len); } catch { /* number inputs etc. */ }
+    });
+  };
+
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
     abortRef.current.abort();
