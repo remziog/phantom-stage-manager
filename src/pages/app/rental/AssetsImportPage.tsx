@@ -62,6 +62,21 @@ export default function AssetsImportPage() {
   }
   const [resume, setResume] = useState<ResumeCheckpoint | null>(null);
 
+  // Summary of the most recent completed import. When `wasResume` is true we
+  // render a breakdown that separates rows saved in the previous (cancelled)
+  // run from rows saved in the just-finished resumed run.
+  interface RunSummary {
+    wasResume: boolean;
+    previousInserted: number;
+    previousUpdated: number;
+    runInserted: number;
+    runUpdated: number;
+    failed: number;
+    skipped: number;
+    fileName: string;
+  }
+  const [lastRunSummary, setLastRunSummary] = useState<RunSummary | null>(null);
+
   const headerCheck = useMemo(
     () => (headers.length ? validateAssetHeaders(headers) : null),
     [headers],
@@ -81,6 +96,8 @@ export default function AssetsImportPage() {
     mutationFn: (startIndex: number = 0) => {
       const controller = new AbortController();
       abortRef.current = controller;
+      // Clear any prior summary so it doesn't appear stale during the new run.
+      setLastRunSummary(null);
       const slice = validRows.slice(startIndex).map((r) => r.parsed);
       return importAssets(cid, user!.id, slice, {
         onProgress: (p) => setProgress(p),
@@ -119,17 +136,35 @@ export default function AssetsImportPage() {
       }
 
       const skipped = invalidRows.length;
-      const totalInserted = (resume?.inserted ?? 0) + res.inserted;
-      const totalUpdated = (resume?.updated ?? 0) + res.updated;
+      const previousInserted = resume?.inserted ?? 0;
+      const previousUpdated = resume?.updated ?? 0;
+      const wasResume = !!resume;
+      const totalInserted = previousInserted + res.inserted;
+      const totalUpdated = previousUpdated + res.updated;
       const partial = res.failed.length > 0 ? `, ${res.failed.length} failed` : "";
+
+      setLastRunSummary({
+        wasResume,
+        previousInserted,
+        previousUpdated,
+        runInserted: res.inserted,
+        runUpdated: res.updated,
+        failed: res.failed.length,
+        skipped,
+        fileName: fileName ?? "import.csv",
+      });
       setResume(null);
       toast({
-        title: "Import complete",
-        description: `${totalInserted} added, ${totalUpdated} updated${
-          skipped ? `, ${skipped} skipped` : ""
-        }${partial}.`,
+        title: wasResume ? "Resumed import complete" : "Import complete",
+        description: wasResume
+          ? `This run: +${res.inserted} added, ${res.updated} updated. Combined with the earlier run: ${totalInserted} added, ${totalUpdated} updated${partial}.`
+          : `${totalInserted} added, ${totalUpdated} updated${
+              skipped ? `, ${skipped} skipped` : ""
+            }${partial}.`,
       });
-      if (res.failed.length === 0) navigate("/app/assets");
+      // After a fresh import we navigate away as before. After a resumed
+      // import we stay on the page so the user can review the breakdown.
+      if (!wasResume && res.failed.length === 0) navigate("/app/assets");
     },
     onError: (e) => {
       abortRef.current = null;
@@ -150,7 +185,10 @@ export default function AssetsImportPage() {
     importMut.mutate(resume.nextIndex);
   };
 
-  const discardResume = () => setResume(null);
+  const discardResume = () => {
+    setResume(null);
+    setLastRunSummary(null);
+  };
 
   const isImporting = importMut.isPending;
 
@@ -179,6 +217,7 @@ export default function AssetsImportPage() {
     // A new file invalidates any previous resume checkpoint.
     setResume(null);
     setProgress(null);
+    setLastRunSummary(null);
     try {
       const text = await file.text();
       setRawText(text);
@@ -235,6 +274,7 @@ export default function AssetsImportPage() {
     setParseError(null);
     setResume(null);
     setProgress(null);
+    setLastRunSummary(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -457,6 +497,94 @@ export default function AssetsImportPage() {
                 </CardContent>
               </Card>
             )}
+
+            {lastRunSummary && !isImporting && (() => {
+              const s = lastRunSummary;
+              const totalInserted = s.previousInserted + s.runInserted;
+              const totalUpdated = s.previousUpdated + s.runUpdated;
+              return (
+                <Card aria-live="polite">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      {s.wasResume ? "Resumed import complete" : "Import complete"}
+                    </CardTitle>
+                    <CardDescription>
+                      {s.wasResume
+                        ? <>Combined results for <span className="font-medium">{s.fileName}</span> across the original and resumed runs.</>
+                        : <>Results for <span className="font-medium">{s.fileName}</span>.</>}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {s.wasResume ? (
+                      <div className="overflow-hidden rounded-md border border-border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Run</TableHead>
+                              <TableHead className="text-right">Added</TableHead>
+                              <TableHead className="text-right">Updated</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell className="text-muted-foreground">Previous run (before cancel)</TableCell>
+                              <TableCell className="text-right tabular-nums">{s.previousInserted}</TableCell>
+                              <TableCell className="text-right tabular-nums">{s.previousUpdated}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="text-muted-foreground">This resumed run</TableCell>
+                              <TableCell className="text-right tabular-nums text-success">+{s.runInserted}</TableCell>
+                              <TableCell className="text-right tabular-nums text-primary">+{s.runUpdated}</TableCell>
+                            </TableRow>
+                            <TableRow className="bg-muted/30">
+                              <TableCell className="font-medium">Total saved</TableCell>
+                              <TableCell className="text-right tabular-nums font-semibold">{totalInserted}</TableCell>
+                              <TableCell className="text-right tabular-nums font-semibold">{totalUpdated}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                          <div className="text-xs text-muted-foreground">Added</div>
+                          <div className="text-lg font-semibold tabular-nums text-success">{totalInserted}</div>
+                        </div>
+                        <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                          <div className="text-xs text-muted-foreground">Updated</div>
+                          <div className="text-lg font-semibold tabular-nums text-primary">{totalUpdated}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {(s.failed > 0 || s.skipped > 0) && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                          <div className="text-xs text-muted-foreground">Failed (this run)</div>
+                          <div className={`text-lg font-semibold tabular-nums ${s.failed > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                            {s.failed}
+                          </div>
+                        </div>
+                        <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                          <div className="text-xs text-muted-foreground">Skipped (invalid rows)</div>
+                          <div className="text-lg font-semibold tabular-nums text-muted-foreground">{s.skipped}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" onClick={() => navigate("/app/assets")}>
+                        Go to assets
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setLastRunSummary(null)}>
+                        Dismiss
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {resume && !isImporting && (() => {
               const remaining = Math.max(resume.totalValid - resume.nextIndex, 0);
