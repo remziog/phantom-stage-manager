@@ -161,6 +161,17 @@ export default function AssetsImportPage() {
         failed: res.failed.length,
         skipped,
         fileName: fileName ?? "import.csv",
+        headers,
+        failedRows: res.failed.map((f) => {
+          // `f.index` is relative to the slice handed to importAssets — translate
+          // back to the original validRows index so we can recover the raw CSV row.
+          const source = validRows[res.startIndex + f.index];
+          return {
+            lineNumber: source?.lineNumber ?? -1,
+            raw: source?.raw ?? {},
+            message: f.message,
+          };
+        }),
       });
       setResume(null);
       toast({
