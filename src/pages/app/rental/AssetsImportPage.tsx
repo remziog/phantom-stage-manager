@@ -230,7 +230,24 @@ export default function AssetsImportPage() {
     const file = new File([csv], `${base}-failed-rows.csv`, { type: "text/csv" });
     // Clear the summary so it doesn't shadow the new upload state.
     setLastRunSummary(null);
-    await handleFile(file);
+    const result = await handleFile(file);
+    if (result.ok) {
+      const { total, valid, invalid } = result;
+      toast({
+        title: "Failed rows revalidated",
+        description:
+          invalid === 0
+            ? `All ${valid} row${valid === 1 ? "" : "s"} passed validation — ready to re-import.`
+            : `${valid} of ${total} row${total === 1 ? "" : "s"} passed; ${invalid} still ${invalid === 1 ? "has" : "have"} errors.`,
+        variant: invalid > 0 ? "destructive" : "default",
+      });
+    } else {
+      toast({
+        title: "Could not revalidate",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
     // Wait for the next paint so the freshly-mounted preview has dimensions,
     // then scroll the import step into view and move keyboard focus to it
     // so screen readers and keyboard users land on the revalidated rows.
