@@ -1046,7 +1046,25 @@ export default function AssetsImportPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => redoLastEdit()}
+                      onClick={() => {
+                        const redone = redoLastEdit();
+                        if (!redone) return;
+                        const remaining = redoHistory.current.length;
+                        const display = redone.restoredValue.trim() === "" ? "(empty)" : `"${redone.restoredValue}"`;
+                        focusCellByCoords(redone.lineNumber, redone.field);
+                        toast({
+                          title: "Edit redone",
+                          description: `Row ${redone.lineNumber} · column "${redone.field}" reapplied to ${display}. ${remaining} undone edit${remaining === 1 ? "" : "s"} remain available to redo.`,
+                          action: (
+                            <ToastAction
+                              altText={`Jump to row ${redone.lineNumber}, column ${redone.field}`}
+                              onClick={() => focusCellByCoords(redone.lineNumber, redone.field)}
+                            >
+                              Jump to cell
+                            </ToastAction>
+                          ),
+                        });
+                      }}
                       disabled={redoCount === 0 || isImporting}
                       title={redoCount > 0 ? `Redo last undone edit (⌘/Ctrl+Y) — ${redoCount} available` : "Nothing to redo"}
                     >
