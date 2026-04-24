@@ -446,7 +446,17 @@ async function main(): Promise<void> {
 
   for (const f of findings) annotate(f);
   const snapshotPath = writeSnapshot();
-  writeStepSummary(snapshotPath);
+
+  // Optional: diff against a previous snapshot artifact if the user provided one.
+  let diffLines: string[] = [];
+  const baseline = loadBaseline(BASELINE_PATH);
+  if (baseline) {
+    const diff = diffSnapshots(baseline, buildCurrentSnapshot());
+    logDiffToConsole(diff, BASELINE_PATH);
+    diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+  }
+
+  writeStepSummary(snapshotPath, diffLines);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
