@@ -418,21 +418,37 @@ export default function AssetsImportPage() {
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <div>
                         <div className="text-sm font-medium">
-                          {progress.phase === "preparing"
-                            ? "Preparing import…"
-                            : progress.phase === "done"
-                              ? "Finishing up…"
-                              : `Importing row ${progress.processed} of ${progress.total}…`}
+                          {isCancelling
+                            ? `Cancelling — finishing row ${progress.processed} of ${progress.total}…`
+                            : progress.phase === "preparing"
+                              ? "Preparing import…"
+                              : progress.phase === "done"
+                                ? "Finishing up…"
+                                : `Importing row ${progress.processed} of ${progress.total}…`}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Please keep this tab open until the import finishes.
+                          {isCancelling
+                            ? "Already-saved rows will be kept."
+                            : "Please keep this tab open until the import finishes."}
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm tabular-nums text-muted-foreground">
-                      {progress.total > 0
-                        ? `${Math.round((progress.processed / progress.total) * 100)}%`
-                        : "0%"}
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm tabular-nums text-muted-foreground">
+                        {progress.total > 0
+                          ? `${Math.round((progress.processed / progress.total) * 100)}%`
+                          : "0%"}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                        disabled={isCancelling}
+                        aria-label="Cancel import"
+                      >
+                        {isCancelling ? "Cancelling…" : "Cancel import"}
+                      </Button>
                     </div>
                   </div>
 
