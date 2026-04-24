@@ -25,6 +25,27 @@ const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/s
 const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
 
 /**
+ * Which kinds of baseline-diff changes should fail CI.
+ *
+ *   PREFLIGHT_FAIL_ON=any            → fail on ANY diff (added/removed/regressed/fixed)
+ *   PREFLIGHT_FAIL_ON=regressions    → fail only on missing tables/columns/enums (DEFAULT)
+ *   PREFLIGHT_FAIL_ON=removed        → fail only on tables/columns/enums removed vs baseline
+ *   PREFLIGHT_FAIL_ON=regressions,removed → combine multiple categories with commas
+ *   PREFLIGHT_FAIL_ON=none           → never fail on the diff (live-schema errors still fail)
+ *
+ * The hard live-schema check (missing tables/columns/enums in the CURRENT DB)
+ * always exits non-zero regardless of this setting.
+ */
+type FailMode = "any" | "regressions" | "removed" | "none";
+const FAIL_ON: Set<FailMode> = new Set(
+  (process.env.PREFLIGHT_FAIL_ON ?? "regressions")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is FailMode => ["any", "regressions", "removed", "none"].includes(s)),
+);
+if (FAIL_ON.size === 0) FAIL_ON.add("regressions");
+
+/**
  * Sanitize the Supabase URL for the snapshot — keeps the project ref so you can
  * tell snapshots apart, but drops anything that could leak credentials.
  */
