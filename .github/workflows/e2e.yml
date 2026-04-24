@@ -45,6 +45,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Preflight — verify Supabase schema matches seed script
+        run: npm run test:e2e:preflight
+
       - name: Seed Supabase test data
         run: npm run test:e2e:seed
 
