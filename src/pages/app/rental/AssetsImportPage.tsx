@@ -406,15 +406,17 @@ export default function AssetsImportPage() {
 
   /** Pop the most recently-undone edit and re-apply it. The re-applied
    * change is pushed back onto `editHistory` so further Cmd/Ctrl+Z continues
-   * to work. */
-  const redoLastEdit = () => {
+   * to work. Returns the redone entry (with the value that was restored)
+   * so callers can surface a "Jump to cell" toast that names the exact
+   * row/column that just changed. */
+  const redoLastEdit = (): (RedoHistoryEntry & { restoredValue: string }) | null => {
     const next = redoHistory.current[redoHistory.current.length - 1];
-    if (!next) return false;
+    if (!next) return null;
     const currentRow = validated.find((r) => r.lineNumber === next.lineNumber);
     if (!currentRow) {
       redoHistory.current.pop();
       syncHistoryCounts();
-      return false;
+      return null;
     }
     const currentValue = currentRow.raw[next.field] ?? "";
     redoHistory.current.pop();
@@ -431,7 +433,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
-    return true;
+    return { ...next, restoredValue: next.nextValue };
   };
 
   /** True when the row's current raw values differ from the originally-parsed
