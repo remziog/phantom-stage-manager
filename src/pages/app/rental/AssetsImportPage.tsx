@@ -901,25 +901,60 @@ export default function AssetsImportPage() {
                                 {r.lineNumber}
                               </TableCell>
                               {editableColumns.map((c) => {
-                                const hasError = fieldErrors?.has(c);
+                                const errorMessage = fieldErrors?.get(c);
+                                const hasError = !!errorMessage;
                                 return (
                                   <TableCell key={c} className="min-w-[140px]">
                                     <Input
                                       value={r.raw[c] ?? ""}
                                       onChange={(e) => editCell(r.lineNumber, c, e.target.value)}
                                       aria-invalid={hasError ? true : undefined}
+                                      aria-describedby={
+                                        hasError ? `err-${r.lineNumber}-${c}` : undefined
+                                      }
                                       aria-label={`${c} for line ${r.lineNumber}`}
                                       className={`h-8 ${hasError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                                     />
+                                    {hasError && (
+                                      <Badge
+                                        id={`err-${r.lineNumber}-${c}`}
+                                        variant="destructive"
+                                        role="alert"
+                                        title={errorMessage}
+                                        className="mt-1 max-w-full font-normal whitespace-normal text-left leading-tight"
+                                      >
+                                        <AlertCircle className="h-3 w-3 mr-1 shrink-0" />
+                                        <span className="line-clamp-2">{errorMessage}</span>
+                                      </Badge>
+                                    )}
                                   </TableCell>
                                 );
                               })}
                               <TableCell>
-                                <ul className="space-y-0.5 text-sm text-destructive pt-1">
-                                  {r.errors.map((e, i) => (
-                                    <li key={i}><strong>{e.field}:</strong> {e.message}</li>
-                                  ))}
-                                </ul>
+                                {(() => {
+                                  // Only render errors here that aren't already
+                                  // shown as inline badges next to their cells —
+                                  // typically row-level issues whose `field`
+                                  // doesn't map to an editable column.
+                                  const editableSet = new Set<string>(editableColumns);
+                                  const others = r.errors.filter(
+                                    (e) => !editableSet.has(e.field),
+                                  );
+                                  if (others.length === 0) {
+                                    return (
+                                      <span className="text-xs text-muted-foreground pt-1 inline-block">
+                                        See badges in cells →
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <ul className="space-y-0.5 text-sm text-destructive pt-1">
+                                      {others.map((e, i) => (
+                                        <li key={i}><strong>{e.field}:</strong> {e.message}</li>
+                                      ))}
+                                    </ul>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell className="pt-1">
                                 <Button
