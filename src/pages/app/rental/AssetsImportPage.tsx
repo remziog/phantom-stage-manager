@@ -966,7 +966,16 @@ export default function AssetsImportPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => undoLastEdit()}
+                      onClick={() => {
+                        const undone = undoLastEdit();
+                        if (!undone) return;
+                        const remaining = editHistory.current.length;
+                        const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
+                        toast({
+                          title: "Edit undone",
+                          description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
+                        });
+                      }}
                       disabled={undoCount === 0 || isImporting}
                       title={undoCount > 0 ? `Undo last edit (⌘/Ctrl+Z) — ${undoCount} available` : "Nothing to undo"}
                     >
