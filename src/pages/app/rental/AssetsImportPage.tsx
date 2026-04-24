@@ -41,6 +41,13 @@ export default function AssetsImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Wraps the file/preview block so we can scroll + focus after a re-upload.
   const importStepRef = useRef<HTMLDivElement>(null);
+  // Snapshot of the originally-parsed raw values per line, captured the first
+  // time a file is validated. Used to power the per-row and global "Undo
+  // edits" actions on the Row errors card.
+  const originalRawByLine = useRef<Map<number, Record<string, string>>>(new Map());
+  // Bumped when an undo runs so we can show a transient "reverted" toast and
+  // optionally drive any UI that needs to react to a revert.
+  const [editedLines, setEditedLines] = useState<Set<number>>(new Set());
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
