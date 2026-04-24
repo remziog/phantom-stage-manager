@@ -25,7 +25,7 @@ import {
   type ValidatedAssetRow,
 } from "@/lib/csv";
 import { importAssets, type ImportProgress } from "@/services/assets";
-import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2, Undo2 } from "lucide-react";
 
 const SAMPLE_CSV = `name,sku,category,quantity,unit_price,location,status
 Shure SM58,MIC-SM58,Microphone,10,99.00,Warehouse A,available
@@ -41,6 +41,10 @@ export default function AssetsImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Wraps the file/preview block so we can scroll + focus after a re-upload.
   const importStepRef = useRef<HTMLDivElement>(null);
+  // Snapshot of the originally-parsed raw values per line, captured the first
+  // time a file is validated. Used to power the per-row and global "Undo
+  // edits" actions on the Row errors card.
+  const originalRawByLine = useRef<Map<number, Record<string, string>>>(new Map());
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
@@ -327,6 +331,56 @@ export default function AssetsImportPage() {
     );
   };
 
+  /** True when the row's current raw values differ from the originally-parsed
+   * snapshot for at least one editable field. */
+  const isRowEdited = (lineNumber: number, currentRaw: Record<string, string>) => {
+    const original = originalRawByLine.current.get(lineNumber);
+    if (!original) return false;
+    for (const c of editableColumns) {
+      if ((currentRaw[c] ?? "") !== (original[c] ?? "")) return true;
+    }
+    return false;
+  };
+
+  /** Derived: true if any row in the table currently differs from its snapshot. */
+  const hasAnyEdits = useMemo(
+    () => validated.some((r) => isRowEdited(r.lineNumber, r.raw)),
+    // `editableColumns` and the snapshot are stable for a given uploaded file;
+    // recompute whenever the validated rows change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [validated, editableColumns],
+  );
+
+  /** Restore one row's raw values to the originally-parsed snapshot, then
+   * re-validate it so the errors column refreshes. */
+  const undoRow = (lineNumber: number) => {
+    const original = originalRawByLine.current.get(lineNumber);
+    if (!original) return;
+    setValidated((prev) =>
+      prev.map((row) =>
+        row.lineNumber === lineNumber
+          ? validateAssetRow({ ...original }, lineNumber)
+          : row,
+      ),
+    );
+  };
+
+  /** Restore every row's raw values to the originally-parsed snapshot. */
+  const undoAllEdits = () => {
+    if (originalRawByLine.current.size === 0 || !hasAnyEdits) return;
+    setValidated((prev) =>
+      prev.map((row) => {
+        const original = originalRawByLine.current.get(row.lineNumber);
+        if (!original) return row;
+        return validateAssetRow({ ...original }, row.lineNumber);
+      }),
+    );
+    toast({
+      title: "Edits reverted",
+      description: "Inline changes were rolled back to the originally uploaded values.",
+    });
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
@@ -378,6 +432,12 @@ export default function AssetsImportPage() {
       setHeaders(hs);
       const v = rows.map((r, idx) => validateAssetRow(r, idx + 2)); // +2: header is line 1
       setValidated(v);
+      // Snapshot the originally-parsed values so per-row / global undo can
+      // restore them after inline edits. Cloning here is enough — we never
+      // mutate the stored maps.
+      const snap = new Map<number, Record<string, string>>();
+      for (const row of v) snap.set(row.lineNumber, { ...row.raw });
+      originalRawByLine.current = snap;
       const valid = v.filter((r) => r.errors.length === 0).length;
       return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
     } catch (e) {
@@ -429,6 +489,7 @@ export default function AssetsImportPage() {
     setResume(null);
     setProgress(null);
     setLastRunSummary(null);
+    originalRawByLine.current = new Map();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -565,14 +626,26 @@ export default function AssetsImportPage() {
 
             {invalidRows.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Row errors</CardTitle>
-                  <CardDescription>
-                    Edit values directly below — rows are re-validated as you
-                    type and move to the valid bucket once all errors clear. Or
-                    fix them in your CSV and re-upload, or enable “Import valid
-                    rows only”.
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">Row errors</CardTitle>
+                    <CardDescription>
+                      Edit values directly below — rows are re-validated as you
+                      type and move to the valid bucket once all errors clear. Or
+                      fix them in your CSV and re-upload, or enable “Import valid
+                      rows only”.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={undoAllEdits}
+                    disabled={!hasAnyEdits || isImporting}
+                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                  >
+                    <Undo2 className="h-4 w-4 mr-2" />
+                    Undo all edits
+                  </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -584,11 +657,13 @@ export default function AssetsImportPage() {
                             <TableHead key={c} className="capitalize">{c.replace(/_/g, " ")}</TableHead>
                           ))}
                           <TableHead>Errors</TableHead>
+                          <TableHead className="w-12 sr-only">Undo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {invalidRows.slice(0, 100).map((r) => {
                           const fieldErrors = errorsByLine.get(r.lineNumber);
+                          const edited = isRowEdited(r.lineNumber, r.raw);
                           return (
                             <TableRow key={r.lineNumber} className="align-top">
                               <TableCell className="tabular-nums text-muted-foreground pt-3">
@@ -614,6 +689,20 @@ export default function AssetsImportPage() {
                                     <li key={i}><strong>{e.field}:</strong> {e.message}</li>
                                   ))}
                                 </ul>
+                              </TableCell>
+                              <TableCell className="pt-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2"
+                                  onClick={() => undoRow(r.lineNumber)}
+                                  disabled={!edited || isImporting}
+                                  aria-label={`Undo edits for line ${r.lineNumber}`}
+                                  title={edited ? "Revert this row to its original values" : "No edits on this row"}
+                                >
+                                  <Undo2 className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
