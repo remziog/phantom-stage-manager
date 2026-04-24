@@ -212,6 +212,7 @@ export default function AssetsImportPage() {
     // A new file invalidates any previous resume checkpoint.
     setResume(null);
     setProgress(null);
+    setLastRunSummary(null);
     try {
       const text = await file.text();
       setRawText(text);
