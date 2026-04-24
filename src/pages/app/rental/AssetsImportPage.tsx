@@ -291,6 +291,20 @@ export default function AssetsImportPage() {
     });
   };
 
+  /** Patch a single cell in the parsed-rows model and re-validate just that
+   * row in place. Updates flow back into `validated`, which feeds the valid /
+   * invalid summaries — so a row can move to the valid bucket as soon as the
+   * user fixes it. */
+  const editCell = (lineNumber: number, field: string, value: string) => {
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== lineNumber) return row;
+        const nextRaw = { ...row.raw, [field]: value };
+        return validateAssetRow(nextRaw, lineNumber);
+      }),
+    );
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
