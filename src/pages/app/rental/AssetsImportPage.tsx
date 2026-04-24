@@ -591,9 +591,18 @@ export default function AssetsImportPage() {
    * invalid cell; Shift+Enter walks backwards to the previous one. If no
    * errors remain after a forward press, blur and toast a confirmation. */
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
     const target = e.target as HTMLElement | null;
     if (!target || target.tagName !== "INPUT") return;
+
+    // Escape stops error navigation and returns focus to the page so the
+    // user can scroll, use shortcuts, or step away from the editor.
+    if (e.key === "Escape" && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      (target as HTMLInputElement).blur();
+      return;
+    }
+
+    if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
     e.preventDefault();
     const direction: 1 | -1 = e.shiftKey ? -1 : 1;
     // Re-validation already ran synchronously inside `editCell`, so the
@@ -930,7 +939,9 @@ export default function AssetsImportPage() {
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Enter</kbd>{" "}
                       /{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Shift+Enter</kbd>{" "}
-                      in any cell to jump to the next / previous remaining error.
+                      in any cell to jump to the next / previous remaining error, or{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Esc</kbd>{" "}
+                      to stop navigating and blur the cell.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
