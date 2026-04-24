@@ -45,6 +45,11 @@ export default function AssetsImportPage() {
   // time a file is validated. Used to power the per-row and global "Undo
   // edits" actions on the Row errors card.
   const originalRawByLine = useRef<Map<number, Record<string, string>>>(new Map());
+  // Stack of inline edits in the order they were made. Each entry captures
+  // the value *before* the change so Cmd/Ctrl+Z can step back one edit at a
+  // time. Cleared whenever a new file is loaded or all edits are reverted.
+  interface EditHistoryEntry { lineNumber: number; field: string; prevValue: string; }
+  const editHistory = useRef<EditHistoryEntry[]>([]);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
@@ -325,10 +330,31 @@ export default function AssetsImportPage() {
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== lineNumber) return row;
+        const prevValue = row.raw[field] ?? "";
+        // Only push to history when the value actually changes — avoids
+        // polluting the undo stack with no-op focus events.
+        if (prevValue !== value) {
+          editHistory.current.push({ lineNumber, field, prevValue });
+        }
         const nextRaw = { ...row.raw, [field]: value };
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+  };
+
+  /** Pop the most recent inline edit off the history stack and restore the
+   * affected cell's previous value. Used by Cmd/Ctrl+Z. */
+  const undoLastEdit = () => {
+    const last = editHistory.current.pop();
+    if (!last) return false;
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== last.lineNumber) return row;
+        const nextRaw = { ...row.raw, [last.field]: last.prevValue };
+        return validateAssetRow(nextRaw, last.lineNumber);
+      }),
+    );
+    return true;
   };
 
   /** True when the row's current raw values differ from the originally-parsed
@@ -363,6 +389,8 @@ export default function AssetsImportPage() {
           : row,
       ),
     );
+    // Drop history entries for this row — they no longer reflect the live state.
+    editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
@@ -375,6 +403,7 @@ export default function AssetsImportPage() {
         return validateAssetRow({ ...original }, row.lineNumber);
       }),
     );
+    editHistory.current = [];
     toast({
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
@@ -410,6 +439,44 @@ export default function AssetsImportPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isImporting]);
 
+  // Keyboard shortcuts for the inline editor:
+  //   Cmd/Ctrl+Z         → undo the most recent inline edit
+  //   Shift+Cmd/Ctrl+Z   → revert all inline edits to the originally-uploaded values
+  // Only active while there are invalid rows being edited and we're not in
+  // the middle of an import.
+  useEffect(() => {
+    if (invalidRows.length === 0 || isImporting) return;
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== "z") return;
+      // Ignore when focus is on a non-editor field (e.g. another text input
+      // outside the row-errors table) so we don't hijack the browser's
+      // native undo elsewhere on the page.
+      const target = e.target as HTMLElement | null;
+      const insideEditor = !!target?.closest('[data-csv-editor="true"]');
+      const onBody = target === document.body;
+      if (!insideEditor && !onBody) return;
+      if (e.shiftKey) {
+        if (!hasAnyEdits) return;
+        e.preventDefault();
+        undoAllEdits();
+      } else {
+        if (editHistory.current.length === 0) return;
+        e.preventDefault();
+        const undone = undoLastEdit();
+        if (undone) {
+          toast({
+            title: "Edit undone",
+            description: `${editHistory.current.length} earlier edit${editHistory.current.length === 1 ? "" : "s"} remain in history.`,
+          });
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invalidRows.length, isImporting, hasAnyEdits]);
+
   const canImport =
     !!cid &&
     !!user &&
@@ -425,6 +492,8 @@ export default function AssetsImportPage() {
     setResume(null);
     setProgress(null);
     setLastRunSummary(null);
+    // A new file resets the inline-edit history.
+    editHistory.current = [];
     try {
       const text = await file.text();
       setRawText(text);
@@ -490,6 +559,7 @@ export default function AssetsImportPage() {
     setProgress(null);
     setLastRunSummary(null);
     originalRawByLine.current = new Map();
+    editHistory.current = [];
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -633,7 +703,11 @@ export default function AssetsImportPage() {
                       Edit values directly below — rows are re-validated as you
                       type and move to the valid bucket once all errors clear. Or
                       fix them in your CSV and re-upload, or enable “Import valid
-                      rows only”.
+                      rows only”. Press{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Z</kbd>{" "}
+                      to undo the last edit, or{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
+                      to undo all.
                     </CardDescription>
                   </div>
                   <Button
@@ -641,14 +715,14 @@ export default function AssetsImportPage() {
                     size="sm"
                     onClick={undoAllEdits}
                     disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                    title={hasAnyEdits ? "Revert all inline edits (⇧⌘/Ctrl+Z)" : "No edits to undo"}
                   >
                     <Undo2 className="h-4 w-4 mr-2" />
                     Undo all edits
                   </Button>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto" data-csv-editor="true">
                     <Table>
                       <TableHeader>
                         <TableRow>
