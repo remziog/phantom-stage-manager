@@ -50,6 +50,11 @@ export default function AssetsImportPage() {
   // time. Cleared whenever a new file is loaded or all edits are reverted.
   interface EditHistoryEntry { lineNumber: number; field: string; prevValue: string; }
   const editHistory = useRef<EditHistoryEntry[]>([]);
+  // Mirror stack for redo. We push the value that was undone (so it can be
+  // re-applied) and clear it whenever the user makes a fresh edit, mirroring
+  // standard text-editor behaviour where a new edit forks the history.
+  interface RedoHistoryEntry { lineNumber: number; field: string; nextValue: string; }
+  const redoHistory = useRef<RedoHistoryEntry[]>([]);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
