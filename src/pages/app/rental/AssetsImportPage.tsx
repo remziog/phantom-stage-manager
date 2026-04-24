@@ -853,7 +853,21 @@ export default function AssetsImportPage() {
                       to redo.
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToFirstError}
+                      disabled={invalidRows.length === 0 || isImporting}
+                      title={
+                        invalidRows.length > 0
+                          ? "Scroll to and focus the first cell with an error"
+                          : "No errors remaining"
+                      }
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2 text-destructive" />
+                      Go to first error
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
