@@ -381,40 +381,47 @@ export default function AssetsImportPage() {
           </CardHeader>
         </Card>
 
-        {!fileName ? (
-          <label
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={onDrop}
-            className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card/50 p-12 text-center cursor-pointer hover:bg-card transition"
-          >
-            <Upload className="h-8 w-8 text-muted-foreground" />
-            <div className="text-sm font-medium">Click to choose a CSV, or drag &amp; drop</div>
-            <div className="text-xs text-muted-foreground">UTF-8 encoded, comma-separated</div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void handleFile(f);
-              }}
-            />
-          </label>
-        ) : (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-base">{fileName}</CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  ({(new Blob([rawText]).size / 1024).toFixed(1)} KB)
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={reset} disabled={isImporting}>Choose another file</Button>
-            </CardHeader>
-          </Card>
-        )}
+        <div
+          ref={importStepRef}
+          tabIndex={-1}
+          aria-label="Import file and row preview"
+          className="scroll-mt-4 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        >
+          {!fileName ? (
+            <label
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card/50 p-12 text-center cursor-pointer hover:bg-card transition"
+            >
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <div className="text-sm font-medium">Click to choose a CSV, or drag &amp; drop</div>
+              <div className="text-xs text-muted-foreground">UTF-8 encoded, comma-separated</div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFile(f);
+                }}
+              />
+            </label>
+          ) : (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">{fileName}</CardTitle>
+                  <span className="text-xs text-muted-foreground">
+                    ({(new Blob([rawText]).size / 1024).toFixed(1)} KB)
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={reset} disabled={isImporting}>Choose another file</Button>
+              </CardHeader>
+            </Card>
+          )}
+        </div>
 
         {parseError && (
           <Alert variant="destructive">
