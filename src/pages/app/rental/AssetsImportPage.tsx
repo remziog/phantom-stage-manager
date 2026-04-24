@@ -25,7 +25,7 @@ import {
   type ValidatedAssetRow,
 } from "@/lib/csv";
 import { importAssets, type ImportProgress } from "@/services/assets";
-import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2, Undo2 } from "lucide-react";
+import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2, Undo2, Redo2 } from "lucide-react";
 
 const SAMPLE_CSV = `name,sku,category,quantity,unit_price,location,status
 Shure SM58,MIC-SM58,Microphone,10,99.00,Warehouse A,available
@@ -55,6 +55,14 @@ export default function AssetsImportPage() {
   // standard text-editor behaviour where a new edit forks the history.
   interface RedoHistoryEntry { lineNumber: number; field: string; nextValue: string; }
   const redoHistory = useRef<RedoHistoryEntry[]>([]);
+  // Mirror the ref-backed stack lengths into state so the visible Undo/Redo
+  // counters re-render whenever an edit, undo, redo, or revert happens.
+  const [undoCount, setUndoCount] = useState(0);
+  const [redoCount, setRedoCount] = useState(0);
+  const syncHistoryCounts = () => {
+    setUndoCount(editHistory.current.length);
+    setRedoCount(redoHistory.current.length);
+  };
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
@@ -348,6 +356,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+    syncHistoryCounts();
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
@@ -370,6 +379,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
+    syncHistoryCounts();
     return true;
   };
 
@@ -392,6 +402,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
+    syncHistoryCounts();
     return true;
   };
 
@@ -430,6 +441,7 @@ export default function AssetsImportPage() {
     // Drop history entries for this row — they no longer reflect the live state.
     editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
     redoHistory.current = redoHistory.current.filter((h) => h.lineNumber !== lineNumber);
+    syncHistoryCounts();
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
@@ -444,6 +456,7 @@ export default function AssetsImportPage() {
     );
     editHistory.current = [];
     redoHistory.current = [];
+    syncHistoryCounts();
     toast({
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
@@ -546,6 +559,7 @@ export default function AssetsImportPage() {
     // A new file resets the inline-edit history.
     editHistory.current = [];
     redoHistory.current = [];
+    syncHistoryCounts();
     try {
       const text = await file.text();
       setRawText(text);
@@ -613,6 +627,7 @@ export default function AssetsImportPage() {
     originalRawByLine.current = new Map();
     editHistory.current = [];
     redoHistory.current = [];
+    syncHistoryCounts();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -765,16 +780,52 @@ export default function AssetsImportPage() {
                       to redo.
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={undoAllEdits}
-                    disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
-                  >
-                    <Undo2 className="h-4 w-4 mr-2" />
-                    Undo all edits
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => undoLastEdit()}
+                      disabled={undoCount === 0 || isImporting}
+                      title={undoCount > 0 ? `Undo last edit (⌘/Ctrl+Z) — ${undoCount} available` : "Nothing to undo"}
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 px-1.5 py-0 h-5 min-w-[1.25rem] justify-center tabular-nums"
+                        aria-label={`${undoCount} undo step${undoCount === 1 ? "" : "s"} available`}
+                      >
+                        {undoCount}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => redoLastEdit()}
+                      disabled={redoCount === 0 || isImporting}
+                      title={redoCount > 0 ? `Redo last undone edit (⌘/Ctrl+Y) — ${redoCount} available` : "Nothing to redo"}
+                    >
+                      <Redo2 className="h-4 w-4 mr-2" />
+                      Redo
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 px-1.5 py-0 h-5 min-w-[1.25rem] justify-center tabular-nums"
+                        aria-label={`${redoCount} redo step${redoCount === 1 ? "" : "s"} available`}
+                      >
+                        {redoCount}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={undoAllEdits}
+                      disabled={!hasAnyEdits || isImporting}
+                      title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo all edits
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto" data-csv-editor="true">
