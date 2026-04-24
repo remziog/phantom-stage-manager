@@ -45,18 +45,52 @@ export interface ImportAssetsResult {
   failed: { index: number; message: string }[];
 }
 
+export interface ImportProgress {
+  /** How many rows have been processed (success or failure). */
+  processed: number;
+  /** Total rows being imported. */
+  total: number;
+  /** Running tally of successful inserts. */
+  inserted: number;
+  /** Running tally of successful updates. */
+  updated: number;
+  /** Running tally of failed rows. */
+  failed: number;
+  /** Coarse phase, useful for status text. */
+  phase: "preparing" | "importing" | "done";
+}
+
 /**
  * Bulk-import assets. Rows with a `sku` matching an existing asset in the
  * company are updated; rows without a sku — or with a brand-new sku — are
  * inserted. Errors are collected per-row instead of aborting the whole batch.
+ *
+ * Pass `onProgress` to receive live updates after every row (and during the
+ * initial SKU lookup). The callback should be cheap — it runs synchronously.
  */
 export async function importAssets(
   companyId: string,
   userId: string,
   rows: ImportAssetRow[],
+  onProgress?: (p: ImportProgress) => void,
 ): Promise<ImportAssetsResult> {
   const result: ImportAssetsResult = { inserted: 0, updated: 0, failed: [] };
-  if (rows.length === 0) return result;
+  const total = rows.length;
+  const emit = (phase: ImportProgress["phase"], processed: number) =>
+    onProgress?.({
+      processed,
+      total,
+      inserted: result.inserted,
+      updated: result.updated,
+      failed: result.failed.length,
+      phase,
+    });
+
+  emit("preparing", 0);
+  if (total === 0) {
+    emit("done", 0);
+    return result;
+  }
 
   // Fetch existing SKUs once so we can decide insert vs update.
   const skus = Array.from(
@@ -74,6 +108,8 @@ export async function importAssets(
       if (row.sku) existingBySku.set(row.sku, row.id);
     }
   }
+
+  emit("importing", 0);
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -111,7 +147,9 @@ export async function importAssets(
     } catch (e) {
       result.failed.push({ index: i, message: (e as Error).message });
     }
+    emit("importing", i + 1);
   }
 
+  emit("done", total);
   return result;
 }
