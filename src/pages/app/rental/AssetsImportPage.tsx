@@ -541,6 +541,21 @@ export default function AssetsImportPage() {
     });
   };
 
+  /** When `handleFile` (or any other validation entry point) sets the
+   * `focusFirstErrorOnNextRender` flag, jump focus to the first invalid
+   * cell once the freshly-validated rows have rendered. The flag is
+   * single-shot so subsequent edits don't yank focus away from the user. */
+  useEffect(() => {
+    if (!focusFirstErrorOnNextRender.current) return;
+    if (invalidRows.length === 0) {
+      focusFirstErrorOnNextRender.current = false;
+      return;
+    }
+    focusFirstErrorOnNextRender.current = false;
+    goToFirstError();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validated]);
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
