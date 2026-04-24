@@ -382,12 +382,86 @@ export default function AssetsImportPage() {
               </Card>
             )}
 
+            {isImporting && progress && (
+              <Card aria-live="polite" aria-busy="true">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <div>
+                        <div className="text-sm font-medium">
+                          {progress.phase === "preparing"
+                            ? "Preparing import…"
+                            : progress.phase === "done"
+                              ? "Finishing up…"
+                              : `Importing row ${progress.processed} of ${progress.total}…`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Please keep this tab open until the import finishes.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm tabular-nums text-muted-foreground">
+                      {progress.total > 0
+                        ? `${Math.round((progress.processed / progress.total) * 100)}%`
+                        : "0%"}
+                    </div>
+                  </div>
+
+                  <Progress
+                    value={
+                      progress.total > 0 ? (progress.processed / progress.total) * 100 : 0
+                    }
+                    aria-label="Import progress"
+                  />
+
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">Added</div>
+                      <div className="text-lg font-semibold tabular-nums text-success">
+                        {progress.inserted}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">Updated</div>
+                      <div className="text-lg font-semibold tabular-nums text-primary">
+                        {progress.updated}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-card/50 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">Failed</div>
+                      <div
+                        className={`text-lg font-semibold tabular-nums ${
+                          progress.failed > 0 ? "text-destructive" : "text-muted-foreground"
+                        }`}
+                      >
+                        {progress.failed}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex items-center justify-end gap-3">
-              <Button variant="ghost" onClick={() => navigate("/app/assets")}>Cancel</Button>
-              <Button disabled={!canImport || importMut.isPending} onClick={() => importMut.mutate()}>
-                {importMut.isPending
-                  ? "Importing…"
-                  : `Import ${validRows.length} row${validRows.length === 1 ? "" : "s"}`}
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/app/assets")}
+                disabled={isImporting}
+              >
+                Cancel
+              </Button>
+              <Button disabled={!canImport} onClick={() => importMut.mutate()}>
+                {isImporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {progress
+                      ? `Importing ${progress.processed}/${progress.total}…`
+                      : "Importing…"}
+                  </>
+                ) : (
+                  `Import ${validRows.length} row${validRows.length === 1 ? "" : "s"}`
+                )}
               </Button>
             </div>
           </>
