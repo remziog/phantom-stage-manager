@@ -901,16 +901,32 @@ export default function AssetsImportPage() {
                                 {r.lineNumber}
                               </TableCell>
                               {editableColumns.map((c) => {
-                                const hasError = fieldErrors?.has(c);
+                                const errorMessage = fieldErrors?.get(c);
+                                const hasError = !!errorMessage;
                                 return (
                                   <TableCell key={c} className="min-w-[140px]">
                                     <Input
                                       value={r.raw[c] ?? ""}
                                       onChange={(e) => editCell(r.lineNumber, c, e.target.value)}
                                       aria-invalid={hasError ? true : undefined}
+                                      aria-describedby={
+                                        hasError ? `err-${r.lineNumber}-${c}` : undefined
+                                      }
                                       aria-label={`${c} for line ${r.lineNumber}`}
                                       className={`h-8 ${hasError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                                     />
+                                    {hasError && (
+                                      <Badge
+                                        id={`err-${r.lineNumber}-${c}`}
+                                        variant="destructive"
+                                        role="alert"
+                                        title={errorMessage}
+                                        className="mt-1 max-w-full font-normal whitespace-normal text-left leading-tight"
+                                      >
+                                        <AlertCircle className="h-3 w-3 mr-1 shrink-0" />
+                                        <span className="line-clamp-2">{errorMessage}</span>
+                                      </Badge>
+                                    )}
                                   </TableCell>
                                 );
                               })}
