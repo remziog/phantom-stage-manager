@@ -43,6 +43,8 @@ export interface ImportAssetsResult {
   inserted: number;
   updated: number;
   failed: { index: number; message: string }[];
+  /** True when the caller aborted via `signal` before all rows were processed. */
+  cancelled: boolean;
 }
 
 export interface ImportProgress {
@@ -57,7 +59,13 @@ export interface ImportProgress {
   /** Running tally of failed rows. */
   failed: number;
   /** Coarse phase, useful for status text. */
-  phase: "preparing" | "importing" | "done";
+  phase: "preparing" | "importing" | "done" | "cancelled";
+}
+
+export interface ImportAssetsOptions {
+  onProgress?: (p: ImportProgress) => void;
+  /** Abort signal — when triggered, the loop stops between rows and resolves with `cancelled: true`. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -66,15 +74,17 @@ export interface ImportProgress {
  * inserted. Errors are collected per-row instead of aborting the whole batch.
  *
  * Pass `onProgress` to receive live updates after every row (and during the
- * initial SKU lookup). The callback should be cheap — it runs synchronously.
+ * initial SKU lookup). Pass `signal` to support cancellation — already-saved
+ * rows are kept (the operation is not rolled back).
  */
 export async function importAssets(
   companyId: string,
   userId: string,
   rows: ImportAssetRow[],
-  onProgress?: (p: ImportProgress) => void,
+  options: ImportAssetsOptions = {},
 ): Promise<ImportAssetsResult> {
-  const result: ImportAssetsResult = { inserted: 0, updated: 0, failed: [] };
+  const { onProgress, signal } = options;
+  const result: ImportAssetsResult = { inserted: 0, updated: 0, failed: [], cancelled: false };
   const total = rows.length;
   const emit = (phase: ImportProgress["phase"], processed: number) =>
     onProgress?.({
@@ -109,9 +119,22 @@ export async function importAssets(
     }
   }
 
+  // Caller may have cancelled while the SKU lookup was in flight.
+  if (signal?.aborted) {
+    result.cancelled = true;
+    emit("cancelled", 0);
+    return result;
+  }
+
   emit("importing", 0);
 
   for (let i = 0; i < rows.length; i++) {
+    if (signal?.aborted) {
+      result.cancelled = true;
+      emit("cancelled", i);
+      return result;
+    }
+
     const r = rows[i];
     try {
       const existingId = r.sku ? existingBySku.get(r.sku) : undefined;
