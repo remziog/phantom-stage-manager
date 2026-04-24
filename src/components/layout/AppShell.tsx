@@ -117,7 +117,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          {isAdmin && (
+            <NavLink
+              to="/app/admin/csv-analytics"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                }`
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              CSV analytics
+            </NavLink>
+          )}
           <NavLink
             to="/app/settings"
             className={({ isActive }) =>
