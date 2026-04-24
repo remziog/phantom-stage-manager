@@ -401,9 +401,44 @@ function logDiffToConsole(d: SchemaDiff, baselinePath: string): void {
   log("fixed", d.nowFixed);
 }
 
+/**
+ * Decide whether the diff should fail CI based on PREFLIGHT_FAIL_ON.
+ * Returns a list of human-readable reasons (empty = don't fail).
+ */
+function evaluateDiffFailures(d: SchemaDiff): string[] {
+  if (FAIL_ON.has("none")) return [];
+  const reasons: string[] = [];
+  const matches = (mode: FailMode) => FAIL_ON.has("any") || FAIL_ON.has(mode);
+
+  if (matches("regressions") && d.newlyMissing.length > 0) {
+    reasons.push(`${d.newlyMissing.length} regression(s): ${d.newlyMissing.join(", ")}`);
+  }
+  if (matches("removed")) {
+    if (d.removedTables.length > 0) {
+      reasons.push(`${d.removedTables.length} removed table(s): ${d.removedTables.join(", ")}`);
+    }
+    if (d.removedColumns.length > 0) {
+      reasons.push(`${d.removedColumns.length} removed column(s): ${d.removedColumns.join(", ")}`);
+    }
+    if (d.removedEnums.length > 0) {
+      reasons.push(`${d.removedEnums.length} removed enum value(s): ${d.removedEnums.join(", ")}`);
+    }
+  }
+  if (FAIL_ON.has("any")) {
+    if (d.addedTables.length) reasons.push(`${d.addedTables.length} added table(s)`);
+    if (d.addedColumns.length) reasons.push(`${d.addedColumns.length} added column(s)`);
+    if (d.addedEnums.length) reasons.push(`${d.addedEnums.length} added enum value(s)`);
+  }
+  return reasons;
+}
+
 // ─────────────────────────────────────────────────────────────────
 
-function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
+function writeStepSummary(
+  snapshotPath: string,
+  diffLines: string[],
+  diffFailureReasons: string[],
+): void {
   if (!STEP_SUMMARY) return;
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");
@@ -411,6 +446,7 @@ function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
   lines.push("## E2E preflight — schema check");
   lines.push("");
   lines.push(`Project: \`${sanitizeUrl(SUPABASE_URL)}\``);
+  lines.push(`Fail mode: \`PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")}\``);
   lines.push("");
   if (findings.length === 0) {
     lines.push("✅ All required tables, columns, and enum values are present.");
@@ -435,6 +471,11 @@ function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
   if (diffLines.length > 0) {
     lines.push("");
     lines.push(...diffLines);
+  }
+  if (diffFailureReasons.length > 0) {
+    lines.push("");
+    lines.push(`### 🛑 CI failure triggered by diff (\`PREFLIGHT_FAIL_ON=${[...FAIL_ON].join(",")}\`)`);
+    for (const r of diffFailureReasons) lines.push(`- ${r}`);
   }
   appendFileSync(STEP_SUMMARY, lines.join("\n") + "\n");
 }
