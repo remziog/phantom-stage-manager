@@ -71,3 +71,83 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## E2E preflight script
+
+`scripts/e2e-preflight.ts` probes the live Supabase backend before E2E tests run, ensuring the schema (tables, columns, enums) matches what the seed script and tests expect. It writes a sanitized JSON snapshot, optionally diffs it against a baseline, and can fail CI based on a configurable policy.
+
+Run it locally with:
+
+```sh
+npm run test:e2e:preflight           # normal run
+npm run test:e2e:preflight -- --help # print usage and exit
+```
+
+### CLI flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--help`, `-h` | Print full usage (flags + every supported env var with example values) and exit `0`. Equivalent to running the script's built-in `printHelp()`. |
+
+All other behavior is configured through environment variables (below). The script is intentionally flag-light so the same invocation works locally and in CI.
+
+### Environment variables
+
+#### Required (Supabase access)
+
+| Variable | Example | Purpose |
+| -------- | ------- | ------- |
+| `SUPABASE_URL` | `https://<ref>.supabase.co` | Project URL probed by the preflight. |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOi...` | Service-role key used to introspect schema. Never commit. |
+
+If either is missing, the script prints a hint to run with `--help` and exits non-zero.
+
+#### Snapshot output
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `PREFLIGHT_SNAPSHOT_PATH` | `preflight-report/schema-snapshot.json` | Where the sanitized snapshot is written. Uploaded as the `preflight-report` artifact in CI. |
+| `GITHUB_STEP_SUMMARY` | _(set by GitHub Actions)_ | If set, the script appends a markdown summary (probed schema + diff + failure reasons) to the GitHub step summary. |
+
+#### Baseline resolution (for diffing)
+
+The script tries these sources in order; the first one that resolves wins:
+
+| Variable | Example | Purpose |
+| -------- | ------- | ------- |
+| `PREFLIGHT_BASELINE_PATH` | `preflight-baseline/schema-snapshot.json` | Local file path to a previous snapshot. Highest priority. |
+| `PREFLIGHT_BASELINE_ARTIFACT_URL` | `https://api.github.com/repos/OWNER/REPO/actions/artifacts/123/zip` | REST or browser URL to a specific artifact zip. Browser URLs are normalized to the REST endpoint. |
+| `PREFLIGHT_BASELINE_RUN_ID` | `9876543210` | Workflow run ID; combined with `PREFLIGHT_BASELINE_REPO` to look up artifacts via the GitHub API. |
+| `PREFLIGHT_BASELINE_REPO` | `owner/repo` | Repo (`OWNER/REPO`) used with `PREFLIGHT_BASELINE_RUN_ID`. Defaults to `GITHUB_REPOSITORY` when running in Actions. |
+| `PREFLIGHT_BASELINE_ARTIFACT_NAME` | `preflight-report` | Artifact name to download from a run. Defaults to `preflight-report`. |
+| `GITHUB_TOKEN` | `ghp_...` | Required for both artifact fallbacks (`actions:read` scope). |
+
+If no baseline is found, the diff section is skipped — schema probing still runs and the snapshot is still written.
+
+#### Failure policy
+
+| Variable | Default | Accepted values | Behavior |
+| -------- | ------- | --------------- | -------- |
+| `PREFLIGHT_FAIL_ON` | `regressions` | Comma-separated list of: `regressions`, `removed`, `any`, `none` | Controls when a diff causes the script to exit non-zero. The core "required schema present" check always blocks regardless of this setting. |
+
+Modes:
+
+- `regressions` — fail when items previously `ok` are now missing or erroring (recommended default).
+- `removed` — fail when tables, columns, or enum values present in the baseline are gone.
+- `any` — fail on any detected change, including additions.
+- `none` — never fail from diffs (snapshot + summary still produced).
+
+### Exit codes
+
+| Code | Meaning |
+| ---- | ------- |
+| `0` | Required schema present and no failure-policy violations. |
+| `1` | Required schema check failed, or `PREFLIGHT_FAIL_ON` matched a detected diff, or required env vars missing. |
+
+### CI usage
+
+The GitHub Actions workflow (`.github/workflows/e2e.yml`) wires this up by:
+
+1. Downloading the previous run's `preflight-report` artifact into `preflight-baseline/`.
+2. Setting `PREFLIGHT_BASELINE_PATH=preflight-baseline/schema-snapshot.json` and `PREFLIGHT_FAIL_ON=regressions`.
+3. Running `npm run test:e2e:preflight` and uploading the new `preflight-report/` directory as an artifact for the next run to diff against.
