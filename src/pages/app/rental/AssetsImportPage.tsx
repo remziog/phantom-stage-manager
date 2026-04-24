@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import {
   parseCsv,
   validateAssetHeaders,
@@ -589,6 +590,25 @@ export default function AssetsImportPage() {
     return true;
   };
 
+  /** Locate a CSV editor input by its (lineNumber, field) coordinates,
+   * scroll it into view, focus it with the value selected, and apply a
+   * brief flash highlight so the user can see exactly which cell changed.
+   * Used by the "Jump to cell" action on undo/redo toasts. */
+  const focusCellByCoords = (lineNumber: number, field: string): boolean => {
+    const selector = `[data-csv-editor="true"] [data-csv-cell="${lineNumber}:${field}"]`;
+    const el = document.querySelector<HTMLInputElement>(selector);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+    try { el.select(); } catch { /* number inputs don't support select */ }
+    // Restart the animation cleanly even if the class is still present.
+    el.classList.remove("csv-cell-flash");
+    void el.offsetWidth; // force reflow
+    el.classList.add("csv-cell-flash");
+    window.setTimeout(() => el.classList.remove("csv-cell-flash"), 1300);
+    return true;
+  };
+
   /** Editor-scoped Enter handler. Plain Enter advances to the next still-
    * invalid cell; Shift+Enter walks backwards to the previous one. If no
    * errors remain after a forward press, blur and toast a confirmation. */
@@ -687,9 +707,20 @@ export default function AssetsImportPage() {
         if (undone) {
           const remaining = editHistory.current.length;
           const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
+          // Flash the cell immediately so the user can see what changed
+          // even if they don't click the action button.
+          focusCellByCoords(undone.lineNumber, undone.field);
           toast({
             title: "Edit undone",
             description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
+            action: (
+              <ToastAction
+                altText={`Jump to row ${undone.lineNumber}, column ${undone.field}`}
+                onClick={() => focusCellByCoords(undone.lineNumber, undone.field)}
+              >
+                Jump to cell
+              </ToastAction>
+            ),
           });
         }
       }
@@ -971,9 +1002,18 @@ export default function AssetsImportPage() {
                         if (!undone) return;
                         const remaining = editHistory.current.length;
                         const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
+                        focusCellByCoords(undone.lineNumber, undone.field);
                         toast({
                           title: "Edit undone",
                           description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
+                          action: (
+                            <ToastAction
+                              altText={`Jump to row ${undone.lineNumber}, column ${undone.field}`}
+                              onClick={() => focusCellByCoords(undone.lineNumber, undone.field)}
+                            >
+                              Jump to cell
+                            </ToastAction>
+                          ),
                         });
                       }}
                       disabled={undoCount === 0 || isImporting}
@@ -1046,6 +1086,7 @@ export default function AssetsImportPage() {
                                 return (
                                   <TableCell key={c} className="min-w-[140px]">
                                     <Input
+                                      data-csv-cell={`${r.lineNumber}:${c}`}
                                       value={r.raw[c] ?? ""}
                                       onChange={(e) => editCell(r.lineNumber, c, e.target.value)}
                                       aria-invalid={hasError ? true : undefined}
