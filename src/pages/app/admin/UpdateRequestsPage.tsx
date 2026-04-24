@@ -4,7 +4,7 @@
  * requested) and approve/reject actions. Approval writes the requested
  * values to the customer record; reject just records the decision.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
@@ -13,7 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -29,8 +33,19 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown,
 } from "lucide-react";
+
+type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "date_desc", label: "Newest first" },
+  { value: "date_asc", label: "Oldest first" },
+  { value: "name_asc", label: "Company A → Z" },
+  { value: "name_desc", label: "Company Z → A" },
+  { value: "email_asc", label: "Email A → Z" },
+  { value: "email_desc", label: "Email Z → A" },
+];
 
 const FIELD_LABELS: Record<EditableField, string> = {
   name: "Company name",
