@@ -340,6 +340,9 @@ export default function AssetsImportPage() {
         // polluting the undo stack with no-op focus events.
         if (prevValue !== value) {
           editHistory.current.push({ lineNumber, field, prevValue });
+          // A fresh edit invalidates the redo stack — same convention as
+          // most text editors.
+          redoHistory.current = [];
         }
         const nextRaw = { ...row.raw, [field]: value };
         return validateAssetRow(nextRaw, lineNumber);
@@ -348,15 +351,45 @@ export default function AssetsImportPage() {
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
-   * affected cell's previous value. Used by Cmd/Ctrl+Z. */
+   * affected cell's previous value. Used by Cmd/Ctrl+Z. The undone change is
+   * pushed onto the redo stack so it can be replayed. */
   const undoLastEdit = () => {
     const last = editHistory.current.pop();
     if (!last) return false;
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== last.lineNumber) return row;
+        const currentValue = row.raw[last.field] ?? "";
+        // Capture the value we're about to discard so redo can restore it.
+        redoHistory.current.push({
+          lineNumber: last.lineNumber,
+          field: last.field,
+          nextValue: currentValue,
+        });
         const nextRaw = { ...row.raw, [last.field]: last.prevValue };
         return validateAssetRow(nextRaw, last.lineNumber);
+      }),
+    );
+    return true;
+  };
+
+  /** Pop the most recently-undone edit and re-apply it. The re-applied
+   * change is pushed back onto `editHistory` so further Cmd/Ctrl+Z continues
+   * to work. */
+  const redoLastEdit = () => {
+    const next = redoHistory.current.pop();
+    if (!next) return false;
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== next.lineNumber) return row;
+        const currentValue = row.raw[next.field] ?? "";
+        editHistory.current.push({
+          lineNumber: next.lineNumber,
+          field: next.field,
+          prevValue: currentValue,
+        });
+        const nextRaw = { ...row.raw, [next.field]: next.nextValue };
+        return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
     return true;
