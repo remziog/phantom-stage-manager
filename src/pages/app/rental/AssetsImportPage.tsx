@@ -185,7 +185,10 @@ export default function AssetsImportPage() {
     importMut.mutate(resume.nextIndex);
   };
 
-  const discardResume = () => setResume(null);
+  const discardResume = () => {
+    setResume(null);
+    setLastRunSummary(null);
+  };
 
   const isImporting = importMut.isPending;
 
