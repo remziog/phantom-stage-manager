@@ -371,17 +371,19 @@ export default function AssetsImportPage() {
 
   /** Pop the most recent inline edit off the history stack and restore the
    * affected cell's previous value. Used by Cmd/Ctrl+Z. The undone change is
-   * pushed onto the redo stack so it can be replayed. */
-  const undoLastEdit = () => {
+   * pushed onto the redo stack so it can be replayed. Returns the undone
+   * entry (with the value that was rolled back to) so callers can surface a
+   * confirmation that names the exact row/column. */
+  const undoLastEdit = (): (EditHistoryEntry & { restoredValue: string }) | null => {
     const last = editHistory.current[editHistory.current.length - 1];
-    if (!last) return false;
+    if (!last) return null;
     const currentRow = validated.find((r) => r.lineNumber === last.lineNumber);
     if (!currentRow) {
       // Row no longer exists (e.g. file was reloaded mid-flight). Drop the
       // dangling entry and resync so the counter doesn't claim a bogus step.
       editHistory.current.pop();
       syncHistoryCounts();
-      return false;
+      return null;
     }
     const currentValue = currentRow.raw[last.field] ?? "";
     editHistory.current.pop();
@@ -398,7 +400,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
-    return true;
+    return { ...last, restoredValue: last.prevValue };
   };
 
   /** Pop the most recently-undone edit and re-apply it. The re-applied
@@ -683,9 +685,11 @@ export default function AssetsImportPage() {
         e.preventDefault();
         const undone = undoLastEdit();
         if (undone) {
+          const remaining = editHistory.current.length;
+          const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
           toast({
             title: "Edit undone",
-            description: `${editHistory.current.length} earlier edit${editHistory.current.length === 1 ? "" : "s"} remain in history.`,
+            description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
           });
         }
       }
@@ -962,7 +966,16 @@ export default function AssetsImportPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => undoLastEdit()}
+                      onClick={() => {
+                        const undone = undoLastEdit();
+                        if (!undone) return;
+                        const remaining = editHistory.current.length;
+                        const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
+                        toast({
+                          title: "Edit undone",
+                          description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
+                        });
+                      }}
                       disabled={undoCount === 0 || isImporting}
                       title={undoCount > 0 ? `Undo last edit (⌘/Ctrl+Z) — ${undoCount} available` : "Nothing to undo"}
                     >
