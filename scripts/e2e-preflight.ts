@@ -296,6 +296,125 @@ interface SchemaDiff {
   nowFixed: string[];       // items missing in baseline but now ok
 }
 
+/**
+ * Normalize a user-supplied artifact URL to the REST `/zip` endpoint that
+ * actually serves the artifact bytes. Accepts either:
+ *   - https://api.github.com/repos/OWNER/REPO/actions/artifacts/<id>(/zip)?
+ *   - https://github.com/OWNER/REPO/actions/runs/<runId>/artifacts/<id>
+ */
+function normalizeArtifactUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    // Browser URL → convert to REST API.
+    const browserMatch = u.pathname.match(
+      /^\/([^/]+)\/([^/]+)\/actions\/runs\/\d+\/artifacts\/(\d+)$/,
+    );
+    if (u.hostname === "github.com" && browserMatch) {
+      const [, owner, repo, artifactId] = browserMatch;
+      return `https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifactId}/zip`;
+    }
+    // REST API URL — make sure it ends with /zip.
+    if (u.hostname === "api.github.com" && /\/actions\/artifacts\/\d+/.test(u.pathname)) {
+      return u.pathname.endsWith("/zip") ? url : `${url.replace(/\/$/, "")}/zip`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function ghFetch(url: string, accept = "application/vnd.github+json"): Promise<Response> {
+  if (!GITHUB_TOKEN) {
+    throw new Error("GITHUB_TOKEN is required to fetch artifacts from GitHub");
+  }
+  const res = await fetch(url, {
+    headers: {
+      Accept: accept,
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "preflight-baseline-fetch",
+    },
+    redirect: "follow",
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub API ${res.status} ${res.statusText} for ${url}`);
+  }
+  return res;
+}
+
+/** Resolve an artifact ID from a workflow run by name. */
+async function resolveArtifactZipUrl(
+  repo: string,
+  runId: string,
+  artifactName: string,
+): Promise<string> {
+  const listUrl = `https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts?per_page=100`;
+  const res = await ghFetch(listUrl);
+  const body = (await res.json()) as { artifacts?: { id: number; name: string }[] };
+  const match = body.artifacts?.find((a) => a.name === artifactName);
+  if (!match) {
+    throw new Error(
+      `Artifact "${artifactName}" not found on run ${runId} ` +
+      `(found: ${body.artifacts?.map((a) => a.name).join(", ") || "none"})`,
+    );
+  }
+  return `https://api.github.com/repos/${repo}/actions/artifacts/${match.id}/zip`;
+}
+
+/**
+ * Download + unzip a baseline snapshot from a GitHub artifact zip.
+ * Returns the path to the extracted schema-snapshot.json (or null on failure).
+ */
+async function fetchBaselineFromArtifact(): Promise<string | null> {
+  let zipUrl: string | null = null;
+  try {
+    if (BASELINE_ARTIFACT_URL) {
+      zipUrl = normalizeArtifactUrl(BASELINE_ARTIFACT_URL);
+      if (!zipUrl) {
+        console.warn(
+          `[preflight] PREFLIGHT_BASELINE_ARTIFACT_URL is not a recognized GitHub artifact URL: ${BASELINE_ARTIFACT_URL}`,
+        );
+        return null;
+      }
+    } else if (BASELINE_RUN_ID && BASELINE_REPO) {
+      console.log(
+        `[preflight] Looking up artifact "${BASELINE_ARTIFACT_NAME}" on ${BASELINE_REPO} run ${BASELINE_RUN_ID}…`,
+      );
+      zipUrl = await resolveArtifactZipUrl(BASELINE_REPO, BASELINE_RUN_ID, BASELINE_ARTIFACT_NAME);
+    } else {
+      return null;
+    }
+
+    console.log(`[preflight] Downloading baseline artifact from ${zipUrl}`);
+    const res = await ghFetch(zipUrl, "application/zip");
+    const buf = Buffer.from(await res.arrayBuffer());
+    const dir = join(tmpdir(), `preflight-baseline-${Date.now()}`);
+    mkdirSync(dir, { recursive: true });
+    const zipPath = join(dir, "artifact.zip");
+    writeFileSync(zipPath, buf);
+
+    // Use the system `unzip` (preinstalled on Ubuntu runners and most dev boxes).
+    try {
+      execFileSync("unzip", ["-o", "-q", zipPath, "-d", dir], { stdio: "inherit" });
+    } catch (err) {
+      console.warn(
+        `[preflight] Failed to unzip baseline artifact (is the 'unzip' binary installed?): ${safeMessage(err)}`,
+      );
+      return null;
+    }
+    const extracted = join(dir, "schema-snapshot.json");
+    if (!existsSync(extracted)) {
+      console.warn(`[preflight] Artifact zip did not contain schema-snapshot.json (looked in ${dir})`);
+      return null;
+    }
+    console.log(`[preflight] Baseline artifact extracted to ${extracted}`);
+    return extracted;
+  } catch (err) {
+    console.warn(`[preflight] Could not fetch baseline artifact: ${safeMessage(err)}`);
+    return null;
+  }
+}
+
 function loadBaseline(path: string): SnapshotShape | null {
   if (!path) return null;
   if (!existsSync(path)) {
