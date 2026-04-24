@@ -587,6 +587,17 @@ export default function AdminUpdateRequestsPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                onClick={exportFilteredCsv}
+                disabled={visibleRequests.length === 0}
+                className="w-full sm:w-auto"
+                title="Export the currently filtered list as CSV"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
             </div>
 
             {/* Active filter summary */}
