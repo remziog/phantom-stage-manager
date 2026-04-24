@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -33,7 +32,7 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter,
 } from "lucide-react";
 
 type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
