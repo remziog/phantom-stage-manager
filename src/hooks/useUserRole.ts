@@ -25,6 +25,7 @@ export type Permission =
   | "view:reservations"
   | "view:customers"
   | "view:invoices"
+  | "view:portal"
   // mutations on tenant data
   | "manage:assets"
   | "manage:reservations"
@@ -47,7 +48,7 @@ const PERMISSIONS: Record<UiRole, Permission[]> = {
     "manage:assets", "manage:reservations", "manage:customers", "manage:invoices",
   ],
   // Customers only see their own reservations & invoices (RLS enforces it).
-  customer: ["view:reservations", "view:invoices"],
+  customer: ["view:reservations", "view:invoices", "view:portal"],
 };
 
 export function useUserRole() {
