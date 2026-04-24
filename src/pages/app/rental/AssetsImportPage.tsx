@@ -406,15 +406,17 @@ export default function AssetsImportPage() {
 
   /** Pop the most recently-undone edit and re-apply it. The re-applied
    * change is pushed back onto `editHistory` so further Cmd/Ctrl+Z continues
-   * to work. */
-  const redoLastEdit = () => {
+   * to work. Returns the redone entry (with the value that was restored)
+   * so callers can surface a "Jump to cell" toast that names the exact
+   * row/column that just changed. */
+  const redoLastEdit = (): (RedoHistoryEntry & { restoredValue: string }) | null => {
     const next = redoHistory.current[redoHistory.current.length - 1];
-    if (!next) return false;
+    if (!next) return null;
     const currentRow = validated.find((r) => r.lineNumber === next.lineNumber);
     if (!currentRow) {
       redoHistory.current.pop();
       syncHistoryCounts();
-      return false;
+      return null;
     }
     const currentValue = currentRow.raw[next.field] ?? "";
     redoHistory.current.pop();
@@ -431,7 +433,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
-    return true;
+    return { ...next, restoredValue: next.nextValue };
   };
 
   /** True when the row's current raw values differ from the originally-parsed
@@ -695,9 +697,21 @@ export default function AssetsImportPage() {
         e.preventDefault();
         const redone = redoLastEdit();
         if (redone) {
+          const remaining = redoHistory.current.length;
+          const display = redone.restoredValue.trim() === "" ? "(empty)" : `"${redone.restoredValue}"`;
+          // Flash the cell immediately so the user can see what was reapplied.
+          focusCellByCoords(redone.lineNumber, redone.field);
           toast({
             title: "Edit redone",
-            description: `${redoHistory.current.length} undone edit${redoHistory.current.length === 1 ? "" : "s"} remain available to redo.`,
+            description: `Row ${redone.lineNumber} · column "${redone.field}" reapplied to ${display}. ${remaining} undone edit${remaining === 1 ? "" : "s"} remain available to redo.`,
+            action: (
+              <ToastAction
+                altText={`Jump to row ${redone.lineNumber}, column ${redone.field}`}
+                onClick={() => focusCellByCoords(redone.lineNumber, redone.field)}
+              >
+                Jump to cell
+              </ToastAction>
+            ),
           });
         }
       } else {
@@ -1032,7 +1046,25 @@ export default function AssetsImportPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => redoLastEdit()}
+                      onClick={() => {
+                        const redone = redoLastEdit();
+                        if (!redone) return;
+                        const remaining = redoHistory.current.length;
+                        const display = redone.restoredValue.trim() === "" ? "(empty)" : `"${redone.restoredValue}"`;
+                        focusCellByCoords(redone.lineNumber, redone.field);
+                        toast({
+                          title: "Edit redone",
+                          description: `Row ${redone.lineNumber} · column "${redone.field}" reapplied to ${display}. ${remaining} undone edit${remaining === 1 ? "" : "s"} remain available to redo.`,
+                          action: (
+                            <ToastAction
+                              altText={`Jump to row ${redone.lineNumber}, column ${redone.field}`}
+                              onClick={() => focusCellByCoords(redone.lineNumber, redone.field)}
+                            >
+                              Jump to cell
+                            </ToastAction>
+                          ),
+                        });
+                      }}
                       disabled={redoCount === 0 || isImporting}
                       title={redoCount > 0 ? `Redo last undone edit (⌘/Ctrl+Y) — ${redoCount} available` : "Nothing to redo"}
                     >
