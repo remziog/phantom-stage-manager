@@ -12,7 +12,7 @@
  * Optional env: GITHUB_STEP_SUMMARY (set automatically by GitHub Actions)
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
@@ -21,6 +21,8 @@ const STEP_SUMMARY = process.env.GITHUB_STEP_SUMMARY;
 const ON_CI = !!process.env.GITHUB_ACTIONS;
 const SCRIPT_PATH = "scripts/e2e-seed.ts";
 const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/schema-snapshot.json";
+/** Optional path to a previous snapshot artifact to diff against. */
+const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
 
 /**
  * Sanitize the Supabase URL for the snapshot — keeps the project ref so you can
