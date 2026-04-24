@@ -63,6 +63,11 @@ export default function AssetsImportPage() {
     setUndoCount(editHistory.current.length);
     setRedoCount(redoHistory.current.length);
   };
+  // Set to true by `handleFile` whenever a freshly-validated CSV contains
+  // invalid rows. A `useEffect` watching `validated` consumes the flag and
+  // moves focus to the first invalid cell — exactly once per validation
+  // pass, so we don't steal focus during ordinary inline editing.
+  const focusFirstErrorOnNextRender = useRef(false);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
