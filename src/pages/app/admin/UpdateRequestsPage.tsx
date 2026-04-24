@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -33,7 +32,7 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter,
 } from "lucide-react";
 
 type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
@@ -295,43 +294,51 @@ function ReviewDialog({ request, onClose }: ReviewDialogProps) {
   );
 }
 
+type StatusFilter = UpdateRequestStatus | "all";
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+];
+
 export default function AdminUpdateRequestsPage() {
   const { company } = useAuth();
   const cid = company?.id ?? "";
-  const [tab, setTab] = useState<UpdateRequestStatus>("pending");
   const [reviewing, setReviewing] = useState<UpdateRequestWithCustomer | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("date_desc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
 
+  // Fetch all requests once; filter/sort happens client-side so the status
+  // dropdown stays instant and the counts always reflect the same dataset.
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["update-requests", cid, tab],
-    queryFn: () => listUpdateRequests(cid, tab),
+    queryKey: ["update-requests", cid, "all"],
+    queryFn: () => listUpdateRequests(cid),
     enabled: !!cid,
   });
 
-  const counts = useQuery({
-    queryKey: ["update-requests-counts", cid],
-    queryFn: async () => {
-      const all = await listUpdateRequests(cid);
-      return {
-        pending: all.filter((r) => r.status === "pending").length,
-        approved: all.filter((r) => r.status === "approved").length,
-        rejected: all.filter((r) => r.status === "rejected").length,
-      };
-    },
-    enabled: !!cid,
-  });
+  const counts = useMemo(
+    () => ({
+      all: requests.length,
+      pending: requests.filter((r) => r.status === "pending").length,
+      approved: requests.filter((r) => r.status === "approved").length,
+      rejected: requests.filter((r) => r.status === "rejected").length,
+    }),
+    [requests],
+  );
 
-  // Filter by company name / email, then sort. Memoised so typing stays cheap.
+  // Status → search → sort. Memoised so typing stays cheap.
   const visibleRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = q
-      ? requests.filter((r) => {
-          const name = (r.customer?.name ?? "").toLowerCase();
-          const email = (r.customer?.email ?? "").toLowerCase();
-          return name.includes(q) || email.includes(q);
-        })
-      : requests;
+    const filtered = requests.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (!q) return true;
+      const name = (r.customer?.name ?? "").toLowerCase();
+      const email = (r.customer?.email ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
 
     const sorted = [...filtered];
     sorted.sort((a, b) => {
@@ -353,7 +360,10 @@ export default function AdminUpdateRequestsPage() {
       }
     });
     return sorted;
-  }, [requests, search, sort]);
+  }, [requests, search, sort, statusFilter]);
+
+  const statusLabel =
+    STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label.toLowerCase() ?? "";
 
   return (
     <AppShell>
@@ -372,63 +382,69 @@ export default function AdminUpdateRequestsPage() {
               Approving a request writes the new values to the customer record.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as UpdateRequestStatus)}>
-              <TabsList>
-                <TabsTrigger value="pending">
-                  Pending {counts.data ? `(${counts.data.pending})` : ""}
-                </TabsTrigger>
-                <TabsTrigger value="approved">
-                  Approved {counts.data ? `(${counts.data.approved})` : ""}
-                </TabsTrigger>
-                <TabsTrigger value="rejected">
-                  Rejected {counts.data ? `(${counts.data.rejected})` : ""}
-                </TabsTrigger>
-              </TabsList>
+          <CardContent className="space-y-4">
+            {/* Filter / search / sort controls */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by status">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label} ({counts[o.value]})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Search + sort controls */}
-              <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by company or email…"
-                    className="pl-9"
-                    aria-label="Search update requests"
-                  />
-                </div>
-                <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-                  <SelectTrigger className="w-full sm:w-[200px]" aria-label="Sort requests">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by company or email…"
+                  className="pl-9"
+                  aria-label="Search update requests"
+                />
               </div>
 
-              <TabsContent value={tab} className="mt-4">
-                {isLoading ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
-                ) : visibleRequests.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">
-                    {search.trim()
-                      ? `No ${tab} requests match "${search.trim()}".`
-                      : `No ${tab} requests.`}
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {visibleRequests.map((r) => (
-                      <RequestRow key={r.id} request={r} onReview={setReviewing} />
-                    ))}
-                  </ul>
-                )}
-              </TabsContent>
-            </Tabs>
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="w-full sm:w-[200px]" aria-label="Sort requests">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Active filter summary */}
+            <div className="text-xs text-muted-foreground">
+              Showing {visibleRequests.length} of {counts.all} request{counts.all === 1 ? "" : "s"}
+              {statusFilter !== "all" && ` · ${statusLabel}`}
+              {search.trim() && ` · matching "${search.trim()}"`}
+            </div>
+
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
+            ) : visibleRequests.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                {search.trim()
+                  ? `No ${statusFilter === "all" ? "" : statusLabel + " "}requests match "${search.trim()}".`
+                  : `No ${statusFilter === "all" ? "" : statusLabel + " "}requests.`}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {visibleRequests.map((r) => (
+                  <RequestRow key={r.id} request={r} onReview={setReviewing} />
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
