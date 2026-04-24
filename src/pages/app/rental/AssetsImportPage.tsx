@@ -667,7 +667,11 @@ export default function AssetsImportPage() {
       for (const row of v) snap.set(row.lineNumber, { ...row.raw });
       originalRawByLine.current = snap;
       const valid = v.filter((r) => r.errors.length === 0).length;
-      return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
+      const invalid = v.length - valid;
+      // Arm the auto-focus effect so the user lands on the first bad cell
+      // as soon as the editor renders. Skipped when nothing is wrong.
+      if (invalid > 0) focusFirstErrorOnNextRender.current = true;
+      return { ok: true as const, total: v.length, valid, invalid };
     } catch (e) {
       setParseError((e as Error).message);
       setHeaders([]);
