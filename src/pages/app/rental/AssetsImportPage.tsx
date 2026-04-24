@@ -446,6 +446,37 @@ export default function AssetsImportPage() {
     [validated, editableColumns],
   );
 
+  /** Safety net: whenever the validated rows change (per-row revert, undo
+   * all, file reload, or any future code path that mutates `validated`),
+   * prune dangling history entries that point to lines no longer present
+   * AND re-mirror the stack lengths into the visible counters. This keeps
+   * the Undo / Redo badges honest even if a future caller forgets to invoke
+   * `syncHistoryCounts` directly. */
+  useEffect(() => {
+    const liveLines = new Set(validated.map((r) => r.lineNumber));
+    let changed = false;
+    const prunedEdits = editHistory.current.filter((h) => {
+      if (liveLines.has(h.lineNumber)) return true;
+      changed = true;
+      return false;
+    });
+    const prunedRedos = redoHistory.current.filter((h) => {
+      if (liveLines.has(h.lineNumber)) return true;
+      changed = true;
+      return false;
+    });
+    if (changed) {
+      editHistory.current = prunedEdits;
+      redoHistory.current = prunedRedos;
+    }
+    // Always re-mirror — cheap and idempotent.
+    if (undoCount !== editHistory.current.length) {
+      setUndoCount(editHistory.current.length);
+    }
+    if (redoCount !== redoHistory.current.length) {
+      setRedoCount(redoHistory.current.length);
+    }
+  }, [validated, undoCount, redoCount]);
   /** Restore one row's raw values to the originally-parsed snapshot, then
    * re-validate it so the errors column refreshes. */
   const undoRow = (lineNumber: number) => {
