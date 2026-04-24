@@ -15,6 +15,7 @@ import CreateCompanyPage from "./pages/onboarding/CreateCompanyPage";
 import OnboardingWizard from "./pages/onboarding/OnboardingWizard";
 import DashboardPage from "./pages/app/DashboardPage";
 import AssetsPage from "./pages/app/rental/AssetsPage";
+import AssetsImportPage from "./pages/app/rental/AssetsImportPage";
 import ReservationsPage from "./pages/app/rental/ReservationsPage";
 import CustomersPage from "./pages/app/rental/CustomersPage";
 import InvoicesPage from "./pages/app/rental/InvoicesPage";
@@ -87,6 +88,7 @@ function AppRoutes() {
       {/* App */}
       <Route path="/app" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/app/assets" element={<ProtectedRoute path="/app/assets"><AssetsPage /></ProtectedRoute>} />
+      <Route path="/app/assets/import" element={<ProtectedRoute path="/app/assets"><AssetsImportPage /></ProtectedRoute>} />
       <Route path="/app/reservations" element={<ProtectedRoute path="/app/reservations"><ReservationsPage /></ProtectedRoute>} />
       <Route path="/app/customers" element={<ProtectedRoute path="/app/customers"><CustomersPage /></ProtectedRoute>} />
       <Route path="/app/invoices" element={<ProtectedRoute path="/app/invoices"><InvoicesPage /></ProtectedRoute>} />
