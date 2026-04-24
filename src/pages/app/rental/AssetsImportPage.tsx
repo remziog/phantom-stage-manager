@@ -703,7 +703,11 @@ export default function AssetsImportPage() {
                       Edit values directly below — rows are re-validated as you
                       type and move to the valid bucket once all errors clear. Or
                       fix them in your CSV and re-upload, or enable “Import valid
-                      rows only”.
+                      rows only”. Press{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Z</kbd>{" "}
+                      to undo the last edit, or{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
+                      to undo all.
                     </CardDescription>
                   </div>
                   <Button
@@ -711,7 +715,7 @@ export default function AssetsImportPage() {
                     size="sm"
                     onClick={undoAllEdits}
                     disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                    title={hasAnyEdits ? "Revert all inline edits (⇧⌘/Ctrl+Z)" : "No edits to undo"}
                   >
                     <Undo2 className="h-4 w-4 mr-2" />
                     Undo all edits
