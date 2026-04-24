@@ -55,6 +55,14 @@ export default function AssetsImportPage() {
   // standard text-editor behaviour where a new edit forks the history.
   interface RedoHistoryEntry { lineNumber: number; field: string; nextValue: string; }
   const redoHistory = useRef<RedoHistoryEntry[]>([]);
+  // Mirror the ref-backed stack lengths into state so the visible Undo/Redo
+  // counters re-render whenever an edit, undo, redo, or revert happens.
+  const [undoCount, setUndoCount] = useState(0);
+  const [redoCount, setRedoCount] = useState(0);
+  const syncHistoryCounts = () => {
+    setUndoCount(editHistory.current.length);
+    setRedoCount(redoHistory.current.length);
+  };
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
