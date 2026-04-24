@@ -24,6 +24,7 @@ import SettingsPage from "./pages/app/SettingsPage";
 import CsvAnalyticsPage from "./pages/app/admin/CsvAnalyticsPage";
 import CsvFieldDetailPage from "./pages/app/admin/CsvFieldDetailPage";
 import NotFound from "./pages/NotFound";
+import { RoleGate } from "@/components/RoleGate";
 
 const queryClient = new QueryClient();
 
@@ -95,9 +96,9 @@ function AppRoutes() {
       <Route path="/app/customers" element={<ProtectedRoute path="/app/customers"><CustomersPage /></ProtectedRoute>} />
       <Route path="/app/invoices" element={<ProtectedRoute path="/app/invoices"><InvoicesPage /></ProtectedRoute>} />
       <Route path="/app/reports" element={<ProtectedRoute path="/app/reports"><ReportsPage /></ProtectedRoute>} />
-      <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-      <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><CsvAnalyticsPage /></ProtectedRoute>} />
-      <Route path="/app/admin/csv-analytics/field/:field" element={<ProtectedRoute><CsvFieldDetailPage /></ProtectedRoute>} />
+      <Route path="/app/settings" element={<ProtectedRoute><RoleGate permission="view:settings"><SettingsPage /></RoleGate></ProtectedRoute>} />
+      <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvAnalyticsPage /></RoleGate></ProtectedRoute>} />
+      <Route path="/app/admin/csv-analytics/field/:field" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvFieldDetailPage /></RoleGate></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
