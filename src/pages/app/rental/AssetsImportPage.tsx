@@ -583,8 +583,9 @@ export default function AssetsImportPage() {
                         <Upload className="h-4 w-4 mr-2" />
                         Retry only failed rows ({invalidRows.length})
                       </Button>
-                      <Button variant="outline" size="sm" onClick={downloadSkipped}>
-                        <Download className="h-4 w-4 mr-2" />Download skipped rows
+                      <Button variant="outline" size="sm" onClick={downloadStillFailing}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export still-failing rows ({invalidRows.length})
                       </Button>
                     </div>
                   </div>
