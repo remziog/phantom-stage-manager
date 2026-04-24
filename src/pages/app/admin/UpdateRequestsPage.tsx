@@ -1,0 +1,362 @@
+/**
+ * Admin Review — Customer Update Requests.
+ * Lists requests grouped by status with a side-by-side diff (current vs.
+ * requested) and approve/reject actions. Approval writes the requested
+ * values to the customer record; reject just records the decision.
+ */
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { AppShell } from "@/components/layout/AppShell";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  listUpdateRequests,
+  approveRequest,
+  rejectRequest,
+  fetchCustomerForDiff,
+  EDITABLE_FIELDS,
+  type EditableField,
+  type UpdateRequestStatus,
+  type UpdateRequestWithCustomer,
+} from "@/services/updateRequestsAdmin";
+import {
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X,
+} from "lucide-react";
+
+const FIELD_LABELS: Record<EditableField, string> = {
+  name: "Company name",
+  email: "Email",
+  phone: "Phone",
+  address: "Address",
+  tax_id: "Tax ID",
+  notes: "Notes",
+};
+
+const STATUS_META: Record<UpdateRequestStatus, { label: string; tone: string; icon: typeof Clock }> = {
+  pending: { label: "Pending", tone: "bg-warning/15 text-warning", icon: Clock },
+  approved: { label: "Approved", tone: "bg-success/15 text-success", icon: CheckCircle2 },
+  rejected: { label: "Rejected", tone: "bg-destructive/15 text-destructive", icon: XCircle },
+};
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString();
+}
+
+/** Returns the list of fields that have a requested value (= a change). */
+function changedFields(req: UpdateRequestWithCustomer): EditableField[] {
+  return EDITABLE_FIELDS.filter((f) => req[f] !== null && req[f] !== undefined);
+}
+
+interface RequestRowProps {
+  request: UpdateRequestWithCustomer;
+  onReview: (req: UpdateRequestWithCustomer) => void;
+}
+
+function RequestRow({ request, onReview }: RequestRowProps) {
+  const meta = STATUS_META[request.status];
+  const Icon = meta.icon;
+  const fields = changedFields(request);
+
+  return (
+    <li className="rounded-md border border-border p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+            <UserCircle2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium truncate">{request.customer?.name ?? "—"}</div>
+            <div className="text-xs text-muted-foreground truncate">
+              {request.customer?.email ?? "no email"}
+            </div>
+          </div>
+        </div>
+        <div className="text-right space-y-1 shrink-0">
+          <Badge className={`${meta.tone} gap-1`}>
+            <Icon className="h-3 w-3" />
+            {meta.label}
+          </Badge>
+          <div className="text-xs text-muted-foreground">{fmtDate(request.created_at)}</div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {fields.length === 0 ? (
+          <span className="text-xs text-muted-foreground">No fields changed</span>
+        ) : fields.map((f) => (
+          <Badge key={f} variant="outline" className="text-xs">{FIELD_LABELS[f]}</Badge>
+        ))}
+      </div>
+
+      {request.message && (
+        <p className="text-sm text-muted-foreground italic">"{request.message}"</p>
+      )}
+
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={() => onReview(request)}>
+          <Eye className="h-4 w-4 mr-2" />
+          {request.status === "pending" ? "Review" : "View"}
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+interface ReviewDialogProps {
+  request: UpdateRequestWithCustomer | null;
+  onClose: () => void;
+}
+
+function ReviewDialog({ request, onClose }: ReviewDialogProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  // Fetch the customer's *current* values so we can show a real diff
+  // even if the customer record has changed since the request was made.
+  const { data: customerNow } = useQuery({
+    queryKey: ["review-customer", request?.customer_id ?? ""],
+    queryFn: () => fetchCustomerForDiff(request!.customer_id),
+    enabled: !!request,
+  });
+
+  const approveMut = useMutation({
+    mutationFn: () => approveRequest(request!, user!.id, reviewNotes),
+    onSuccess: () => {
+      toast({ title: "Request approved", description: "Customer record updated." });
+      qc.invalidateQueries({ queryKey: ["update-requests"] });
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      onClose();
+      setReviewNotes("");
+    },
+    onError: (e: Error) =>
+      toast({ title: "Could not approve", description: e.message, variant: "destructive" }),
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: () => rejectRequest(request!.id, user!.id, reviewNotes),
+    onSuccess: () => {
+      toast({ title: "Request rejected" });
+      qc.invalidateQueries({ queryKey: ["update-requests"] });
+      onClose();
+      setReviewNotes("");
+    },
+    onError: (e: Error) =>
+      toast({ title: "Could not reject", description: e.message, variant: "destructive" }),
+  });
+
+  if (!request) return null;
+  const fields = changedFields(request);
+  const isPending = request.status === "pending";
+  const busy = approveMut.isPending || rejectMut.isPending;
+
+  return (
+    <Dialog open={!!request} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Review update request</DialogTitle>
+          <DialogDescription>
+            From {request.customer?.name ?? "—"} · submitted {fmtDate(request.created_at)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Customer message */}
+          {request.message && (
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                Customer message
+              </div>
+              <p className="text-sm italic">"{request.message}"</p>
+            </div>
+          )}
+
+          {/* Diff */}
+          <div>
+            <div className="text-sm font-medium mb-2">Requested changes</div>
+            {fields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No fields changed.</p>
+            ) : (
+              <div className="space-y-2">
+                {fields.map((f) => {
+                  const before = (customerNow?.[f] as string | null) ?? "";
+                  const after = (request[f] as string | null) ?? "";
+                  const same = before === after;
+                  return (
+                    <div key={f} className="rounded-md border border-border p-3">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                        {FIELD_LABELS[f]}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <div className="rounded bg-destructive/10 border border-destructive/20 p-2">
+                          <div className="text-[10px] uppercase tracking-wide text-destructive mb-1">
+                            Current
+                          </div>
+                          <div className="text-foreground break-words whitespace-pre-wrap">
+                            {before || <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </div>
+                        <div className={`rounded p-2 border ${
+                          same
+                            ? "bg-muted/30 border-border"
+                            : "bg-success/10 border-success/20"
+                        }`}>
+                          <div className={`text-[10px] uppercase tracking-wide mb-1 ${
+                            same ? "text-muted-foreground" : "text-success"
+                          }`}>
+                            {same ? "Requested (no change)" : "Requested"}
+                          </div>
+                          <div className="text-foreground break-words whitespace-pre-wrap">
+                            {after || <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Existing review notes (read-only when already decided) */}
+          {!isPending && request.review_notes && (
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                Admin note
+              </div>
+              <p className="text-sm">{request.review_notes}</p>
+            </div>
+          )}
+
+          {/* Notes input — only when actionable */}
+          {isPending && (
+            <div className="space-y-1.5">
+              <Label htmlFor="reviewNotes">Note to customer (optional)</Label>
+              <Textarea
+                id="reviewNotes"
+                rows={2}
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                placeholder="Reason or follow-up instructions…"
+              />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={busy}>Close</Button>
+          {isPending && (
+            <>
+              <Button
+                variant="destructive"
+                onClick={() => rejectMut.mutate()}
+                disabled={busy}
+              >
+                <X className="h-4 w-4 mr-2" />
+                {rejectMut.isPending ? "Rejecting…" : "Reject"}
+              </Button>
+              <Button
+                onClick={() => approveMut.mutate()}
+                disabled={busy || fields.length === 0}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                {approveMut.isPending ? "Approving…" : "Approve"}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default function AdminUpdateRequestsPage() {
+  const { company } = useAuth();
+  const cid = company?.id ?? "";
+  const [tab, setTab] = useState<UpdateRequestStatus>("pending");
+  const [reviewing, setReviewing] = useState<UpdateRequestWithCustomer | null>(null);
+
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ["update-requests", cid, tab],
+    queryFn: () => listUpdateRequests(cid, tab),
+    enabled: !!cid,
+  });
+
+  const counts = useQuery({
+    queryKey: ["update-requests-counts", cid],
+    queryFn: async () => {
+      const all = await listUpdateRequests(cid);
+      return {
+        pending: all.filter((r) => r.status === "pending").length,
+        approved: all.filter((r) => r.status === "approved").length,
+        rejected: all.filter((r) => r.status === "rejected").length,
+      };
+    },
+    enabled: !!cid,
+  });
+
+  return (
+    <AppShell>
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="text-2xl font-bold tracking-display">Customer update requests</h1>
+          <p className="text-sm text-muted-foreground">
+            Review changes customers have requested to their profile.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Inbox</CardTitle>
+            <CardDescription>
+              Approving a request writes the new values to the customer record.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as UpdateRequestStatus)}>
+              <TabsList>
+                <TabsTrigger value="pending">
+                  Pending {counts.data ? `(${counts.data.pending})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="approved">
+                  Approved {counts.data ? `(${counts.data.approved})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="rejected">
+                  Rejected {counts.data ? `(${counts.data.rejected})` : ""}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={tab} className="mt-4">
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
+                ) : requests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">
+                    No {tab} requests.
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {requests.map((r) => (
+                      <RequestRow key={r.id} request={r} onReview={setReviewing} />
+                    ))}
+                  </ul>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+
+      <ReviewDialog request={reviewing} onClose={() => setReviewing(null)} />
+    </AppShell>
+  );
+}
