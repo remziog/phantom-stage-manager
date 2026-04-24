@@ -45,9 +45,6 @@ export default function AssetsImportPage() {
   // time a file is validated. Used to power the per-row and global "Undo
   // edits" actions on the Row errors card.
   const originalRawByLine = useRef<Map<number, Record<string, string>>>(new Map());
-  // Bumped when an undo runs so we can show a transient "reverted" toast and
-  // optionally drive any UI that needs to react to a revert.
-  const [editedLines, setEditedLines] = useState<Set<number>>(new Set());
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
