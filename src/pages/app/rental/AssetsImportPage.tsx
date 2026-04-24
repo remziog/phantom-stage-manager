@@ -556,24 +556,30 @@ export default function AssetsImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validated]);
 
-  /** Move focus from the currently-focused editor input to the next input
-   * that still has `aria-invalid="true"`. Used by the Enter-to-advance
-   * keyboard flow. Returns true when a target was found, false when the
+  /** Move focus from the currently-focused editor input to the next/previous
+   * input that still has `aria-invalid="true"`. Used by the Enter / Shift+Enter
+   * navigation flow. Returns true when a target was found, false when the
    * user has cleared all remaining errors. */
-  const focusNextError = (current: HTMLElement): boolean => {
+  const focusAdjacentError = (
+    current: HTMLElement,
+    direction: 1 | -1,
+  ): boolean => {
     const editor = document.querySelector('[data-csv-editor="true"]');
     if (!editor) return false;
     const all = Array.from(
       editor.querySelectorAll<HTMLInputElement>('input[aria-invalid="true"]'),
     );
     if (all.length === 0) return false;
-    // Pick the first invalid input that comes *after* the current one in
-    // DOM order; wrap to the top if we're already past the last one.
     const currentIdx = all.indexOf(current as HTMLInputElement);
-    const next =
-      currentIdx === -1
-        ? all[0]
-        : all[(currentIdx + 1) % all.length];
+    let nextIdx: number;
+    if (currentIdx === -1) {
+      // Focus is on a now-valid (or unrelated) input — jump to the first
+      // when going forward, or the last when going backward.
+      nextIdx = direction === 1 ? 0 : all.length - 1;
+    } else {
+      nextIdx = (currentIdx + direction + all.length) % all.length;
+    }
+    const next = all[nextIdx];
     next.scrollIntoView({ behavior: "smooth", block: "center" });
     next.focus({ preventScroll: true });
     const len = next.value.length;
@@ -581,18 +587,18 @@ export default function AssetsImportPage() {
     return true;
   };
 
-  /** Editor-scoped Enter handler. When the user presses Enter inside an
-   * input, jump to the next still-invalid cell. If there are no remaining
-   * errors, blur the field and toast a confirmation so the user knows
-   * they're done. Other keys (and Enter outside the editor) are unaffected. */
+  /** Editor-scoped Enter handler. Plain Enter advances to the next still-
+   * invalid cell; Shift+Enter walks backwards to the previous one. If no
+   * errors remain after a forward press, blur and toast a confirmation. */
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.altKey) return;
     const target = e.target as HTMLElement | null;
     if (!target || target.tagName !== "INPUT") return;
     e.preventDefault();
+    const direction: 1 | -1 = e.shiftKey ? -1 : 1;
     // Re-validation already ran synchronously inside `editCell`, so the
     // current input's `aria-invalid` is up-to-date by the time Enter fires.
-    const moved = focusNextError(target);
+    const moved = focusAdjacentError(target, direction);
     if (!moved) {
       (target as HTMLInputElement).blur();
       toast({
@@ -922,7 +928,9 @@ export default function AssetsImportPage() {
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
                       to redo. Press{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Enter</kbd>{" "}
-                      in any cell to jump to the next remaining error.
+                      /{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Shift+Enter</kbd>{" "}
+                      in any cell to jump to the next / previous remaining error.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
