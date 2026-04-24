@@ -626,14 +626,26 @@ export default function AssetsImportPage() {
 
             {invalidRows.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Row errors</CardTitle>
-                  <CardDescription>
-                    Edit values directly below — rows are re-validated as you
-                    type and move to the valid bucket once all errors clear. Or
-                    fix them in your CSV and re-upload, or enable “Import valid
-                    rows only”.
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">Row errors</CardTitle>
+                    <CardDescription>
+                      Edit values directly below — rows are re-validated as you
+                      type and move to the valid bucket once all errors clear. Or
+                      fix them in your CSV and re-upload, or enable “Import valid
+                      rows only”.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={undoAllEdits}
+                    disabled={!hasAnyEdits || isImporting}
+                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                  >
+                    <Undo2 className="h-4 w-4 mr-2" />
+                    Undo all edits
+                  </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -645,11 +657,13 @@ export default function AssetsImportPage() {
                             <TableHead key={c} className="capitalize">{c.replace(/_/g, " ")}</TableHead>
                           ))}
                           <TableHead>Errors</TableHead>
+                          <TableHead className="w-12 sr-only">Undo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {invalidRows.slice(0, 100).map((r) => {
                           const fieldErrors = errorsByLine.get(r.lineNumber);
+                          const edited = isRowEdited(r.lineNumber, r.raw);
                           return (
                             <TableRow key={r.lineNumber} className="align-top">
                               <TableCell className="tabular-nums text-muted-foreground pt-3">
@@ -675,6 +689,20 @@ export default function AssetsImportPage() {
                                     <li key={i}><strong>{e.field}:</strong> {e.message}</li>
                                   ))}
                                 </ul>
+                              </TableCell>
+                              <TableCell className="pt-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2"
+                                  onClick={() => undoRow(r.lineNumber)}
+                                  disabled={!edited || isImporting}
+                                  aria-label={`Undo edits for line ${r.lineNumber}`}
+                                  title={edited ? "Revert this row to its original values" : "No edits on this row"}
+                                >
+                                  <Undo2 className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
