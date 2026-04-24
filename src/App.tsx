@@ -95,6 +95,7 @@ function AppRoutes() {
       <Route path="/app/invoices" element={<ProtectedRoute path="/app/invoices"><InvoicesPage /></ProtectedRoute>} />
       <Route path="/app/reports" element={<ProtectedRoute path="/app/reports"><ReportsPage /></ProtectedRoute>} />
       <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><CsvAnalyticsPage /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
