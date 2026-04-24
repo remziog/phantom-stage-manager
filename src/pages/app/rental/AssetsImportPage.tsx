@@ -535,6 +535,9 @@ export default function AssetsImportPage() {
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
     });
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo_all" });
+    }
   };
 
   /** Find the first invalid input rendered inside the editor (DOM order
