@@ -454,6 +454,8 @@ export default function AssetsImportPage() {
     setResume(null);
     setProgress(null);
     setLastRunSummary(null);
+    // A new file resets the inline-edit history.
+    editHistory.current = [];
     try {
       const text = await file.text();
       setRawText(text);
