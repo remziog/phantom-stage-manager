@@ -236,3 +236,131 @@ permissions:
 ```
 
 > Note: cross-repo artifact fetches (when `PREFLIGHT_BASELINE_REPO` points at a different repository) require a PAT with `actions:read` on that repo passed as `GITHUB_TOKEN` — the default `GITHUB_TOKEN` is scoped to the current repo only.
+
+#### Complete examples per baseline option
+
+The three blocks below are full, copy-pasteable job snippets. Each one shows the `permissions:` block and the `env:` wiring that match a single baseline source. Pick the one that fits your setup.
+
+##### Option A — `PREFLIGHT_BASELINE_PATH` (recommended default)
+
+Downloads the previous run's artifact to a local path, then points the preflight at the file. No `actions: read` needed.
+
+```yaml
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # actions: read NOT required — download action uses its own token.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Download previous preflight snapshot
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          name: preflight-report
+          workflow: e2e.yml
+          branch: ${{ github.event.repository.default_branch }}
+          path: preflight-baseline
+          if_no_artifact_found: warn
+
+      - name: Preflight (baseline = local file)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
+          PREFLIGHT_FAIL_ON: regressions
+        run: npm run test:e2e:preflight
+
+      - name: Upload new snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report
+          path: preflight-report/
+          retention-days: 14
+```
+
+##### Option B — `PREFLIGHT_BASELINE_ARTIFACT_URL` (pin to a known artifact)
+
+Useful when comparing against a specific artifact (e.g. the last green build on `main`). Requires `actions: read` and `GITHUB_TOKEN`.
+
+```yaml
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read   # required: script calls GitHub API to download the artifact zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Preflight (baseline = artifact URL)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Either a REST URL (…/zip) or a browser URL — both are normalized.
+          PREFLIGHT_BASELINE_ARTIFACT_URL: https://api.github.com/repos/${{ github.repository }}/actions/artifacts/123456789/zip
+          PREFLIGHT_FAIL_ON: regressions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run test:e2e:preflight
+
+      - name: Upload new snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report
+          path: preflight-report/
+          retention-days: 14
+```
+
+##### Option C — `PREFLIGHT_BASELINE_RUN_ID` + `PREFLIGHT_BASELINE_REPO`
+
+Looks up the named artifact (default `preflight-report`) on a specific workflow run. Requires `actions: read` and `GITHUB_TOKEN`.
+
+```yaml
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read   # required: script lists + downloads artifacts via GitHub API
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Preflight (baseline = workflow run)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PREFLIGHT_BASELINE_RUN_ID: "9876543210"
+          PREFLIGHT_BASELINE_REPO: ${{ github.repository }}
+          PREFLIGHT_BASELINE_ARTIFACT_NAME: preflight-report   # optional, this is the default
+          PREFLIGHT_FAIL_ON: regressions
+          # For cross-repo lookups, swap GITHUB_TOKEN for a PAT with actions:read on the target repo.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run test:e2e:preflight
+
+      - name: Upload new snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report
+          path: preflight-report/
+          retention-days: 14
+```
