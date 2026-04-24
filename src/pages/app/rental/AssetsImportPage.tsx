@@ -62,6 +62,21 @@ export default function AssetsImportPage() {
   }
   const [resume, setResume] = useState<ResumeCheckpoint | null>(null);
 
+  // Summary of the most recent completed import. When `wasResume` is true we
+  // render a breakdown that separates rows saved in the previous (cancelled)
+  // run from rows saved in the just-finished resumed run.
+  interface RunSummary {
+    wasResume: boolean;
+    previousInserted: number;
+    previousUpdated: number;
+    runInserted: number;
+    runUpdated: number;
+    failed: number;
+    skipped: number;
+    fileName: string;
+  }
+  const [lastRunSummary, setLastRunSummary] = useState<RunSummary | null>(null);
+
   const headerCheck = useMemo(
     () => (headers.length ? validateAssetHeaders(headers) : null),
     [headers],
