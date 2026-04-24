@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -22,8 +23,8 @@ import {
   ASSET_OPTIONAL_HEADERS,
   type ValidatedAssetRow,
 } from "@/lib/csv";
-import { importAssets } from "@/services/assets";
-import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText } from "lucide-react";
+import { importAssets, type ImportProgress } from "@/services/assets";
+import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2 } from "lucide-react";
 
 const SAMPLE_CSV = `name,sku,category,quantity,unit_price,location,status
 Shure SM58,MIC-SM58,Microphone,10,99.00,Warehouse A,available
@@ -44,6 +45,7 @@ export default function AssetsImportPage() {
   const [validated, setValidated] = useState<ValidatedAssetRow[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [allowPartial, setAllowPartial] = useState(false);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
 
   const headerCheck = useMemo(
     () => (headers.length ? validateAssetHeaders(headers) : null),
@@ -53,19 +55,13 @@ export default function AssetsImportPage() {
   const validRows = useMemo(() => validated.filter((r) => r.errors.length === 0), [validated]);
   const invalidRows = useMemo(() => validated.filter((r) => r.errors.length > 0), [validated]);
 
-  const canImport =
-    !!cid &&
-    !!user &&
-    headerCheck?.ok === true &&
-    validated.length > 0 &&
-    (invalidRows.length === 0 || allowPartial);
-
   const importMut = useMutation({
     mutationFn: () =>
       importAssets(
         cid,
         user!.id,
         validRows.map((r) => r.parsed),
+        (p) => setProgress(p),
       ),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["assets", cid] });
@@ -79,9 +75,32 @@ export default function AssetsImportPage() {
       });
       if (res.failed.length === 0) navigate("/app/assets");
     },
-    onError: (e) =>
-      toast({ title: "Import failed", description: (e as Error).message, variant: "destructive" }),
+    onError: (e) => {
+      setProgress(null);
+      toast({ title: "Import failed", description: (e as Error).message, variant: "destructive" });
+    },
   });
+
+  const isImporting = importMut.isPending;
+
+  // Block browser nav (refresh / close tab) while a batch is in-flight.
+  useEffect(() => {
+    if (!isImporting) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isImporting]);
+
+  const canImport =
+    !!cid &&
+    !!user &&
+    headerCheck?.ok === true &&
+    validated.length > 0 &&
+    (invalidRows.length === 0 || allowPartial) &&
+    !isImporting;
 
   const handleFile = async (file: File) => {
     setParseError(null);
