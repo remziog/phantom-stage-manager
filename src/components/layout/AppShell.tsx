@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
-  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck,
+  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck, UserCircle2,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
@@ -178,6 +178,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border space-y-1">
+          {/* Customer-only: link to their portal page (profile + update requests). */}
+          {isCustomer && (
+            <GatedNavLink
+              to="/app/portal"
+              icon={UserCircle2}
+              label="My profile"
+              permission="view:portal"
+            />
+          )}
           {/* Admin-only — shown disabled to Team Members so they can see
               what their role would unlock. Hidden entirely from customers. */}
           {!isCustomer && (
@@ -188,16 +197,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               permission="view:csv-analytics"
             />
           )}
-          {/* Settings: admins manage company; team members & customers see disabled */}
-          {isAdmin ? (
-            <GatedNavLink to="/app/settings" icon={Settings} label="Settings" />
-          ) : (
-            <GatedNavLink
-              to="/app/settings"
-              icon={Settings}
-              label="Settings"
-              permission="view:settings"
-            />
+          {/* Settings: admins manage company; team members see disabled; hidden from customers. */}
+          {!isCustomer && (
+            isAdmin ? (
+              <GatedNavLink to="/app/settings" icon={Settings} label="Settings" />
+            ) : (
+              <GatedNavLink
+                to="/app/settings"
+                icon={Settings}
+                label="Settings"
+                permission="view:settings"
+              />
+            )
           )}
         </div>
       </aside>
