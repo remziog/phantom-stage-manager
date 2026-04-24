@@ -26,6 +26,7 @@ import {
   type ValidatedAssetRow,
 } from "@/lib/csv";
 import { importAssets, type ImportProgress } from "@/services/assets";
+import { logCsvEditEvent, flushCsvEditEvents } from "@/services/csvAnalytics";
 import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2, Undo2, Redo2 } from "lucide-react";
 
 const SAMPLE_CSV = `name,sku,category,quantity,unit_price,location,status
