@@ -12,10 +12,10 @@ import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
   Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCurrentMemberRole } from "@/services/csvAnalyticsAdmin";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
+import { useUserRole, deniedReason, type Permission } from "@/hooks/useUserRole";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Industry = Database["public"]["Enums"]["industry_type"];
 
@@ -71,25 +71,92 @@ function navItems(industry: Industry | null | undefined, enabled: string[]): Nav
   return allNavItems(industry).filter((item) => !item.module || enabledSet.has(item.module));
 }
 
+/**
+ * Render a sidebar nav item, optionally gated by a permission. When the
+ * user lacks the permission, the link is rendered as a disabled-looking
+ * row with a tooltip — matching the "show but disabled" UX choice.
+ */
+function GatedNavLink({
+  to, end, icon: Icon, label, permission,
+}: {
+  to: string;
+  end?: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  permission?: Permission;
+}) {
+  const { isAllowed, role } = useUserRole();
+  const allowed = !permission || isAllowed(permission);
+
+  if (allowed) {
+    return (
+      <NavLink
+        to={to}
+        end={end}
+        className={({ isActive }) =>
+          `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+            isActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+          }`
+        }
+      >
+        <Icon className="h-4 w-4" />
+        {label}
+      </NavLink>
+    );
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          aria-disabled
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/40 cursor-not-allowed"
+        >
+          <Icon className="h-4 w-4" />
+          {label}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right">{deniedReason(permission!, role)}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Map a nav item's module key to a permission for gating. */
+const MODULE_PERMISSION: Record<string, Permission> = {
+  Assets: "view:assets",
+  Inventory: "view:assets",
+  Routes: "view:assets",
+  Reservations: "view:reservations",
+  Movements: "view:reservations",
+  Deliveries: "view:reservations",
+  Customers: "view:customers",
+  Invoices: "view:invoices",
+  Orders: "view:invoices",
+  Reports: "view:reports",
+};
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, profile, company, signOut } = useAuth();
   const location = useLocation();
   const enabledModules = getEnabledModules(company?.settings, company?.industry_type);
   const items = navItems(company?.industry_type, enabledModules);
-
-  // Resolve the caller's role inside the current company so we can show
-  // admin-only nav links (e.g. CSV analytics). RLS still enforces access
-  // on the page itself — this is purely UX.
-  const { data: role } = useQuery({
-    queryKey: ["company-role", company?.id ?? "", user?.id ?? ""],
-    queryFn: () => fetchCurrentMemberRole(company!.id, user!.id),
-    enabled: !!company?.id && !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
-  const isAdmin = role === "owner" || role === "admin";
+  const { isAdmin, isCustomer } = useUserRole();
 
   const initials = (profile?.full_name || user?.email || "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+
+  // Customers see a slimmed-down sidebar: only Dashboard + their own
+  // reservations & invoices. Everything else is hidden (not just disabled),
+  // since those modules don't apply to them at all.
+  const visibleItems = isCustomer
+    ? items.filter((i) =>
+        i.to === "/app" ||
+        i.to === "/app/reservations" ||
+        i.to === "/app/invoices",
+      )
+    : items;
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -99,53 +166,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link to="/app"><ApexLogo size="sm" /></Link>
         </div>
         <nav className="flex-1 p-3 space-y-1">
-          {items.map((item) => (
-            <NavLink
+          {visibleItems.map((item) => (
+            <GatedNavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                }`
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
+              icon={item.icon}
+              label={item.label}
+              permission={item.module ? MODULE_PERMISSION[item.module] : undefined}
+            />
           ))}
         </nav>
         <div className="p-3 border-t border-sidebar-border space-y-1">
-          {isAdmin && (
-            <NavLink
+          {/* Admin-only — shown disabled to Team Members so they can see
+              what their role would unlock. Hidden entirely from customers. */}
+          {!isCustomer && (
+            <GatedNavLink
               to="/app/admin/csv-analytics"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                }`
-              }
-            >
-              <ShieldCheck className="h-4 w-4" />
-              CSV analytics
-            </NavLink>
+              icon={ShieldCheck}
+              label="CSV analytics"
+              permission="view:csv-analytics"
+            />
           )}
-          <NavLink
-            to="/app/settings"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-              }`
-            }
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </NavLink>
+          {/* Settings: admins manage company; team members & customers see disabled */}
+          {isAdmin ? (
+            <GatedNavLink to="/app/settings" icon={Settings} label="Settings" />
+          ) : (
+            <GatedNavLink
+              to="/app/settings"
+              icon={Settings}
+              label="Settings"
+              permission="view:settings"
+            />
+          )}
         </div>
       </aside>
 
@@ -174,9 +227,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/app/settings"><Settings className="h-4 w-4 mr-2" />Settings</Link>
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/app/settings"><Settings className="h-4 w-4 mr-2" />Settings</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />Sign out
                 </DropdownMenuItem>

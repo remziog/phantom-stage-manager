@@ -17,6 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { listAssets, createAsset, updateAsset, archiveAsset, type AssetStatus } from "@/services/assets";
 import { Plus, Search, Archive, Upload } from "lucide-react";
+import { PermissionGate } from "@/components/PermissionGate";
 
 const STATUS_LABELS: Record<AssetStatus, string> = {
   available: "Available", rented: "Rented", in_maintenance: "Maintenance", sold: "Sold", archived: "Archived",
@@ -98,11 +99,17 @@ export default function AssetsPage() {
             <p className="text-sm text-muted-foreground">{filtered.length} of {assets.length}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/app/assets/import"><Upload className="h-4 w-4 mr-2" />Import CSV</Link>
-            </Button>
+            <PermissionGate permission="manage:assets">
+              <Button variant="outline" asChild>
+                <Link to="/app/assets/import"><Upload className="h-4 w-4 mr-2" />Import CSV</Link>
+              </Button>
+            </PermissionGate>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New asset</Button></DialogTrigger>
+              <DialogTrigger asChild>
+                <PermissionGate permission="manage:assets">
+                  <Button><Plus className="h-4 w-4 mr-2" />New asset</Button>
+                </PermissionGate>
+              </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Add asset</DialogTitle></DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-3">

@@ -396,6 +396,7 @@ export type Database = {
           current_company_id: string | null
           full_name: string | null
           id: string
+          linked_customer_id: string | null
           updated_at: string
           user_id: string
         }
@@ -405,6 +406,7 @@ export type Database = {
           current_company_id?: string | null
           full_name?: string | null
           id?: string
+          linked_customer_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -414,6 +416,7 @@ export type Database = {
           current_company_id?: string | null
           full_name?: string | null
           id?: string
+          linked_customer_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -543,6 +546,7 @@ export type Database = {
     }
     Functions: {
       get_current_company_id: { Args: { _user_id: string }; Returns: string }
+      get_linked_customer_id: { Args: { _user_id: string }; Returns: string }
       has_company_role: {
         Args: {
           _company_id: string
@@ -553,6 +557,10 @@ export type Database = {
       }
       is_company_member: {
         Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_linked_customer: {
+        Args: { _customer_id: string; _user_id: string }
         Returns: boolean
       }
       minute_bucket: { Args: { ts: string }; Returns: string }

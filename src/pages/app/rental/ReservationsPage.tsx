@@ -17,6 +17,7 @@ import { listCustomers } from "@/services/customers";
 import { listAssets } from "@/services/assets";
 import { generateInvoiceFromReservation } from "@/services/invoices";
 import { Plus, FileText } from "lucide-react";
+import { PermissionGate } from "@/components/PermissionGate";
 
 const STATUS_LABELS: Record<TransactionStatus, string> = {
   draft: "Draft", confirmed: "Confirmed", active: "Active", returned: "Returned", cancelled: "Cancelled",
@@ -112,7 +113,11 @@ export default function ReservationsPage() {
             <p className="text-sm text-muted-foreground">{reservations.length} total</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New reservation</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <PermissionGate permission="manage:reservations">
+                <Button><Plus className="h-4 w-4 mr-2" />New reservation</Button>
+              </PermissionGate>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>New reservation</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-3">
@@ -178,15 +183,17 @@ export default function ReservationsPage() {
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost" size="sm"
-                            onClick={() => user && cid && invoiceMut.mutate({
-                              companyId: cid, reservationId: r.id, customerId: r.customer_id,
-                              total: Number(r.total_amount), currency: r.currency, userId: user.id,
-                            })}
-                          >
-                            <FileText className="h-4 w-4 mr-1" /> Invoice
-                          </Button>
+                          <PermissionGate permission="manage:invoices" hideWhenDenied>
+                            <Button
+                              variant="ghost" size="sm"
+                              onClick={() => user && cid && invoiceMut.mutate({
+                                companyId: cid, reservationId: r.id, customerId: r.customer_id,
+                                total: Number(r.total_amount), currency: r.currency, userId: user.id,
+                              })}
+                            >
+                              <FileText className="h-4 w-4 mr-1" /> Invoice
+                            </Button>
+                          </PermissionGate>
                         </TableCell>
                       </TableRow>
                     ))}
