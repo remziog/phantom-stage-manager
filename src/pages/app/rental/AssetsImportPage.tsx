@@ -330,10 +330,31 @@ export default function AssetsImportPage() {
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== lineNumber) return row;
+        const prevValue = row.raw[field] ?? "";
+        // Only push to history when the value actually changes — avoids
+        // polluting the undo stack with no-op focus events.
+        if (prevValue !== value) {
+          editHistory.current.push({ lineNumber, field, prevValue });
+        }
         const nextRaw = { ...row.raw, [field]: value };
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+  };
+
+  /** Pop the most recent inline edit off the history stack and restore the
+   * affected cell's previous value. Used by Cmd/Ctrl+Z. */
+  const undoLastEdit = () => {
+    const last = editHistory.current.pop();
+    if (!last) return false;
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== last.lineNumber) return row;
+        const nextRaw = { ...row.raw, [last.field]: last.prevValue };
+        return validateAssetRow(nextRaw, last.lineNumber);
+      }),
+    );
+    return true;
   };
 
   /** True when the row's current raw values differ from the originally-parsed
