@@ -214,6 +214,23 @@ export default function AssetsImportPage() {
     URL.revokeObjectURL(url);
   };
 
+  /** Re-feed the just-failed rows back into the importer as a synthesized
+   * CSV file. Uses only the original headers so re-validation runs cleanly
+   * (the diagnostic `_line`/`_error` columns from the download are dropped). */
+  const reuploadFailedRows = () => {
+    const s = lastRunSummary;
+    if (!s || s.failedRows.length === 0) return;
+    const csv = rowsToCsv(
+      s.headers,
+      s.failedRows.map((r) => ({ ...r.raw })),
+    );
+    const base = s.fileName.replace(/\.csv$/i, "");
+    const file = new File([csv], `${base}-failed-rows.csv`, { type: "text/csv" });
+    // Clear the summary so it doesn't shadow the new upload state.
+    setLastRunSummary(null);
+    void handleFile(file);
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
@@ -618,10 +635,16 @@ export default function AssetsImportPage() {
                         Go to assets
                       </Button>
                       {s.failedRows.length > 0 && (
-                        <Button size="sm" variant="outline" onClick={downloadFailedRows}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download failed rows ({s.failedRows.length})
-                        </Button>
+                        <>
+                          <Button size="sm" variant="default" onClick={reuploadFailedRows}>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Re-upload these failed rows ({s.failedRows.length})
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={downloadFailedRows}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download failed rows
+                          </Button>
+                        </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => setLastRunSummary(null)}>
                         Dismiss
