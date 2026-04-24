@@ -134,17 +134,35 @@ export default function AssetsImportPage() {
       }
 
       const skipped = invalidRows.length;
-      const totalInserted = (resume?.inserted ?? 0) + res.inserted;
-      const totalUpdated = (resume?.updated ?? 0) + res.updated;
+      const previousInserted = resume?.inserted ?? 0;
+      const previousUpdated = resume?.updated ?? 0;
+      const wasResume = !!resume;
+      const totalInserted = previousInserted + res.inserted;
+      const totalUpdated = previousUpdated + res.updated;
       const partial = res.failed.length > 0 ? `, ${res.failed.length} failed` : "";
+
+      setLastRunSummary({
+        wasResume,
+        previousInserted,
+        previousUpdated,
+        runInserted: res.inserted,
+        runUpdated: res.updated,
+        failed: res.failed.length,
+        skipped,
+        fileName: fileName ?? "import.csv",
+      });
       setResume(null);
       toast({
-        title: "Import complete",
-        description: `${totalInserted} added, ${totalUpdated} updated${
-          skipped ? `, ${skipped} skipped` : ""
-        }${partial}.`,
+        title: wasResume ? "Resumed import complete" : "Import complete",
+        description: wasResume
+          ? `This run: +${res.inserted} added, ${res.updated} updated. Combined with the earlier run: ${totalInserted} added, ${totalUpdated} updated${partial}.`
+          : `${totalInserted} added, ${totalUpdated} updated${
+              skipped ? `, ${skipped} skipped` : ""
+            }${partial}.`,
       });
-      if (res.failed.length === 0) navigate("/app/assets");
+      // After a fresh import we navigate away as before. After a resumed
+      // import we stay on the page so the user can review the breakdown.
+      if (!wasResume && res.failed.length === 0) navigate("/app/assets");
     },
     onError: (e) => {
       abortRef.current = null;
