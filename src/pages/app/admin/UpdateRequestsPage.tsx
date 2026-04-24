@@ -300,6 +300,8 @@ export default function AdminUpdateRequestsPage() {
   const cid = company?.id ?? "";
   const [tab, setTab] = useState<UpdateRequestStatus>("pending");
   const [reviewing, setReviewing] = useState<UpdateRequestWithCustomer | null>(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("date_desc");
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["update-requests", cid, tab],
@@ -319,6 +321,39 @@ export default function AdminUpdateRequestsPage() {
     },
     enabled: !!cid,
   });
+
+  // Filter by company name / email, then sort. Memoised so typing stays cheap.
+  const visibleRequests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? requests.filter((r) => {
+          const name = (r.customer?.name ?? "").toLowerCase();
+          const email = (r.customer?.email ?? "").toLowerCase();
+          return name.includes(q) || email.includes(q);
+        })
+      : requests;
+
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "date_asc":
+          return a.created_at.localeCompare(b.created_at);
+        case "date_desc":
+          return b.created_at.localeCompare(a.created_at);
+        case "name_asc":
+          return (a.customer?.name ?? "").localeCompare(b.customer?.name ?? "");
+        case "name_desc":
+          return (b.customer?.name ?? "").localeCompare(a.customer?.name ?? "");
+        case "email_asc":
+          return (a.customer?.email ?? "").localeCompare(b.customer?.email ?? "");
+        case "email_desc":
+          return (b.customer?.email ?? "").localeCompare(a.customer?.email ?? "");
+        default:
+          return 0;
+      }
+    });
+    return sorted;
+  }, [requests, search, sort]);
 
   return (
     <AppShell>
@@ -351,16 +386,43 @@ export default function AdminUpdateRequestsPage() {
                 </TabsTrigger>
               </TabsList>
 
+              {/* Search + sort controls */}
+              <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by company or email…"
+                    className="pl-9"
+                    aria-label="Search update requests"
+                  />
+                </div>
+                <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                  <SelectTrigger className="w-full sm:w-[200px]" aria-label="Sort requests">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <TabsContent value={tab} className="mt-4">
                 {isLoading ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
-                ) : requests.length === 0 ? (
+                ) : visibleRequests.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-8 text-center">
-                    No {tab} requests.
+                    {search.trim()
+                      ? `No ${tab} requests match "${search.trim()}".`
+                      : `No ${tab} requests.`}
                   </p>
                 ) : (
                   <ul className="space-y-3">
-                    {requests.map((r) => (
+                    {visibleRequests.map((r) => (
                       <RequestRow key={r.id} request={r} onReview={setReviewing} />
                     ))}
                   </ul>
