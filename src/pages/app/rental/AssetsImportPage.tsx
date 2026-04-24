@@ -385,6 +385,13 @@ export default function AssetsImportPage() {
       setHeaders(hs);
       const v = rows.map((r, idx) => validateAssetRow(r, idx + 2)); // +2: header is line 1
       setValidated(v);
+      // Snapshot the originally-parsed values so per-row / global undo can
+      // restore them after inline edits. Cloning here is enough — we never
+      // mutate the stored maps.
+      const snap = new Map<number, Record<string, string>>();
+      for (const row of v) snap.set(row.lineNumber, { ...row.raw });
+      originalRawByLine.current = snap;
+      setEditedLines(new Set());
       const valid = v.filter((r) => r.errors.length === 0).length;
       return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
     } catch (e) {
