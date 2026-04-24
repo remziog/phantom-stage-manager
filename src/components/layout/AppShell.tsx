@@ -10,8 +10,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
-  Settings, LogOut, Truck, Warehouse, MapPinned,
+  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCurrentMemberRole } from "@/services/csvAnalyticsAdmin";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
 
