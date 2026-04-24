@@ -405,6 +405,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo", field: last.field, lineNumber: last.lineNumber });
+    }
     return { ...last, restoredValue: last.prevValue };
   };
 
