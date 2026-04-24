@@ -340,46 +340,59 @@ export default function AssetsImportPage() {
    * invalid summaries — so a row can move to the valid bucket as soon as the
    * user fixes it. */
   const editCell = (lineNumber: number, field: string, value: string) => {
+    // Capture the previous value from the live state BEFORE calling
+    // setValidated, so the history bookkeeping happens exactly once even
+    // under React 18 strict-mode (which double-invokes state updaters).
+    const currentRow = validated.find((r) => r.lineNumber === lineNumber);
+    if (!currentRow) return;
+    const prevValue = currentRow.raw[field] ?? "";
+    if (prevValue === value) return; // no-op
+    editHistory.current.push({ lineNumber, field, prevValue });
+    // A fresh edit invalidates the redo stack — same convention as most
+    // text editors.
+    redoHistory.current = [];
+    syncHistoryCounts();
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== lineNumber) return row;
-        const prevValue = row.raw[field] ?? "";
-        // Only push to history when the value actually changes — avoids
-        // polluting the undo stack with no-op focus events.
-        if (prevValue !== value) {
-          editHistory.current.push({ lineNumber, field, prevValue });
-          // A fresh edit invalidates the redo stack — same convention as
-          // most text editors.
-          redoHistory.current = [];
-        }
         const nextRaw = { ...row.raw, [field]: value };
+        // `validateAssetRow` is total — it returns errors instead of
+        // throwing — so a failing validation still updates the row and
+        // surfaces messages without desyncing the history stack.
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
-    syncHistoryCounts();
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
    * affected cell's previous value. Used by Cmd/Ctrl+Z. The undone change is
    * pushed onto the redo stack so it can be replayed. */
   const undoLastEdit = () => {
-    const last = editHistory.current.pop();
+    const last = editHistory.current[editHistory.current.length - 1];
     if (!last) return false;
+    const currentRow = validated.find((r) => r.lineNumber === last.lineNumber);
+    if (!currentRow) {
+      // Row no longer exists (e.g. file was reloaded mid-flight). Drop the
+      // dangling entry and resync so the counter doesn't claim a bogus step.
+      editHistory.current.pop();
+      syncHistoryCounts();
+      return false;
+    }
+    const currentValue = currentRow.raw[last.field] ?? "";
+    editHistory.current.pop();
+    redoHistory.current.push({
+      lineNumber: last.lineNumber,
+      field: last.field,
+      nextValue: currentValue,
+    });
+    syncHistoryCounts();
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== last.lineNumber) return row;
-        const currentValue = row.raw[last.field] ?? "";
-        // Capture the value we're about to discard so redo can restore it.
-        redoHistory.current.push({
-          lineNumber: last.lineNumber,
-          field: last.field,
-          nextValue: currentValue,
-        });
         const nextRaw = { ...row.raw, [last.field]: last.prevValue };
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
-    syncHistoryCounts();
     return true;
   };
 
@@ -387,22 +400,29 @@ export default function AssetsImportPage() {
    * change is pushed back onto `editHistory` so further Cmd/Ctrl+Z continues
    * to work. */
   const redoLastEdit = () => {
-    const next = redoHistory.current.pop();
+    const next = redoHistory.current[redoHistory.current.length - 1];
     if (!next) return false;
+    const currentRow = validated.find((r) => r.lineNumber === next.lineNumber);
+    if (!currentRow) {
+      redoHistory.current.pop();
+      syncHistoryCounts();
+      return false;
+    }
+    const currentValue = currentRow.raw[next.field] ?? "";
+    redoHistory.current.pop();
+    editHistory.current.push({
+      lineNumber: next.lineNumber,
+      field: next.field,
+      prevValue: currentValue,
+    });
+    syncHistoryCounts();
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== next.lineNumber) return row;
-        const currentValue = row.raw[next.field] ?? "";
-        editHistory.current.push({
-          lineNumber: next.lineNumber,
-          field: next.field,
-          prevValue: currentValue,
-        });
         const nextRaw = { ...row.raw, [next.field]: next.nextValue };
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
-    syncHistoryCounts();
     return true;
   };
 
@@ -426,6 +446,37 @@ export default function AssetsImportPage() {
     [validated, editableColumns],
   );
 
+  /** Safety net: whenever the validated rows change (per-row revert, undo
+   * all, file reload, or any future code path that mutates `validated`),
+   * prune dangling history entries that point to lines no longer present
+   * AND re-mirror the stack lengths into the visible counters. This keeps
+   * the Undo / Redo badges honest even if a future caller forgets to invoke
+   * `syncHistoryCounts` directly. */
+  useEffect(() => {
+    const liveLines = new Set(validated.map((r) => r.lineNumber));
+    let changed = false;
+    const prunedEdits = editHistory.current.filter((h) => {
+      if (liveLines.has(h.lineNumber)) return true;
+      changed = true;
+      return false;
+    });
+    const prunedRedos = redoHistory.current.filter((h) => {
+      if (liveLines.has(h.lineNumber)) return true;
+      changed = true;
+      return false;
+    });
+    if (changed) {
+      editHistory.current = prunedEdits;
+      redoHistory.current = prunedRedos;
+    }
+    // Always re-mirror — cheap and idempotent.
+    if (undoCount !== editHistory.current.length) {
+      setUndoCount(editHistory.current.length);
+    }
+    if (redoCount !== redoHistory.current.length) {
+      setRedoCount(redoHistory.current.length);
+    }
+  }, [validated, undoCount, redoCount]);
   /** Restore one row's raw values to the originally-parsed snapshot, then
    * re-validate it so the errors column refreshes. */
   const undoRow = (lineNumber: number) => {
