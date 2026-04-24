@@ -194,6 +194,26 @@ export default function AssetsImportPage() {
     },
   });
 
+  /** Download the failed rows from the most recent run as a CSV, preserving
+   * the original columns and appending `_line` and `_error` for diagnosis. */
+  const downloadFailedRows = () => {
+    const s = lastRunSummary;
+    if (!s || s.failedRows.length === 0) return;
+    const cols = [...s.headers, "_line", "_error"];
+    const csv = rowsToCsv(
+      cols,
+      s.failedRows.map((r) => ({ ...r.raw, _line: String(r.lineNumber), _error: r.message })),
+    );
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const base = s.fileName.replace(/\.csv$/i, "");
+    a.href = url;
+    a.download = `${base}-failed-rows.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
