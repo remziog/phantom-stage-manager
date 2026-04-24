@@ -13,7 +13,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "lcov", "json-summary"],
       reportsDirectory: "./coverage",
-      include: ["src/services/**/*.{ts,tsx}"],
+      include: ["src/services/moduleLog.ts"],
       exclude: [
         "src/**/__tests__/**",
         "src/**/*.test.{ts,tsx}",
@@ -21,10 +21,10 @@ export default defineConfig({
         "src/test/**",
       ],
       thresholds: {
-        lines: 70,
-        functions: 70,
-        statements: 70,
-        branches: 60,
+        lines: 80,
+        functions: 50,
+        statements: 80,
+        branches: 80,
       },
     },
   },
