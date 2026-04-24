@@ -759,8 +759,10 @@ export default function AssetsImportPage() {
                       rows only”. Press{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Z</kbd>{" "}
                       to undo the last edit, or{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Y</kbd>{" "}
+                      /{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
-                      to undo all.
+                      to redo.
                     </CardDescription>
                   </div>
                   <Button
@@ -768,7 +770,7 @@ export default function AssetsImportPage() {
                     size="sm"
                     onClick={undoAllEdits}
                     disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits (⇧⌘/Ctrl+Z)" : "No edits to undo"}
+                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
                   >
                     <Undo2 className="h-4 w-4 mr-2" />
                     Undo all edits
