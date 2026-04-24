@@ -356,6 +356,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+    syncHistoryCounts();
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
@@ -378,6 +379,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
+    syncHistoryCounts();
     return true;
   };
 
@@ -400,6 +402,7 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
+    syncHistoryCounts();
     return true;
   };
 
