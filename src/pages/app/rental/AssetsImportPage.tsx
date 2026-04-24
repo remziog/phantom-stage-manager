@@ -176,6 +176,9 @@ export default function AssetsImportPage() {
   const handleFile = async (file: File) => {
     setParseError(null);
     setFileName(file.name);
+    // A new file invalidates any previous resume checkpoint.
+    setResume(null);
+    setProgress(null);
     try {
       const text = await file.text();
       setRawText(text);
@@ -230,6 +233,8 @@ export default function AssetsImportPage() {
     setHeaders([]);
     setValidated([]);
     setParseError(null);
+    setResume(null);
+    setProgress(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -538,7 +543,7 @@ export default function AssetsImportPage() {
               >
                 Cancel
               </Button>
-              <Button disabled={!canImport} onClick={() => importMut.mutate()}>
+              <Button disabled={!canImport} onClick={() => importMut.mutate(0)}>
                 {isImporting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
