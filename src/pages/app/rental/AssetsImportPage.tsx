@@ -697,9 +697,21 @@ export default function AssetsImportPage() {
         e.preventDefault();
         const redone = redoLastEdit();
         if (redone) {
+          const remaining = redoHistory.current.length;
+          const display = redone.restoredValue.trim() === "" ? "(empty)" : `"${redone.restoredValue}"`;
+          // Flash the cell immediately so the user can see what was reapplied.
+          focusCellByCoords(redone.lineNumber, redone.field);
           toast({
             title: "Edit redone",
-            description: `${redoHistory.current.length} undone edit${redoHistory.current.length === 1 ? "" : "s"} remain available to redo.`,
+            description: `Row ${redone.lineNumber} · column "${redone.field}" reapplied to ${display}. ${remaining} undone edit${remaining === 1 ? "" : "s"} remain available to redo.`,
+            action: (
+              <ToastAction
+                altText={`Jump to row ${redone.lineNumber}, column ${redone.field}`}
+                onClick={() => focusCellByCoords(redone.lineNumber, redone.field)}
+              >
+                Jump to cell
+              </ToastAction>
+            ),
           });
         }
       } else {
