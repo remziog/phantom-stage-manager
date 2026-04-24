@@ -78,17 +78,35 @@ function changedFields(req: UpdateRequestWithCustomer): EditableField[] {
 interface RequestRowProps {
   request: UpdateRequestWithCustomer;
   onReview: (req: UpdateRequestWithCustomer) => void;
+  /** When defined, the row shows a checkbox bound to this state. */
+  selected?: boolean;
+  onSelectedChange?: (next: boolean) => void;
+  disabled?: boolean;
 }
 
-function RequestRow({ request, onReview }: RequestRowProps) {
+function RequestRow({
+  request, onReview, selected, onSelectedChange, disabled,
+}: RequestRowProps) {
   const meta = STATUS_META[request.status];
   const Icon = meta.icon;
   const fields = changedFields(request);
+  const selectable = onSelectedChange !== undefined;
 
   return (
-    <li className="rounded-md border border-border p-4 space-y-3">
+    <li className={`rounded-md border p-4 space-y-3 transition-colors ${
+      selected ? "border-primary bg-primary/5" : "border-border"
+    }`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
+          {selectable && (
+            <Checkbox
+              checked={!!selected}
+              disabled={disabled}
+              onCheckedChange={(v) => onSelectedChange?.(v === true)}
+              aria-label={`Select request from ${request.customer?.name ?? "customer"}`}
+              className="shrink-0"
+            />
+          )}
           <div className="h-9 w-9 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
             <UserCircle2 className="h-5 w-5" />
           </div>
