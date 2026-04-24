@@ -521,6 +521,7 @@ export default function AssetsImportPage() {
     setProgress(null);
     setLastRunSummary(null);
     originalRawByLine.current = new Map();
+    editHistory.current = [];
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
