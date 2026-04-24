@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
-  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck, UserCircle2,
+  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck, UserCircle2, Inbox,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
@@ -190,12 +190,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Admin-only — shown disabled to Team Members so they can see
               what their role would unlock. Hidden entirely from customers. */}
           {!isCustomer && (
-            <GatedNavLink
-              to="/app/admin/csv-analytics"
-              icon={ShieldCheck}
-              label="CSV analytics"
-              permission="view:csv-analytics"
-            />
+            <>
+              <GatedNavLink
+                to="/app/admin/update-requests"
+                icon={Inbox}
+                label="Update requests"
+                permission="manage:customers"
+              />
+              <GatedNavLink
+                to="/app/admin/csv-analytics"
+                icon={ShieldCheck}
+                label="CSV analytics"
+                permission="view:csv-analytics"
+              />
+            </>
           )}
           {/* Settings: admins manage company; team members see disabled; hidden from customers. */}
           {!isCustomer && (
