@@ -440,6 +440,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "redo", field: next.field, lineNumber: next.lineNumber });
+    }
     return { ...next, restoredValue: next.nextValue };
   };
 
