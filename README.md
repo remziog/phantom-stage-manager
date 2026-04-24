@@ -209,10 +209,30 @@ To download the previous run's snapshot for diffing, add this step **before** th
     if_no_artifact_found: warn
 ```
 
-If you rely on `GITHUB_TOKEN` for the artifact-URL or run-ID fallbacks, grant the job read access to Actions at the workflow or job level:
+#### When `actions: read` is required
+
+The preflight only needs `actions: read` when it has to call the GitHub API to fetch a baseline artifact. Use this quick reference to decide:
+
+| Baseline source | Needs `actions: read`? |
+| --------------- | ---------------------- |
+| No baseline (first run, or diff disabled) | ❌ No |
+| `PREFLIGHT_BASELINE_PATH` (local file, e.g. downloaded by `dawidd6/action-download-artifact`) | ❌ No — the download action uses its own token. |
+| `PREFLIGHT_BASELINE_ARTIFACT_URL` (REST or browser artifact URL) | ✅ Yes |
+| `PREFLIGHT_BASELINE_RUN_ID` + `PREFLIGHT_BASELINE_REPO` | ✅ Yes |
+
+Minimal `permissions:` block for the artifact-URL or run-ID fallbacks (set at workflow or job level):
 
 ```yaml
 permissions:
   contents: read
-  actions: read   # required for PREFLIGHT_BASELINE_ARTIFACT_URL / PREFLIGHT_BASELINE_RUN_ID
+  actions: read   # required ONLY for PREFLIGHT_BASELINE_ARTIFACT_URL / PREFLIGHT_BASELINE_RUN_ID
 ```
+
+If you only ever use `PREFLIGHT_BASELINE_PATH` (the recommended default), you can omit `actions: read` entirely:
+
+```yaml
+permissions:
+  contents: read
+```
+
+> Note: cross-repo artifact fetches (when `PREFLIGHT_BASELINE_REPO` points at a different repository) require a PAT with `actions:read` on that repo passed as `GITHUB_TOKEN` — the default `GITHUB_TOKEN` is scoped to the current repo only.
