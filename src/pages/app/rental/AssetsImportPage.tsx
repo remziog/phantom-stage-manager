@@ -536,6 +536,7 @@ export default function AssetsImportPage() {
     });
   };
 
+  const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
     abortRef.current.abort();
