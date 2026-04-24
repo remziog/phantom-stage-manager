@@ -617,6 +617,12 @@ export default function AssetsImportPage() {
                       <Button size="sm" onClick={() => navigate("/app/assets")}>
                         Go to assets
                       </Button>
+                      {s.failedRows.length > 0 && (
+                        <Button size="sm" variant="outline" onClick={downloadFailedRows}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download failed rows ({s.failedRows.length})
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => setLastRunSummary(null)}>
                         Dismiss
                       </Button>
