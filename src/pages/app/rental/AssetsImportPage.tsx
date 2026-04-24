@@ -936,7 +936,7 @@ export default function AssetsImportPage() {
                                   // shown as inline badges next to their cells —
                                   // typically row-level issues whose `field`
                                   // doesn't map to an editable column.
-                                  const editableSet = new Set(editableColumns);
+                                  const editableSet = new Set<string>(editableColumns);
                                   const others = r.errors.filter(
                                     (e) => !editableSet.has(e.field),
                                   );
