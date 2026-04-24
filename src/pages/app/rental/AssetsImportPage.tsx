@@ -38,6 +38,8 @@ export default function AssetsImportPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Wraps the file/preview block so we can scroll + focus after a re-upload.
+  const importStepRef = useRef<HTMLDivElement>(null);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
