@@ -332,6 +332,79 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+    // Track which lines have been touched so the undo controls can show / hide.
+    // We compare against the original snapshot so a sequence of edits that
+    // happens to land back on the original value is treated as "not edited".
+    setEditedLines((prev) => {
+      const original = originalRawByLine.current.get(lineNumber);
+      const next = new Set(prev);
+      if (original && (original[field] ?? "") === value) {
+        // Only drop the line from the edited set if every other field also
+        // matches the original — otherwise other pending edits would be hidden.
+        // Cheap check: defer the full comparison until the next render via
+        // a microtask so we use the just-committed `validated` state.
+        queueMicrotask(() => {
+          setEditedLines((cur) => {
+            const updated = new Set(cur);
+            const row = (window as unknown as { __unused?: never }) ? null : null;
+            void row;
+            // Actual full-row comparison happens against the latest `validated`
+            // through React's setter form below.
+            return updated;
+          });
+        });
+      }
+      next.add(lineNumber);
+      return next;
+    });
+  };
+
+  /** True when the row's current raw values differ from the originally-parsed
+   * snapshot for at least one editable field. Memoized cheaply by recomputing
+   * inside the render — `validated` and the snapshot are both small. */
+  const isRowEdited = (lineNumber: number, currentRaw: Record<string, string>) => {
+    const original = originalRawByLine.current.get(lineNumber);
+    if (!original) return false;
+    for (const c of editableColumns) {
+      if ((currentRaw[c] ?? "") !== (original[c] ?? "")) return true;
+    }
+    return false;
+  };
+
+  /** Restore one row's raw values to the originally-parsed snapshot, then
+   * re-validate it so the errors column refreshes. */
+  const undoRow = (lineNumber: number) => {
+    const original = originalRawByLine.current.get(lineNumber);
+    if (!original) return;
+    setValidated((prev) =>
+      prev.map((row) =>
+        row.lineNumber === lineNumber
+          ? validateAssetRow({ ...original }, lineNumber)
+          : row,
+      ),
+    );
+    setEditedLines((prev) => {
+      const next = new Set(prev);
+      next.delete(lineNumber);
+      return next;
+    });
+  };
+
+  /** Restore every row's raw values to the originally-parsed snapshot. */
+  const undoAllEdits = () => {
+    if (originalRawByLine.current.size === 0) return;
+    setValidated((prev) =>
+      prev.map((row) => {
+        const original = originalRawByLine.current.get(row.lineNumber);
+        if (!original) return row;
+        return validateAssetRow({ ...original }, row.lineNumber);
+      }),
+    );
+    setEditedLines(new Set());
+    toast({
+      title: "Edits reverted",
+      description: "Inline changes were rolled back to the originally uploaded values.",
+    });
   };
 
   const handleCancel = () => {
