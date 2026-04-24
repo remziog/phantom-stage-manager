@@ -13,7 +13,9 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,6 +25,31 @@ const SCRIPT_PATH = "scripts/e2e-seed.ts";
 const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/schema-snapshot.json";
 /** Optional path to a previous snapshot artifact to diff against. */
 const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
+
+/**
+ * Optional fallback when PREFLIGHT_BASELINE_PATH is empty: fetch the snapshot
+ * from a GitHub artifact. Supported inputs (checked in this order):
+ *
+ *   PREFLIGHT_BASELINE_ARTIFACT_URL
+ *     Full GitHub REST API URL or browser URL to an artifact, e.g.
+ *       https://api.github.com/repos/OWNER/REPO/actions/artifacts/123456789/zip
+ *       https://github.com/OWNER/REPO/actions/runs/987/artifacts/123456789
+ *
+ *   PREFLIGHT_BASELINE_RUN_ID + PREFLIGHT_BASELINE_REPO (+ optional PREFLIGHT_BASELINE_ARTIFACT_NAME)
+ *     Look up the artifact named "preflight-report" (or the override) on a
+ *     specific workflow run, then download its zip.
+ *
+ * Auth: requires GITHUB_TOKEN (set automatically in Actions). For private
+ * repos run locally, export a token with `actions:read` scope.
+ *
+ * The downloaded zip is unzipped (via the system `unzip` binary, available on
+ * every GitHub-hosted runner) into a temp dir; we then read schema-snapshot.json.
+ */
+const BASELINE_ARTIFACT_URL = process.env.PREFLIGHT_BASELINE_ARTIFACT_URL ?? "";
+const BASELINE_RUN_ID = process.env.PREFLIGHT_BASELINE_RUN_ID ?? "";
+const BASELINE_REPO = process.env.PREFLIGHT_BASELINE_REPO ?? process.env.GITHUB_REPOSITORY ?? "";
+const BASELINE_ARTIFACT_NAME = process.env.PREFLIGHT_BASELINE_ARTIFACT_NAME ?? "preflight-report";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? "";
 
 /**
  * Which kinds of baseline-diff changes should fail CI.
