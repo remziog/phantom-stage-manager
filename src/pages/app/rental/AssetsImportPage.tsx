@@ -97,6 +97,28 @@ export default function AssetsImportPage() {
   const validRows = useMemo(() => validated.filter((r) => r.errors.length === 0), [validated]);
   const invalidRows = useMemo(() => validated.filter((r) => r.errors.length > 0), [validated]);
 
+  /** Asset columns that are present in the uploaded file — used to render the
+   * inline editor. Header keys are lowercased to match how `validateAssetRow`
+   * looks them up. */
+  const editableColumns = useMemo(() => {
+    const present = new Set(headers.map((h) => h.toLowerCase()));
+    return [
+      ...ASSET_REQUIRED_HEADERS,
+      ...ASSET_OPTIONAL_HEADERS,
+    ].filter((c) => present.has(c));
+  }, [headers]);
+
+  /** Per-field error lookup so we can highlight the offending input. */
+  const errorsByLine = useMemo(() => {
+    const m = new Map<number, Map<string, string>>();
+    for (const r of invalidRows) {
+      const fields = new Map<string, string>();
+      for (const e of r.errors) fields.set(e.field, e.message);
+      m.set(r.lineNumber, fields);
+    }
+    return m;
+  }, [invalidRows]);
+
   // Holds the AbortController for the active import so the Cancel button
   // can stop the loop between rows. Stored in a ref so toggling it doesn't
   // re-render and tear down the in-flight mutation.
