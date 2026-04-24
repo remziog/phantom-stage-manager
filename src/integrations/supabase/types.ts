@@ -203,6 +203,36 @@ export type Database = {
           },
         ]
       }
+      csv_edit_events: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          field: string | null
+          id: string
+          line_number: number | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          field?: string | null
+          id?: string
+          line_number?: number | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          field?: string | null
+          id?: string
+          line_number?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
