@@ -47,6 +47,21 @@ export default function AssetsImportPage() {
   const [allowPartial, setAllowPartial] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
 
+  // Resume support: when the user cancels mid-import we remember how many
+  // valid rows were already processed (so we can replay just the rest) and
+  // a snapshot of totals for the summary card.
+  interface ResumeCheckpoint {
+    fileName: string;
+    /** Index into the *valid rows* array where the next attempt should start. */
+    nextIndex: number;
+    /** Total valid rows in the original batch (for the "X of Y" copy). */
+    totalValid: number;
+    /** Inserted/updated counts from the cancelled run (for the summary card). */
+    inserted: number;
+    updated: number;
+  }
+  const [resume, setResume] = useState<ResumeCheckpoint | null>(null);
+
   const headerCheck = useMemo(
     () => (headers.length ? validateAssetHeaders(headers) : null),
     [headers],
@@ -62,13 +77,15 @@ export default function AssetsImportPage() {
   const [isCancelling, setIsCancelling] = useState(false);
 
   const importMut = useMutation({
-    mutationFn: () => {
+    /** `startIndex` lets us resume — defaults to 0 for a fresh import. */
+    mutationFn: (startIndex: number = 0) => {
       const controller = new AbortController();
       abortRef.current = controller;
-      return importAssets(cid, user!.id, validRows.map((r) => r.parsed), {
+      const slice = validRows.slice(startIndex).map((r) => r.parsed);
+      return importAssets(cid, user!.id, slice, {
         onProgress: (p) => setProgress(p),
         signal: controller.signal,
-      });
+      }).then((res) => ({ ...res, startIndex, sliceLength: slice.length }));
     },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["assets", cid] });
@@ -76,20 +93,39 @@ export default function AssetsImportPage() {
       setIsCancelling(false);
 
       if (res.cancelled) {
+        // Carry forward earlier progress when resuming a previously cancelled run.
+        const carriedInserted = (resume?.inserted ?? 0) + res.inserted;
+        const carriedUpdated = (resume?.updated ?? 0) + res.updated;
+        // The service reports `processed` relative to the slice it was given —
+        // translate back to an absolute offset across the full valid-rows list.
+        const absoluteNext = res.startIndex + (progress?.processed ?? 0);
+
+        setResume({
+          fileName: fileName ?? "import.csv",
+          nextIndex: absoluteNext,
+          totalValid: validRows.length,
+          inserted: carriedInserted,
+          updated: carriedUpdated,
+        });
+
         toast({
           title: "Import cancelled",
-          description: `${res.inserted} added, ${res.updated} updated before stopping. Remaining rows were not saved.`,
+          description: `${carriedInserted} added, ${carriedUpdated} updated before stopping. ${
+            validRows.length - absoluteNext
+          } row(s) remain — you can resume below.`,
         });
-        // Stay on the import page so the user can review or retry.
         setProgress(null);
         return;
       }
 
       const skipped = invalidRows.length;
+      const totalInserted = (resume?.inserted ?? 0) + res.inserted;
+      const totalUpdated = (resume?.updated ?? 0) + res.updated;
       const partial = res.failed.length > 0 ? `, ${res.failed.length} failed` : "";
+      setResume(null);
       toast({
         title: "Import complete",
-        description: `${res.inserted} added, ${res.updated} updated${
+        description: `${totalInserted} added, ${totalUpdated} updated${
           skipped ? `, ${skipped} skipped` : ""
         }${partial}.`,
       });
@@ -108,6 +144,13 @@ export default function AssetsImportPage() {
     setIsCancelling(true);
     abortRef.current.abort();
   };
+
+  const handleResume = () => {
+    if (!resume) return;
+    importMut.mutate(resume.nextIndex);
+  };
+
+  const discardResume = () => setResume(null);
 
   const isImporting = importMut.isPending;
 
