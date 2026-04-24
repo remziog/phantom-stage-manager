@@ -556,6 +556,52 @@ export default function AssetsImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validated]);
 
+  /** Move focus from the currently-focused editor input to the next input
+   * that still has `aria-invalid="true"`. Used by the Enter-to-advance
+   * keyboard flow. Returns true when a target was found, false when the
+   * user has cleared all remaining errors. */
+  const focusNextError = (current: HTMLElement): boolean => {
+    const editor = document.querySelector('[data-csv-editor="true"]');
+    if (!editor) return false;
+    const all = Array.from(
+      editor.querySelectorAll<HTMLInputElement>('input[aria-invalid="true"]'),
+    );
+    if (all.length === 0) return false;
+    // Pick the first invalid input that comes *after* the current one in
+    // DOM order; wrap to the top if we're already past the last one.
+    const currentIdx = all.indexOf(current as HTMLInputElement);
+    const next =
+      currentIdx === -1
+        ? all[0]
+        : all[(currentIdx + 1) % all.length];
+    next.scrollIntoView({ behavior: "smooth", block: "center" });
+    next.focus({ preventScroll: true });
+    const len = next.value.length;
+    try { next.setSelectionRange(len, len); } catch { /* number inputs */ }
+    return true;
+  };
+
+  /** Editor-scoped Enter handler. When the user presses Enter inside an
+   * input, jump to the next still-invalid cell. If there are no remaining
+   * errors, blur the field and toast a confirmation so the user knows
+   * they're done. Other keys (and Enter outside the editor) are unaffected. */
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    if (!target || target.tagName !== "INPUT") return;
+    e.preventDefault();
+    // Re-validation already ran synchronously inside `editCell`, so the
+    // current input's `aria-invalid` is up-to-date by the time Enter fires.
+    const moved = focusNextError(target);
+    if (!moved) {
+      (target as HTMLInputElement).blur();
+      toast({
+        title: "All errors fixed",
+        description: "Every row in the preview is now valid — ready to import.",
+      });
+    }
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
@@ -874,7 +920,9 @@ export default function AssetsImportPage() {
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Y</kbd>{" "}
                       /{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
-                      to redo.
+                      to redo. Press{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Enter</kbd>{" "}
+                      in any cell to jump to the next remaining error.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -939,7 +987,7 @@ export default function AssetsImportPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto" data-csv-editor="true">
+                  <div className="overflow-x-auto" data-csv-editor="true" onKeyDown={handleEditorKeyDown}>
                     <Table>
                       <TableHeader>
                         <TableRow>
