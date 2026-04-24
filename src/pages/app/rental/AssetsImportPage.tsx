@@ -438,7 +438,6 @@ export default function AssetsImportPage() {
       const snap = new Map<number, Record<string, string>>();
       for (const row of v) snap.set(row.lineNumber, { ...row.raw });
       originalRawByLine.current = snap;
-      setEditedLines(new Set());
       const valid = v.filter((r) => r.errors.length === 0).length;
       return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
     } catch (e) {
