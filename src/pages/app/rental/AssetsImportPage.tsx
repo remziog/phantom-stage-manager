@@ -293,10 +293,13 @@ export default function AssetsImportPage() {
       setHeaders(hs);
       const v = rows.map((r, idx) => validateAssetRow(r, idx + 2)); // +2: header is line 1
       setValidated(v);
+      const valid = v.filter((r) => r.errors.length === 0).length;
+      return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
     } catch (e) {
       setParseError((e as Error).message);
       setHeaders([]);
       setValidated([]);
+      return { ok: false as const, message: (e as Error).message };
     }
   };
 
