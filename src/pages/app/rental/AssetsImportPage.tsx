@@ -568,16 +568,27 @@ export default function AssetsImportPage() {
                       Showing first 100 of {invalidRows.length} rows with errors.
                     </div>
                   )}
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 border-t">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t">
                     <div className="flex items-center gap-2">
                       <Switch id="partial" checked={allowPartial} onCheckedChange={setAllowPartial} disabled={isImporting} />
                       <Label htmlFor="partial" className="cursor-pointer">
                         Import valid rows only ({validRows.length})
                       </Label>
                     </div>
-                    <Button variant="outline" size="sm" onClick={downloadSkipped}>
-                      <Download className="h-4 w-4 mr-2" />Download skipped rows
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={retryInvalidRows}
+                        disabled={isImporting}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Retry only failed rows ({invalidRows.length})
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={downloadSkipped}>
+                        <Download className="h-4 w-4 mr-2" />Download skipped rows
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
