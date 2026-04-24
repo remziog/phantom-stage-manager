@@ -63,6 +63,11 @@ export default function AssetsImportPage() {
     setUndoCount(editHistory.current.length);
     setRedoCount(redoHistory.current.length);
   };
+  // Set to true by `handleFile` whenever a freshly-validated CSV contains
+  // invalid rows. A `useEffect` watching `validated` consumes the flag and
+  // moves focus to the first invalid cell — exactly once per validation
+  // pass, so we don't steal focus during ordinary inline editing.
+  const focusFirstErrorOnNextRender = useRef(false);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
@@ -536,6 +541,21 @@ export default function AssetsImportPage() {
     });
   };
 
+  /** When `handleFile` (or any other validation entry point) sets the
+   * `focusFirstErrorOnNextRender` flag, jump focus to the first invalid
+   * cell once the freshly-validated rows have rendered. The flag is
+   * single-shot so subsequent edits don't yank focus away from the user. */
+  useEffect(() => {
+    if (!focusFirstErrorOnNextRender.current) return;
+    if (invalidRows.length === 0) {
+      focusFirstErrorOnNextRender.current = false;
+      return;
+    }
+    focusFirstErrorOnNextRender.current = false;
+    goToFirstError();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validated]);
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
@@ -647,7 +667,11 @@ export default function AssetsImportPage() {
       for (const row of v) snap.set(row.lineNumber, { ...row.raw });
       originalRawByLine.current = snap;
       const valid = v.filter((r) => r.errors.length === 0).length;
-      return { ok: true as const, total: v.length, valid, invalid: v.length - valid };
+      const invalid = v.length - valid;
+      // Arm the auto-focus effect so the user lands on the first bad cell
+      // as soon as the editor renders. Skipped when nothing is wrong.
+      if (invalid > 0) focusFirstErrorOnNextRender.current = true;
+      return { ok: true as const, total: v.length, valid, invalid };
     } catch (e) {
       setParseError((e as Error).message);
       setHeaders([]);
