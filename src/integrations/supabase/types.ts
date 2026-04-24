@@ -233,6 +233,66 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_update_requests: {
+        Row: {
+          address: string | null
+          company_id: string
+          created_at: string
+          customer_id: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          requested_by: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["update_request_status"]
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          created_at?: string
+          customer_id: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          requested_by: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["update_request_status"]
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          created_at?: string
+          customer_id?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          requested_by?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["update_request_status"]
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -583,6 +643,7 @@ export type Database = {
         | "returned"
         | "cancelled"
       transaction_type: "rental" | "sale" | "shipment" | "return"
+      update_request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -729,6 +790,7 @@ export const Constants = {
         "cancelled",
       ],
       transaction_type: ["rental", "sale", "shipment", "return"],
+      update_request_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
