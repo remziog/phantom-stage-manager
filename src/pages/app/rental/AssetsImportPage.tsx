@@ -458,6 +458,56 @@ export default function AssetsImportPage() {
               </Card>
             )}
 
+            {resume && !isImporting && (() => {
+              const remaining = Math.max(resume.totalValid - resume.nextIndex, 0);
+              const stillSameFile = fileName === resume.fileName;
+              return (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertTitle>Resume the cancelled import?</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p className="text-sm">
+                      <strong>{resume.inserted}</strong> added and{" "}
+                      <strong>{resume.updated}</strong> updated before you cancelled.{" "}
+                      <strong>{remaining}</strong> of {resume.totalValid} valid row
+                      {resume.totalValid === 1 ? "" : "s"} from{" "}
+                      <span className="font-medium">{resume.fileName}</span> haven't been
+                      saved yet.
+                    </p>
+                    {!stillSameFile && (
+                      <p className="text-xs text-warning">
+                        You loaded a different file ({fileName}). Resuming will use the
+                        currently parsed rows — re-upload <strong>{resume.fileName}</strong>{" "}
+                        first if that's not what you want.
+                      </p>
+                    )}
+                    {stillSameFile && remaining > validRows.length - resume.nextIndex && (
+                      <p className="text-xs text-warning">
+                        The current file has fewer valid rows than when you started.
+                        Resuming will only process the rows still present.
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleResume}
+                        disabled={validRows.length <= resume.nextIndex}
+                      >
+                        Resume — import remaining {Math.min(
+                          remaining,
+                          Math.max(validRows.length - resume.nextIndex, 0),
+                        )}{" "}
+                        row{remaining === 1 ? "" : "s"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={discardResume}>
+                        Discard checkpoint
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
+
             {isImporting && progress && (
               <Card aria-live="polite" aria-busy="true">
                 <CardContent className="p-5 space-y-4">
