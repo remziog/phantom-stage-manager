@@ -151,3 +151,68 @@ The GitHub Actions workflow (`.github/workflows/e2e.yml`) wires this up by:
 1. Downloading the previous run's `preflight-report` artifact into `preflight-baseline/`.
 2. Setting `PREFLIGHT_BASELINE_PATH=preflight-baseline/schema-snapshot.json` and `PREFLIGHT_FAIL_ON=regressions`.
 3. Running `npm run test:e2e:preflight` and uploading the new `preflight-report/` directory as an artifact for the next run to diff against.
+
+#### Example GitHub Actions step
+
+A complete preflight step showing every supported variable. Required vars are marked; optional ones can be omitted to fall back to defaults.
+
+```yaml
+- name: Preflight — verify Supabase schema matches seed script
+  env:
+    # ── Required: Supabase access ─────────────────────────────────────────
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    # ── Optional: snapshot output ─────────────────────────────────────────
+    # Default: preflight-report/schema-snapshot.json
+    PREFLIGHT_SNAPSHOT_PATH: preflight-report/schema-snapshot.json
+
+    # ── Optional: baseline resolution (first match wins) ──────────────────
+    # 1) Local file (downloaded from a previous run's artifact).
+    PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
+    # 2) Direct artifact URL (REST or browser link — both accepted).
+    # PREFLIGHT_BASELINE_ARTIFACT_URL: https://api.github.com/repos/${{ github.repository }}/actions/artifacts/123456789/zip
+    # 3) Look up by run ID + repo + artifact name.
+    # PREFLIGHT_BASELINE_RUN_ID: "9876543210"
+    PREFLIGHT_BASELINE_REPO: ${{ github.repository }}
+    # PREFLIGHT_BASELINE_ARTIFACT_NAME: preflight-report
+
+    # ── Optional: failure policy ──────────────────────────────────────────
+    # regressions (default) | removed | any | none — comma-separated to combine.
+    PREFLIGHT_FAIL_ON: regressions
+
+    # ── Required for artifact fallbacks (URL or RUN_ID resolution) ────────
+    # Needs `actions: read` permission (see `permissions:` block below).
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: npm run test:e2e:preflight
+
+- name: Upload preflight schema snapshot
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: preflight-report
+    path: preflight-report/
+    retention-days: 14
+```
+
+To download the previous run's snapshot for diffing, add this step **before** the preflight step:
+
+```yaml
+- name: Download previous preflight snapshot (for diff)
+  uses: dawidd6/action-download-artifact@v6
+  continue-on-error: true
+  with:
+    name: preflight-report
+    workflow: e2e.yml
+    branch: ${{ github.event.repository.default_branch }}
+    path: preflight-baseline
+    if_no_artifact_found: warn
+```
+
+If you rely on `GITHUB_TOKEN` for the artifact-URL or run-ID fallbacks, grant the job read access to Actions at the workflow or job level:
+
+```yaml
+permissions:
+  contents: read
+  actions: read   # required for PREFLIGHT_BASELINE_ARTIFACT_URL / PREFLIGHT_BASELINE_RUN_ID
+```
