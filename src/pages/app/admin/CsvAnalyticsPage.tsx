@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
@@ -207,7 +208,7 @@ export default function CsvAnalyticsPage() {
           <CardHeader>
             <CardTitle className="text-base">Most edited CSV fields</CardTitle>
             <CardDescription>
-              Top columns by edit + undo + redo activity. Helps spot fields that consistently need cleanup.
+              Top columns by edit + undo + redo activity. Click a field for the full timeline.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -231,8 +232,15 @@ export default function CsvAnalyticsPage() {
                 {fieldsQ.data?.map((f) => {
                   const total = f.edits + f.undos + f.redos;
                   return (
-                    <TableRow key={f.field}>
-                      <TableCell className="font-medium">{f.field}</TableCell>
+                    <TableRow key={f.field} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        <Link
+                          to={`/app/admin/csv-analytics/field/${encodeURIComponent(f.field)}`}
+                          className="block hover:underline text-primary"
+                        >
+                          {f.field}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">{f.edits.toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums">{f.undos.toLocaleString()}</TableCell>
                       <TableCell className="text-right tabular-nums">{f.redos.toLocaleString()}</TableCell>
