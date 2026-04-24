@@ -439,6 +439,44 @@ export default function AssetsImportPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isImporting]);
 
+  // Keyboard shortcuts for the inline editor:
+  //   Cmd/Ctrl+Z         → undo the most recent inline edit
+  //   Shift+Cmd/Ctrl+Z   → revert all inline edits to the originally-uploaded values
+  // Only active while there are invalid rows being edited and we're not in
+  // the middle of an import.
+  useEffect(() => {
+    if (invalidRows.length === 0 || isImporting) return;
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== "z") return;
+      // Ignore when focus is on a non-editor field (e.g. another text input
+      // outside the row-errors table) so we don't hijack the browser's
+      // native undo elsewhere on the page.
+      const target = e.target as HTMLElement | null;
+      const insideEditor = !!target?.closest('[data-csv-editor="true"]');
+      const onBody = target === document.body;
+      if (!insideEditor && !onBody) return;
+      if (e.shiftKey) {
+        if (!hasAnyEdits) return;
+        e.preventDefault();
+        undoAllEdits();
+      } else {
+        if (editHistory.current.length === 0) return;
+        e.preventDefault();
+        const undone = undoLastEdit();
+        if (undone) {
+          toast({
+            title: "Edit undone",
+            description: `${editHistory.current.length} earlier edit${editHistory.current.length === 1 ? "" : "s"} remain in history.`,
+          });
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invalidRows.length, isImporting, hasAnyEdits]);
+
   const canImport =
     !!cid &&
     !!user &&
