@@ -367,20 +367,18 @@ export default function AssetsImportPage() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadSkipped = () => {
+  /** Export the currently still-failing rows as a clean CSV — only the
+   * original columns, no `_errors` annotation — so the user can fix them
+   * offline and re-upload the file directly. */
+  const downloadStillFailing = () => {
     if (invalidRows.length === 0 || headers.length === 0) return;
-    const csv = rowsToCsv(
-      [...headers, "_errors"],
-      invalidRows.map((r) => ({
-        ...r.raw,
-        _errors: r.errors.map((e) => `${e.field}: ${e.message}`).join(" | "),
-      })),
-    );
+    const csv = rowsToCsv(headers, invalidRows.map((r) => ({ ...r.raw })));
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
+    const base = (fileName ?? "import.csv").replace(/\.csv$/i, "");
     a.href = url;
-    a.download = "assets-skipped-rows.csv";
+    a.download = `${base}-still-failing.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
