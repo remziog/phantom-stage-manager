@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:preflight": "tsx scripts/e2e-preflight.ts",
     "test:e2e:seed": "tsx scripts/e2e-seed.ts",
     "test:e2e:teardown": "tsx scripts/e2e-teardown.ts"
   },
