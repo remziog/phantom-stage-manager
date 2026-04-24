@@ -50,6 +50,11 @@ export default function AssetsImportPage() {
   // time. Cleared whenever a new file is loaded or all edits are reverted.
   interface EditHistoryEntry { lineNumber: number; field: string; prevValue: string; }
   const editHistory = useRef<EditHistoryEntry[]>([]);
+  // Mirror stack for redo. We push the value that was undone (so it can be
+  // re-applied) and clear it whenever the user makes a fresh edit, mirroring
+  // standard text-editor behaviour where a new edit forks the history.
+  interface RedoHistoryEntry { lineNumber: number; field: string; nextValue: string; }
+  const redoHistory = useRef<RedoHistoryEntry[]>([]);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
@@ -335,6 +340,9 @@ export default function AssetsImportPage() {
         // polluting the undo stack with no-op focus events.
         if (prevValue !== value) {
           editHistory.current.push({ lineNumber, field, prevValue });
+          // A fresh edit invalidates the redo stack — same convention as
+          // most text editors.
+          redoHistory.current = [];
         }
         const nextRaw = { ...row.raw, [field]: value };
         return validateAssetRow(nextRaw, lineNumber);
@@ -343,15 +351,45 @@ export default function AssetsImportPage() {
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
-   * affected cell's previous value. Used by Cmd/Ctrl+Z. */
+   * affected cell's previous value. Used by Cmd/Ctrl+Z. The undone change is
+   * pushed onto the redo stack so it can be replayed. */
   const undoLastEdit = () => {
     const last = editHistory.current.pop();
     if (!last) return false;
     setValidated((prev) =>
       prev.map((row) => {
         if (row.lineNumber !== last.lineNumber) return row;
+        const currentValue = row.raw[last.field] ?? "";
+        // Capture the value we're about to discard so redo can restore it.
+        redoHistory.current.push({
+          lineNumber: last.lineNumber,
+          field: last.field,
+          nextValue: currentValue,
+        });
         const nextRaw = { ...row.raw, [last.field]: last.prevValue };
         return validateAssetRow(nextRaw, last.lineNumber);
+      }),
+    );
+    return true;
+  };
+
+  /** Pop the most recently-undone edit and re-apply it. The re-applied
+   * change is pushed back onto `editHistory` so further Cmd/Ctrl+Z continues
+   * to work. */
+  const redoLastEdit = () => {
+    const next = redoHistory.current.pop();
+    if (!next) return false;
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== next.lineNumber) return row;
+        const currentValue = row.raw[next.field] ?? "";
+        editHistory.current.push({
+          lineNumber: next.lineNumber,
+          field: next.field,
+          prevValue: currentValue,
+        });
+        const nextRaw = { ...row.raw, [next.field]: next.nextValue };
+        return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
     return true;
@@ -391,6 +429,7 @@ export default function AssetsImportPage() {
     );
     // Drop history entries for this row — they no longer reflect the live state.
     editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
+    redoHistory.current = redoHistory.current.filter((h) => h.lineNumber !== lineNumber);
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
@@ -404,6 +443,7 @@ export default function AssetsImportPage() {
       }),
     );
     editHistory.current = [];
+    redoHistory.current = [];
     toast({
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
@@ -441,14 +481,19 @@ export default function AssetsImportPage() {
 
   // Keyboard shortcuts for the inline editor:
   //   Cmd/Ctrl+Z         → undo the most recent inline edit
-  //   Shift+Cmd/Ctrl+Z   → revert all inline edits to the originally-uploaded values
+  //   Cmd/Ctrl+Y         → redo the last undone edit
+  //   Shift+Cmd/Ctrl+Z   → also redo (matches standard editor conventions)
   // Only active while there are invalid rows being edited and we're not in
   // the middle of an import.
   useEffect(() => {
     if (invalidRows.length === 0 || isImporting) return;
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod || e.key.toLowerCase() !== "z") return;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      const isUndoKey = key === "z" && !e.shiftKey;
+      const isRedoKey = key === "y" || (key === "z" && e.shiftKey);
+      if (!isUndoKey && !isRedoKey) return;
       // Ignore when focus is on a non-editor field (e.g. another text input
       // outside the row-errors table) so we don't hijack the browser's
       // native undo elsewhere on the page.
@@ -456,10 +501,16 @@ export default function AssetsImportPage() {
       const insideEditor = !!target?.closest('[data-csv-editor="true"]');
       const onBody = target === document.body;
       if (!insideEditor && !onBody) return;
-      if (e.shiftKey) {
-        if (!hasAnyEdits) return;
+      if (isRedoKey) {
+        if (redoHistory.current.length === 0) return;
         e.preventDefault();
-        undoAllEdits();
+        const redone = redoLastEdit();
+        if (redone) {
+          toast({
+            title: "Edit redone",
+            description: `${redoHistory.current.length} undone edit${redoHistory.current.length === 1 ? "" : "s"} remain available to redo.`,
+          });
+        }
       } else {
         if (editHistory.current.length === 0) return;
         e.preventDefault();
@@ -475,7 +526,7 @@ export default function AssetsImportPage() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invalidRows.length, isImporting, hasAnyEdits]);
+  }, [invalidRows.length, isImporting]);
 
   const canImport =
     !!cid &&
@@ -494,6 +545,7 @@ export default function AssetsImportPage() {
     setLastRunSummary(null);
     // A new file resets the inline-edit history.
     editHistory.current = [];
+    redoHistory.current = [];
     try {
       const text = await file.text();
       setRawText(text);
@@ -560,6 +612,7 @@ export default function AssetsImportPage() {
     setLastRunSummary(null);
     originalRawByLine.current = new Map();
     editHistory.current = [];
+    redoHistory.current = [];
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -706,8 +759,10 @@ export default function AssetsImportPage() {
                       rows only”. Press{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Z</kbd>{" "}
                       to undo the last edit, or{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⌘/Ctrl+Y</kbd>{" "}
+                      /{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
-                      to undo all.
+                      to redo.
                     </CardDescription>
                   </div>
                   <Button
@@ -715,7 +770,7 @@ export default function AssetsImportPage() {
                     size="sm"
                     onClick={undoAllEdits}
                     disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits (⇧⌘/Ctrl+Z)" : "No edits to undo"}
+                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
                   >
                     <Undo2 className="h-4 w-4 mr-2" />
                     Undo all edits
