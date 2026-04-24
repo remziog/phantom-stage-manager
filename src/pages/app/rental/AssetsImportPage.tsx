@@ -214,6 +214,23 @@ export default function AssetsImportPage() {
     URL.revokeObjectURL(url);
   };
 
+  /** Re-feed the just-failed rows back into the importer as a synthesized
+   * CSV file. Uses only the original headers so re-validation runs cleanly
+   * (the diagnostic `_line`/`_error` columns from the download are dropped). */
+  const reuploadFailedRows = () => {
+    const s = lastRunSummary;
+    if (!s || s.failedRows.length === 0) return;
+    const csv = rowsToCsv(
+      s.headers,
+      s.failedRows.map((r) => ({ ...r.raw })),
+    );
+    const base = s.fileName.replace(/\.csv$/i, "");
+    const file = new File([csv], `${base}-failed-rows.csv`, { type: "text/csv" });
+    // Clear the summary so it doesn't shadow the new upload state.
+    setLastRunSummary(null);
+    void handleFile(file);
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
