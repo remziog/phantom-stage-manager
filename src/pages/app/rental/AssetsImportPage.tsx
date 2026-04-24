@@ -227,7 +227,7 @@ export default function AssetsImportPage() {
                   ({(new Blob([rawText]).size / 1024).toFixed(1)} KB)
                 </span>
               </div>
-              <Button variant="ghost" size="sm" onClick={reset}>Choose another file</Button>
+              <Button variant="ghost" size="sm" onClick={reset} disabled={isImporting}>Choose another file</Button>
             </CardHeader>
           </Card>
         )}
@@ -328,7 +328,7 @@ export default function AssetsImportPage() {
                   )}
                   <div className="flex items-center justify-between gap-3 px-4 py-3 border-t">
                     <div className="flex items-center gap-2">
-                      <Switch id="partial" checked={allowPartial} onCheckedChange={setAllowPartial} />
+                      <Switch id="partial" checked={allowPartial} onCheckedChange={setAllowPartial} disabled={isImporting} />
                       <Label htmlFor="partial" className="cursor-pointer">
                         Import valid rows only ({validRows.length})
                       </Label>
