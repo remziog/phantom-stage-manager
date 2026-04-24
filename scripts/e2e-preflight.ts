@@ -13,7 +13,9 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,6 +25,31 @@ const SCRIPT_PATH = "scripts/e2e-seed.ts";
 const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/schema-snapshot.json";
 /** Optional path to a previous snapshot artifact to diff against. */
 const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
+
+/**
+ * Optional fallback when PREFLIGHT_BASELINE_PATH is empty: fetch the snapshot
+ * from a GitHub artifact. Supported inputs (checked in this order):
+ *
+ *   PREFLIGHT_BASELINE_ARTIFACT_URL
+ *     Full GitHub REST API URL or browser URL to an artifact, e.g.
+ *       https://api.github.com/repos/OWNER/REPO/actions/artifacts/123456789/zip
+ *       https://github.com/OWNER/REPO/actions/runs/987/artifacts/123456789
+ *
+ *   PREFLIGHT_BASELINE_RUN_ID + PREFLIGHT_BASELINE_REPO (+ optional PREFLIGHT_BASELINE_ARTIFACT_NAME)
+ *     Look up the artifact named "preflight-report" (or the override) on a
+ *     specific workflow run, then download its zip.
+ *
+ * Auth: requires GITHUB_TOKEN (set automatically in Actions). For private
+ * repos run locally, export a token with `actions:read` scope.
+ *
+ * The downloaded zip is unzipped (via the system `unzip` binary, available on
+ * every GitHub-hosted runner) into a temp dir; we then read schema-snapshot.json.
+ */
+const BASELINE_ARTIFACT_URL = process.env.PREFLIGHT_BASELINE_ARTIFACT_URL ?? "";
+const BASELINE_RUN_ID = process.env.PREFLIGHT_BASELINE_RUN_ID ?? "";
+const BASELINE_REPO = process.env.PREFLIGHT_BASELINE_REPO ?? process.env.GITHUB_REPOSITORY ?? "";
+const BASELINE_ARTIFACT_NAME = process.env.PREFLIGHT_BASELINE_ARTIFACT_NAME ?? "preflight-report";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? "";
 
 /**
  * Which kinds of baseline-diff changes should fail CI.
@@ -269,6 +296,125 @@ interface SchemaDiff {
   nowFixed: string[];       // items missing in baseline but now ok
 }
 
+/**
+ * Normalize a user-supplied artifact URL to the REST `/zip` endpoint that
+ * actually serves the artifact bytes. Accepts either:
+ *   - https://api.github.com/repos/OWNER/REPO/actions/artifacts/<id>(/zip)?
+ *   - https://github.com/OWNER/REPO/actions/runs/<runId>/artifacts/<id>
+ */
+function normalizeArtifactUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    // Browser URL → convert to REST API.
+    const browserMatch = u.pathname.match(
+      /^\/([^/]+)\/([^/]+)\/actions\/runs\/\d+\/artifacts\/(\d+)$/,
+    );
+    if (u.hostname === "github.com" && browserMatch) {
+      const [, owner, repo, artifactId] = browserMatch;
+      return `https://api.github.com/repos/${owner}/${repo}/actions/artifacts/${artifactId}/zip`;
+    }
+    // REST API URL — make sure it ends with /zip.
+    if (u.hostname === "api.github.com" && /\/actions\/artifacts\/\d+/.test(u.pathname)) {
+      return u.pathname.endsWith("/zip") ? url : `${url.replace(/\/$/, "")}/zip`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function ghFetch(url: string, accept = "application/vnd.github+json"): Promise<Response> {
+  if (!GITHUB_TOKEN) {
+    throw new Error("GITHUB_TOKEN is required to fetch artifacts from GitHub");
+  }
+  const res = await fetch(url, {
+    headers: {
+      Accept: accept,
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "preflight-baseline-fetch",
+    },
+    redirect: "follow",
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub API ${res.status} ${res.statusText} for ${url}`);
+  }
+  return res;
+}
+
+/** Resolve an artifact ID from a workflow run by name. */
+async function resolveArtifactZipUrl(
+  repo: string,
+  runId: string,
+  artifactName: string,
+): Promise<string> {
+  const listUrl = `https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts?per_page=100`;
+  const res = await ghFetch(listUrl);
+  const body = (await res.json()) as { artifacts?: { id: number; name: string }[] };
+  const match = body.artifacts?.find((a) => a.name === artifactName);
+  if (!match) {
+    throw new Error(
+      `Artifact "${artifactName}" not found on run ${runId} ` +
+      `(found: ${body.artifacts?.map((a) => a.name).join(", ") || "none"})`,
+    );
+  }
+  return `https://api.github.com/repos/${repo}/actions/artifacts/${match.id}/zip`;
+}
+
+/**
+ * Download + unzip a baseline snapshot from a GitHub artifact zip.
+ * Returns the path to the extracted schema-snapshot.json (or null on failure).
+ */
+async function fetchBaselineFromArtifact(): Promise<string | null> {
+  let zipUrl: string | null = null;
+  try {
+    if (BASELINE_ARTIFACT_URL) {
+      zipUrl = normalizeArtifactUrl(BASELINE_ARTIFACT_URL);
+      if (!zipUrl) {
+        console.warn(
+          `[preflight] PREFLIGHT_BASELINE_ARTIFACT_URL is not a recognized GitHub artifact URL: ${BASELINE_ARTIFACT_URL}`,
+        );
+        return null;
+      }
+    } else if (BASELINE_RUN_ID && BASELINE_REPO) {
+      console.log(
+        `[preflight] Looking up artifact "${BASELINE_ARTIFACT_NAME}" on ${BASELINE_REPO} run ${BASELINE_RUN_ID}…`,
+      );
+      zipUrl = await resolveArtifactZipUrl(BASELINE_REPO, BASELINE_RUN_ID, BASELINE_ARTIFACT_NAME);
+    } else {
+      return null;
+    }
+
+    console.log(`[preflight] Downloading baseline artifact from ${zipUrl}`);
+    const res = await ghFetch(zipUrl, "application/zip");
+    const buf = Buffer.from(await res.arrayBuffer());
+    const dir = join(tmpdir(), `preflight-baseline-${Date.now()}`);
+    mkdirSync(dir, { recursive: true });
+    const zipPath = join(dir, "artifact.zip");
+    writeFileSync(zipPath, buf);
+
+    // Use the system `unzip` (preinstalled on Ubuntu runners and most dev boxes).
+    try {
+      execFileSync("unzip", ["-o", "-q", zipPath, "-d", dir], { stdio: "inherit" });
+    } catch (err) {
+      console.warn(
+        `[preflight] Failed to unzip baseline artifact (is the 'unzip' binary installed?): ${safeMessage(err)}`,
+      );
+      return null;
+    }
+    const extracted = join(dir, "schema-snapshot.json");
+    if (!existsSync(extracted)) {
+      console.warn(`[preflight] Artifact zip did not contain schema-snapshot.json (looked in ${dir})`);
+      return null;
+    }
+    console.log(`[preflight] Baseline artifact extracted to ${extracted}`);
+    return extracted;
+  } catch (err) {
+    console.warn(`[preflight] Could not fetch baseline artifact: ${safeMessage(err)}`);
+    return null;
+  }
+}
+
 function loadBaseline(path: string): SnapshotShape | null {
   if (!path) return null;
   if (!existsSync(path)) {
@@ -509,14 +655,25 @@ async function main(): Promise<void> {
   for (const f of findings) annotate(f);
   const snapshotPath = writeSnapshot();
 
-  // Optional: diff against a previous snapshot artifact if the user provided one.
+  // Optional: diff against a previous snapshot. Sources, in priority order:
+  //   1. PREFLIGHT_BASELINE_PATH (local file)
+  //   2. PREFLIGHT_BASELINE_ARTIFACT_URL  (GitHub artifact URL)
+  //   3. PREFLIGHT_BASELINE_RUN_ID + PREFLIGHT_BASELINE_REPO  (lookup by run)
   let diffLines: string[] = [];
   let diffFailureReasons: string[] = [];
-  const baseline = loadBaseline(BASELINE_PATH);
+  let baselineSource = BASELINE_PATH;
+  let baseline = loadBaseline(BASELINE_PATH);
+  if (!baseline && (BASELINE_ARTIFACT_URL || (BASELINE_RUN_ID && BASELINE_REPO))) {
+    const fetched = await fetchBaselineFromArtifact();
+    if (fetched) {
+      baselineSource = fetched;
+      baseline = loadBaseline(fetched);
+    }
+  }
   if (baseline) {
     const diff = diffSnapshots(baseline, buildCurrentSnapshot());
-    logDiffToConsole(diff, BASELINE_PATH);
-    diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+    logDiffToConsole(diff, baselineSource);
+    diffLines = renderDiffMarkdown(diff, baselineSource);
     diffFailureReasons = evaluateDiffFailures(diff);
   }
 

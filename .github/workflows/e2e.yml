@@ -57,7 +57,16 @@ jobs:
 
       - name: Preflight — verify Supabase schema matches seed script
         env:
+          # Local file (downloaded above) takes priority. If empty/missing,
+          # the script can fall back to a GitHub artifact via:
+          #   PREFLIGHT_BASELINE_ARTIFACT_URL: https://api.github.com/repos/OWNER/REPO/actions/artifacts/<id>/zip
+          # or
+          #   PREFLIGHT_BASELINE_RUN_ID: <runId>
+          #   PREFLIGHT_BASELINE_REPO:   ${{ github.repository }}
+          # Both fallbacks require GITHUB_TOKEN with actions:read.
           PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
+          PREFLIGHT_BASELINE_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Fail CI only on actual regressions (newly missing tables/columns/enums).
           # Use "any" to also fail on additions, "none" to disable diff-based failures.
           PREFLIGHT_FAIL_ON: regressions
