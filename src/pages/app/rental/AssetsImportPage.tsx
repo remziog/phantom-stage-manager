@@ -443,6 +443,8 @@ export default function AssetsImportPage() {
     setResume(null);
     setProgress(null);
     setLastRunSummary(null);
+    originalRawByLine.current = new Map();
+    setEditedLines(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
