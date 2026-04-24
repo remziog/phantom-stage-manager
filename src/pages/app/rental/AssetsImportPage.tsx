@@ -780,16 +780,52 @@ export default function AssetsImportPage() {
                       to redo.
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={undoAllEdits}
-                    disabled={!hasAnyEdits || isImporting}
-                    title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
-                  >
-                    <Undo2 className="h-4 w-4 mr-2" />
-                    Undo all edits
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => undoLastEdit()}
+                      disabled={undoCount === 0 || isImporting}
+                      title={undoCount > 0 ? `Undo last edit (⌘/Ctrl+Z) — ${undoCount} available` : "Nothing to undo"}
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 px-1.5 py-0 h-5 min-w-[1.25rem] justify-center tabular-nums"
+                        aria-label={`${undoCount} undo step${undoCount === 1 ? "" : "s"} available`}
+                      >
+                        {undoCount}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => redoLastEdit()}
+                      disabled={redoCount === 0 || isImporting}
+                      title={redoCount > 0 ? `Redo last undone edit (⌘/Ctrl+Y) — ${redoCount} available` : "Nothing to redo"}
+                    >
+                      <Redo2 className="h-4 w-4 mr-2" />
+                      Redo
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 px-1.5 py-0 h-5 min-w-[1.25rem] justify-center tabular-nums"
+                        aria-label={`${redoCount} redo step${redoCount === 1 ? "" : "s"} available`}
+                      >
+                        {redoCount}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={undoAllEdits}
+                      disabled={!hasAnyEdits || isImporting}
+                      title={hasAnyEdits ? "Revert all inline edits" : "No edits to undo"}
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo all edits
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto" data-csv-editor="true">
