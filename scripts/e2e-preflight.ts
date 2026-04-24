@@ -229,14 +229,14 @@ function annotate(f: Finding): void {
   );
 }
 
-function writeStepSummary(): void {
+function writeStepSummary(snapshotPath: string): void {
   if (!STEP_SUMMARY) return;
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");
   const lines: string[] = [];
   lines.push("## E2E preflight — schema check");
   lines.push("");
-  lines.push(`Project: \`${SUPABASE_URL}\``);
+  lines.push(`Project: \`${sanitizeUrl(SUPABASE_URL)}\``);
   lines.push("");
   if (findings.length === 0) {
     lines.push("✅ All required tables, columns, and enum values are present.");
@@ -256,11 +256,13 @@ function writeStepSummary(): void {
       "or run a migration to restore the expected columns/enums.",
     );
   }
+  lines.push("");
+  lines.push(`📦 Snapshot artifact: \`${snapshotPath}\` (uploaded as \`preflight-report\`).`);
   appendFileSync(STEP_SUMMARY, lines.join("\n") + "\n");
 }
 
 async function main(): Promise<void> {
-  console.log(`[preflight] Checking schema at ${SUPABASE_URL}`);
+  console.log(`[preflight] Checking schema at ${sanitizeUrl(SUPABASE_URL)}`);
 
   for (const [table, cols] of Object.entries(REQUIRED_COLUMNS)) {
     try {
@@ -286,7 +288,8 @@ async function main(): Promise<void> {
   }
 
   for (const f of findings) annotate(f);
-  writeStepSummary();
+  const snapshotPath = writeSnapshot();
+  writeStepSummary(snapshotPath);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
@@ -299,6 +302,7 @@ async function main(): Promise<void> {
       `\nUpdate ${SCRIPT_PATH} (and scripts/e2e-teardown.ts) to match the current schema, ` +
       "or run a migration to restore the expected columns/enums.",
     );
+    console.error(`\nSnapshot for local diff: ${snapshotPath}`);
     process.exit(1);
   }
 
