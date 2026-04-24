@@ -931,11 +931,30 @@ export default function AssetsImportPage() {
                                 );
                               })}
                               <TableCell>
-                                <ul className="space-y-0.5 text-sm text-destructive pt-1">
-                                  {r.errors.map((e, i) => (
-                                    <li key={i}><strong>{e.field}:</strong> {e.message}</li>
-                                  ))}
-                                </ul>
+                                {(() => {
+                                  // Only render errors here that aren't already
+                                  // shown as inline badges next to their cells —
+                                  // typically row-level issues whose `field`
+                                  // doesn't map to an editable column.
+                                  const editableSet = new Set(editableColumns);
+                                  const others = r.errors.filter(
+                                    (e) => !editableSet.has(e.field),
+                                  );
+                                  if (others.length === 0) {
+                                    return (
+                                      <span className="text-xs text-muted-foreground pt-1 inline-block">
+                                        See badges in cells →
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <ul className="space-y-0.5 text-sm text-destructive pt-1">
+                                      {others.map((e, i) => (
+                                        <li key={i}><strong>{e.field}:</strong> {e.message}</li>
+                                      ))}
+                                    </ul>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell className="pt-1">
                                 <Button
