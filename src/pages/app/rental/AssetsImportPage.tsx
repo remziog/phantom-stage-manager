@@ -26,6 +26,7 @@ import {
   type ValidatedAssetRow,
 } from "@/lib/csv";
 import { importAssets, type ImportProgress } from "@/services/assets";
+import { logCsvEditEvent, flushCsvEditEvents } from "@/services/csvAnalytics";
 import { ArrowLeft, Upload, AlertCircle, CheckCircle2, Download, FileText, Loader2, Undo2, Redo2 } from "lucide-react";
 
 const SAMPLE_CSV = `name,sku,category,quantity,unit_price,location,status
@@ -368,6 +369,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "edit", field, lineNumber });
+    }
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
@@ -401,6 +405,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, last.lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo", field: last.field, lineNumber: last.lineNumber });
+    }
     return { ...last, restoredValue: last.prevValue };
   };
 
@@ -433,6 +440,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, next.lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "redo", field: next.field, lineNumber: next.lineNumber });
+    }
     return { ...next, restoredValue: next.nextValue };
   };
 
@@ -487,6 +497,13 @@ export default function AssetsImportPage() {
       setRedoCount(redoHistory.current.length);
     }
   }, [validated, undoCount, redoCount]);
+
+  // Flush any queued analytics events when leaving the page so we don't
+  // lose the tail of a session (e.g. last few edits before navigation).
+  useEffect(() => {
+    return () => { void flushCsvEditEvents(); };
+  }, []);
+
   /** Restore one row's raw values to the originally-parsed snapshot, then
    * re-validate it so the errors column refreshes. */
   const undoRow = (lineNumber: number) => {
@@ -503,6 +520,9 @@ export default function AssetsImportPage() {
     editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
     redoHistory.current = redoHistory.current.filter((h) => h.lineNumber !== lineNumber);
     syncHistoryCounts();
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo_row", lineNumber });
+    }
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
@@ -522,6 +542,9 @@ export default function AssetsImportPage() {
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
     });
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo_all" });
+    }
   };
 
   /** Find the first invalid input rendered inside the editor (DOM order
