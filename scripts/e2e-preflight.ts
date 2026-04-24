@@ -86,8 +86,118 @@ function sanitizeUrl(url: string | undefined): string {
   }
 }
 
+interface EnvDoc {
+  name: string;
+  required: boolean;
+  description: string;
+  example: string;
+  defaultValue?: string;
+}
+
+const ENV_DOCS: EnvDoc[] = [
+  {
+    name: "SUPABASE_URL",
+    required: true,
+    description: "Supabase project URL (falls back to VITE_SUPABASE_URL).",
+    example: "https://abcdefghijkl.supabase.co",
+  },
+  {
+    name: "SUPABASE_SERVICE_ROLE_KEY",
+    required: true,
+    description: "Service-role key used to introspect the schema. Keep secret.",
+    example: "eyJhbGciOiJIUzI1NiIsInR5c…",
+  },
+  {
+    name: "PREFLIGHT_SNAPSHOT_PATH",
+    required: false,
+    description: "Where to write the sanitized JSON schema snapshot.",
+    example: "preflight-report/schema-snapshot.json",
+    defaultValue: "preflight-report/schema-snapshot.json",
+  },
+  {
+    name: "PREFLIGHT_BASELINE_PATH",
+    required: false,
+    description: "Local path to a previous snapshot to diff against.",
+    example: "preflight-baseline/schema-snapshot.json",
+  },
+  {
+    name: "PREFLIGHT_BASELINE_ARTIFACT_URL",
+    required: false,
+    description: "GitHub artifact URL (REST or browser) used when no local baseline is set.",
+    example: "https://api.github.com/repos/OWNER/REPO/actions/artifacts/123456789/zip",
+  },
+  {
+    name: "PREFLIGHT_BASELINE_RUN_ID",
+    required: false,
+    description: "Workflow run ID to look up the baseline artifact on (with PREFLIGHT_BASELINE_REPO).",
+    example: "9876543210",
+  },
+  {
+    name: "PREFLIGHT_BASELINE_REPO",
+    required: false,
+    description: "owner/repo for the artifact lookup. Defaults to GITHUB_REPOSITORY.",
+    example: "my-org/my-repo",
+  },
+  {
+    name: "PREFLIGHT_BASELINE_ARTIFACT_NAME",
+    required: false,
+    description: "Artifact name to look up on the run.",
+    example: "preflight-report",
+    defaultValue: "preflight-report",
+  },
+  {
+    name: "PREFLIGHT_FAIL_ON",
+    required: false,
+    description: "Comma-separated diff failure modes: any | regressions | removed | none.",
+    example: "regressions,removed",
+    defaultValue: "regressions",
+  },
+  {
+    name: "GITHUB_TOKEN",
+    required: false,
+    description: "Token with actions:read scope. Required for artifact-URL/run-ID fallbacks.",
+    example: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  },
+  {
+    name: "GITHUB_STEP_SUMMARY",
+    required: false,
+    description: "Path to the GitHub Actions step summary file (set automatically in CI).",
+    example: "/github/file_commands/step_summary_xxx",
+  },
+];
+
+function printHelp(): void {
+  const lines: string[] = [];
+  lines.push("preflight — verify the Supabase schema matches the E2E seed script.");
+  lines.push("");
+  lines.push("Usage:");
+  lines.push("  npm run test:e2e:preflight");
+  lines.push("  PREFLIGHT_BASELINE_PATH=./prev.json npm run test:e2e:preflight");
+  lines.push("  npx tsx scripts/e2e-preflight.ts [--help|-h]");
+  lines.push("");
+  lines.push("Environment variables:");
+  for (const e of ENV_DOCS) {
+    const tag = e.required ? "(required)" : "(optional)";
+    const def = e.defaultValue ? `  default: ${e.defaultValue}` : "";
+    lines.push(`  ${e.name}  ${tag}`);
+    lines.push(`    ${e.description}`);
+    lines.push(`    example: ${e.name}="${e.example}"${def ? "\n    " + def : ""}`);
+    lines.push("");
+  }
+  lines.push("Exit codes:");
+  lines.push("  0  schema matches expectations (and diff is within PREFLIGHT_FAIL_ON limits)");
+  lines.push("  1  missing tables/columns/enums in the live DB, or diff failure triggered");
+  console.log(lines.join("\n"));
+}
+
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  printHelp();
+  process.exit(0);
+}
+
 if (!SUPABASE_URL || !SERVICE_ROLE) {
   console.error("[preflight] Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
+  console.error("[preflight] Run with --help for full env-var documentation.");
   process.exit(1);
 }
 
