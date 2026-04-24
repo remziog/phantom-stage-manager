@@ -635,10 +635,16 @@ export default function AssetsImportPage() {
                         Go to assets
                       </Button>
                       {s.failedRows.length > 0 && (
-                        <Button size="sm" variant="outline" onClick={downloadFailedRows}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download failed rows ({s.failedRows.length})
-                        </Button>
+                        <>
+                          <Button size="sm" variant="default" onClick={reuploadFailedRows}>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Re-upload these failed rows ({s.failedRows.length})
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={downloadFailedRows}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download failed rows
+                          </Button>
+                        </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => setLastRunSummary(null)}>
                         Dismiss
