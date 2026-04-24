@@ -655,14 +655,25 @@ async function main(): Promise<void> {
   for (const f of findings) annotate(f);
   const snapshotPath = writeSnapshot();
 
-  // Optional: diff against a previous snapshot artifact if the user provided one.
+  // Optional: diff against a previous snapshot. Sources, in priority order:
+  //   1. PREFLIGHT_BASELINE_PATH (local file)
+  //   2. PREFLIGHT_BASELINE_ARTIFACT_URL  (GitHub artifact URL)
+  //   3. PREFLIGHT_BASELINE_RUN_ID + PREFLIGHT_BASELINE_REPO  (lookup by run)
   let diffLines: string[] = [];
   let diffFailureReasons: string[] = [];
-  const baseline = loadBaseline(BASELINE_PATH);
+  let baselineSource = BASELINE_PATH;
+  let baseline = loadBaseline(BASELINE_PATH);
+  if (!baseline && (BASELINE_ARTIFACT_URL || (BASELINE_RUN_ID && BASELINE_REPO))) {
+    const fetched = await fetchBaselineFromArtifact();
+    if (fetched) {
+      baselineSource = fetched;
+      baseline = loadBaseline(fetched);
+    }
+  }
   if (baseline) {
     const diff = diffSnapshots(baseline, buildCurrentSnapshot());
-    logDiffToConsole(diff, BASELINE_PATH);
-    diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+    logDiffToConsole(diff, baselineSource);
+    diffLines = renderDiffMarkdown(diff, baselineSource);
     diffFailureReasons = evaluateDiffFailures(diff);
   }
 
