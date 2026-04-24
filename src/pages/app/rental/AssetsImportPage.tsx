@@ -65,6 +65,11 @@ export default function AssetsImportPage() {
   // Summary of the most recent completed import. When `wasResume` is true we
   // render a breakdown that separates rows saved in the previous (cancelled)
   // run from rows saved in the just-finished resumed run.
+  interface FailedRowSnapshot {
+    lineNumber: number;
+    raw: Record<string, string>;
+    message: string;
+  }
   interface RunSummary {
     wasResume: boolean;
     previousInserted: number;
@@ -74,6 +79,10 @@ export default function AssetsImportPage() {
     failed: number;
     skipped: number;
     fileName: string;
+    /** Headers captured at the time of the run, used for CSV export. */
+    headers: string[];
+    /** Per-row failures from the just-finished run, with error messages. */
+    failedRows: FailedRowSnapshot[];
   }
   const [lastRunSummary, setLastRunSummary] = useState<RunSummary | null>(null);
 
