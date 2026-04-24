@@ -12,7 +12,7 @@
  * Optional env: GITHUB_STEP_SUMMARY (set automatically by GitHub Actions)
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
@@ -21,6 +21,8 @@ const STEP_SUMMARY = process.env.GITHUB_STEP_SUMMARY;
 const ON_CI = !!process.env.GITHUB_ACTIONS;
 const SCRIPT_PATH = "scripts/e2e-seed.ts";
 const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/schema-snapshot.json";
+/** Optional path to a previous snapshot artifact to diff against. */
+const BASELINE_PATH = process.env.PREFLIGHT_BASELINE_PATH ?? "";
 
 /**
  * Sanitize the Supabase URL for the snapshot — keeps the project ref so you can
@@ -229,7 +231,158 @@ function annotate(f: Finding): void {
   );
 }
 
-function writeStepSummary(snapshotPath: string): void {
+// ───────────────────────── Baseline diff ─────────────────────────
+
+interface SnapshotShape {
+  tables: { name: string; status: string; columns: { name: string; status: string }[] }[];
+  enums: { table: string; column: string; value: string; status: string }[];
+}
+interface SchemaDiff {
+  addedTables: string[];
+  removedTables: string[];
+  addedColumns: string[];   // "table.column"
+  removedColumns: string[]; // "table.column"
+  addedEnums: string[];     // "table.column=value"
+  removedEnums: string[];
+  newlyMissing: string[];   // items present in baseline as ok but now missing/error
+  nowFixed: string[];       // items missing in baseline but now ok
+}
+
+function loadBaseline(path: string): SnapshotShape | null {
+  if (!path) return null;
+  if (!existsSync(path)) {
+    console.log(`[preflight] (no baseline at ${path}, skipping diff)`);
+    return null;
+  }
+  try {
+    const raw = readFileSync(path, "utf8");
+    return JSON.parse(raw) as SnapshotShape;
+  } catch (err) {
+    console.warn(`[preflight] Could not parse baseline ${path}: ${safeMessage(err)}`);
+    return null;
+  }
+}
+
+function buildCurrentSnapshot(): SnapshotShape {
+  return {
+    tables: tableSnapshots.map((t) => ({
+      name: t.name, status: t.status,
+      columns: t.columns.map((c) => ({ name: c.name, status: c.status })),
+    })),
+    enums: enumSnapshots.map((e) => ({
+      table: e.table, column: e.column, value: e.value, status: e.status,
+    })),
+  };
+}
+
+function diffSnapshots(baseline: SnapshotShape, current: SnapshotShape): SchemaDiff {
+  const baseTables = new Map(baseline.tables.map((t) => [t.name, t] as const));
+  const curTables = new Map(current.tables.map((t) => [t.name, t] as const));
+  const baseEnums = new Map(
+    baseline.enums.map((e) => [`${e.table}.${e.column}=${e.value}`, e] as const),
+  );
+  const curEnums = new Map(
+    current.enums.map((e) => [`${e.table}.${e.column}=${e.value}`, e] as const),
+  );
+
+  const addedTables: string[] = [];
+  const removedTables: string[] = [];
+  const addedColumns: string[] = [];
+  const removedColumns: string[] = [];
+  const newlyMissing: string[] = [];
+  const nowFixed: string[] = [];
+
+  for (const name of curTables.keys()) if (!baseTables.has(name)) addedTables.push(name);
+  for (const name of baseTables.keys()) if (!curTables.has(name)) removedTables.push(name);
+
+  for (const [name, cur] of curTables) {
+    const base = baseTables.get(name);
+    if (!base) continue;
+    const baseCols = new Map(base.columns.map((c) => [c.name, c.status] as const));
+    const curCols = new Map(cur.columns.map((c) => [c.name, c.status] as const));
+    for (const c of curCols.keys()) if (!baseCols.has(c)) addedColumns.push(`${name}.${c}`);
+    for (const c of baseCols.keys()) if (!curCols.has(c)) removedColumns.push(`${name}.${c}`);
+    for (const [c, status] of curCols) {
+      const baseStatus = baseCols.get(c);
+      if (baseStatus === "ok" && status !== "ok") newlyMissing.push(`column ${name}.${c}`);
+      if (baseStatus && baseStatus !== "ok" && status === "ok") nowFixed.push(`column ${name}.${c}`);
+    }
+    if (base.status === "ok" && cur.status !== "ok") newlyMissing.push(`table ${name}`);
+    if (base.status !== "ok" && cur.status === "ok") nowFixed.push(`table ${name}`);
+  }
+
+  const addedEnums: string[] = [];
+  const removedEnums: string[] = [];
+  for (const k of curEnums.keys()) if (!baseEnums.has(k)) addedEnums.push(k);
+  for (const k of baseEnums.keys()) if (!curEnums.has(k)) removedEnums.push(k);
+  for (const [k, e] of curEnums) {
+    const base = baseEnums.get(k);
+    if (base?.status === "ok" && e.status !== "ok") newlyMissing.push(`enum ${k}`);
+    if (base && base.status !== "ok" && e.status === "ok") nowFixed.push(`enum ${k}`);
+  }
+
+  return {
+    addedTables, removedTables, addedColumns, removedColumns,
+    addedEnums, removedEnums, newlyMissing, nowFixed,
+  };
+}
+
+function diffIsEmpty(d: SchemaDiff): boolean {
+  return (
+    d.addedTables.length + d.removedTables.length +
+    d.addedColumns.length + d.removedColumns.length +
+    d.addedEnums.length + d.removedEnums.length +
+    d.newlyMissing.length + d.nowFixed.length
+  ) === 0;
+}
+
+function renderDiffMarkdown(d: SchemaDiff, baselinePath: string): string[] {
+  const lines: string[] = [];
+  lines.push(`### 🔍 Diff vs baseline (\`${baselinePath}\`)`);
+  lines.push("");
+  if (diffIsEmpty(d)) {
+    lines.push("No schema changes vs baseline.");
+    return lines;
+  }
+  const section = (title: string, items: string[]) => {
+    if (items.length === 0) return;
+    lines.push(`**${title}** (${items.length})`);
+    for (const i of items) lines.push(`- \`${i}\``);
+    lines.push("");
+  };
+  section("➕ Added tables", d.addedTables);
+  section("➖ Removed tables", d.removedTables);
+  section("➕ Added columns", d.addedColumns);
+  section("➖ Removed columns", d.removedColumns);
+  section("➕ Added enum values", d.addedEnums);
+  section("➖ Removed enum values", d.removedEnums);
+  section("🚨 Newly missing (regressions)", d.newlyMissing);
+  section("✅ Now fixed", d.nowFixed);
+  return lines;
+}
+
+function logDiffToConsole(d: SchemaDiff, baselinePath: string): void {
+  console.log(`\n[preflight] 🔍 Diff vs baseline (${baselinePath}):`);
+  if (diffIsEmpty(d)) {
+    console.log("  (no changes)");
+    return;
+  }
+  const log = (label: string, items: string[]) => {
+    if (items.length) console.log(`  ${label}: ${items.join(", ")}`);
+  };
+  log("+tables", d.addedTables);
+  log("-tables", d.removedTables);
+  log("+columns", d.addedColumns);
+  log("-columns", d.removedColumns);
+  log("+enums", d.addedEnums);
+  log("-enums", d.removedEnums);
+  log("regressions", d.newlyMissing);
+  log("fixed", d.nowFixed);
+}
+
+// ─────────────────────────────────────────────────────────────────
+
+function writeStepSummary(snapshotPath: string, diffLines: string[]): void {
   if (!STEP_SUMMARY) return;
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");
@@ -258,6 +411,10 @@ function writeStepSummary(snapshotPath: string): void {
   }
   lines.push("");
   lines.push(`📦 Snapshot artifact: \`${snapshotPath}\` (uploaded as \`preflight-report\`).`);
+  if (diffLines.length > 0) {
+    lines.push("");
+    lines.push(...diffLines);
+  }
   appendFileSync(STEP_SUMMARY, lines.join("\n") + "\n");
 }
 
@@ -289,7 +446,17 @@ async function main(): Promise<void> {
 
   for (const f of findings) annotate(f);
   const snapshotPath = writeSnapshot();
-  writeStepSummary(snapshotPath);
+
+  // Optional: diff against a previous snapshot artifact if the user provided one.
+  let diffLines: string[] = [];
+  const baseline = loadBaseline(BASELINE_PATH);
+  if (baseline) {
+    const diff = diffSnapshots(baseline, buildCurrentSnapshot());
+    logDiffToConsole(diff, BASELINE_PATH);
+    diffLines = renderDiffMarkdown(diff, BASELINE_PATH);
+  }
+
+  writeStepSummary(snapshotPath, diffLines);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
