@@ -48,6 +48,15 @@ jobs:
       - name: Preflight — verify Supabase schema matches seed script
         run: npm run test:e2e:preflight
 
+      - name: Upload preflight schema snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report
+          path: preflight-report/
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Seed Supabase test data
         run: npm run test:e2e:seed
 

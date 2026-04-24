@@ -12,13 +12,29 @@
  * Optional env: GITHUB_STEP_SUMMARY (set automatically by GitHub Actions)
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const STEP_SUMMARY = process.env.GITHUB_STEP_SUMMARY;
 const ON_CI = !!process.env.GITHUB_ACTIONS;
 const SCRIPT_PATH = "scripts/e2e-seed.ts";
+const SNAPSHOT_PATH = process.env.PREFLIGHT_SNAPSHOT_PATH ?? "preflight-report/schema-snapshot.json";
+
+/**
+ * Sanitize the Supabase URL for the snapshot — keeps the project ref so you can
+ * tell snapshots apart, but drops anything that could leak credentials.
+ */
+function sanitizeUrl(url: string | undefined): string {
+  if (!url) return "unknown";
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.hostname}`;
+  } catch {
+    return "invalid-url";
+  }
+}
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
   console.error("[preflight] Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
@@ -62,28 +78,54 @@ interface Finding {
 
 const findings: Finding[] = [];
 
+type ProbeStatus = "ok" | "missing" | "error";
+interface ColumnSnapshot { name: string; status: ProbeStatus; error?: string }
+interface TableSnapshot {
+  name: string;
+  status: ProbeStatus; // "missing" if the table itself isn't reachable
+  error?: string;
+  columns: ColumnSnapshot[];
+}
+interface EnumSnapshot {
+  table: string;
+  column: string;
+  value: string;
+  status: ProbeStatus;
+  error?: string;
+}
+
+const tableSnapshots: TableSnapshot[] = [];
+const enumSnapshots: EnumSnapshot[] = [];
+
 /** Mask a string of unknown shape for safe console output. */
 function safeMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
 async function checkTable(table: string, columns: string[]): Promise<void> {
+  const snap: TableSnapshot = { name: table, status: "ok", columns: [] };
+  tableSnapshots.push(snap);
+
   // Step 1: probe the table itself with `select(id) limit 0`.
   const probe = await admin.from(table).select("id").limit(0);
   if (probe.error) {
     const msg = probe.error.message;
-    // Postgrest reports missing relations with this code/message shape.
     if (
       probe.error.code === "PGRST205" ||
       /relation .* does not exist/i.test(msg) ||
       /could not find the table/i.test(msg)
     ) {
+      snap.status = "missing";
+      snap.error = msg;
       findings.push({
         severity: "error", kind: "missing_table", table, detail: table, rawError: msg,
       });
+      // Still record the columns as "missing" so the snapshot stays uniform.
+      for (const col of columns) snap.columns.push({ name: col, status: "missing" });
       return;
     }
-    // Some other failure — still record it so the user sees something.
+    snap.status = "error";
+    snap.error = msg;
     findings.push({
       severity: "error", kind: "unknown", table, detail: "probe failed", rawError: msg,
     });
@@ -92,18 +134,26 @@ async function checkTable(table: string, columns: string[]): Promise<void> {
 
   // Step 2: probe each column individually so we can list every miss.
   for (const col of columns) {
-    if (col === "id") continue; // already covered by the table probe
+    if (col === "id") {
+      snap.columns.push({ name: col, status: "ok" });
+      continue;
+    }
     const { error } = await admin.from(table).select(col).limit(0);
-    if (!error) continue;
+    if (!error) {
+      snap.columns.push({ name: col, status: "ok" });
+      continue;
+    }
     if (
       error.code === "42703" ||
       /column .* does not exist/i.test(error.message) ||
       /could not find the .* column/i.test(error.message)
     ) {
+      snap.columns.push({ name: col, status: "missing", error: error.message });
       findings.push({
         severity: "error", kind: "missing_column", table, detail: col, rawError: error.message,
       });
     } else {
+      snap.columns.push({ name: col, status: "error", error: error.message });
       findings.push({
         severity: "warning", kind: "unknown", table,
         detail: `column "${col}"`, rawError: error.message,
@@ -117,20 +167,48 @@ async function checkTable(table: string, columns: string[]): Promise<void> {
 async function checkEnumValue(table: string, column: string, value: string): Promise<void> {
   const { error } = await admin.from(table).select("id").eq(column, value).limit(0);
   if (!error) {
+    enumSnapshots.push({ table, column, value, status: "ok" });
     console.log(`[preflight] ✓ enum ${table}.${column} accepts "${value}"`);
     return;
   }
   if (error.code === "22P02" || /invalid input value for enum/i.test(error.message)) {
+    enumSnapshots.push({ table, column, value, status: "missing", error: error.message });
     findings.push({
       severity: "error", kind: "missing_enum_value", table,
       detail: `${column} = "${value}"`, rawError: error.message,
     });
     return;
   }
+  enumSnapshots.push({ table, column, value, status: "error", error: error.message });
   findings.push({
     severity: "warning", kind: "unknown", table,
     detail: `enum probe ${column}="${value}"`, rawError: error.message,
   });
+}
+
+function writeSnapshot(): string {
+  const errors = findings.filter((f) => f.severity === "error").length;
+  const warnings = findings.filter((f) => f.severity === "warning").length;
+  const snapshot = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    project: sanitizeUrl(SUPABASE_URL),
+    scriptPath: SCRIPT_PATH,
+    summary: {
+      tablesChecked: tableSnapshots.length,
+      columnsChecked: tableSnapshots.reduce((n, t) => n + t.columns.length, 0),
+      enumValuesChecked: enumSnapshots.length,
+      errors,
+      warnings,
+      ok: errors === 0,
+    },
+    tables: tableSnapshots,
+    enums: enumSnapshots,
+  };
+  mkdirSync(dirname(SNAPSHOT_PATH), { recursive: true });
+  writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2) + "\n");
+  console.log(`[preflight] 📄 Wrote snapshot to ${SNAPSHOT_PATH}`);
+  return SNAPSHOT_PATH;
 }
 
 function annotate(f: Finding): void {
@@ -151,14 +229,14 @@ function annotate(f: Finding): void {
   );
 }
 
-function writeStepSummary(): void {
+function writeStepSummary(snapshotPath: string): void {
   if (!STEP_SUMMARY) return;
   const errors = findings.filter((f) => f.severity === "error");
   const warnings = findings.filter((f) => f.severity === "warning");
   const lines: string[] = [];
   lines.push("## E2E preflight — schema check");
   lines.push("");
-  lines.push(`Project: \`${SUPABASE_URL}\``);
+  lines.push(`Project: \`${sanitizeUrl(SUPABASE_URL)}\``);
   lines.push("");
   if (findings.length === 0) {
     lines.push("✅ All required tables, columns, and enum values are present.");
@@ -178,11 +256,13 @@ function writeStepSummary(): void {
       "or run a migration to restore the expected columns/enums.",
     );
   }
+  lines.push("");
+  lines.push(`📦 Snapshot artifact: \`${snapshotPath}\` (uploaded as \`preflight-report\`).`);
   appendFileSync(STEP_SUMMARY, lines.join("\n") + "\n");
 }
 
 async function main(): Promise<void> {
-  console.log(`[preflight] Checking schema at ${SUPABASE_URL}`);
+  console.log(`[preflight] Checking schema at ${sanitizeUrl(SUPABASE_URL)}`);
 
   for (const [table, cols] of Object.entries(REQUIRED_COLUMNS)) {
     try {
@@ -208,7 +288,8 @@ async function main(): Promise<void> {
   }
 
   for (const f of findings) annotate(f);
-  writeStepSummary();
+  const snapshotPath = writeSnapshot();
+  writeStepSummary(snapshotPath);
 
   const errors = findings.filter((f) => f.severity === "error");
   if (errors.length > 0) {
@@ -221,6 +302,7 @@ async function main(): Promise<void> {
       `\nUpdate ${SCRIPT_PATH} (and scripts/e2e-teardown.ts) to match the current schema, ` +
       "or run a migration to restore the expected columns/enums.",
     );
+    console.error(`\nSnapshot for local diff: ${snapshotPath}`);
     process.exit(1);
   }
 
