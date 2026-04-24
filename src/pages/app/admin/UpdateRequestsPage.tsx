@@ -434,13 +434,16 @@ export default function AdminUpdateRequestsPage() {
   const clearSelection = () => setSelected(new Set());
 
   /**
-   * Build a CSV from the selected requests and trigger a browser download.
-   * Includes customer info, status, the requested values per editable field,
-   * the customer message, and metadata so the file is self-contained for
-   * offline review.
+   * Build a CSV from the given requests and trigger a browser download.
+   * Used for both "export selected" and "export filtered" so the columns
+   * stay consistent. Filename includes the scope so multiple exports don't
+   * collide.
    */
-  const exportSelectedCsv = () => {
-    if (selectedRequests.length === 0) return;
+  const downloadRequestsCsv = (
+    items: UpdateRequestWithCustomer[],
+    scope: string,
+  ) => {
+    if (items.length === 0) return;
     const headers = [
       "request_id",
       "submitted_at",
@@ -450,7 +453,7 @@ export default function AdminUpdateRequestsPage() {
       ...EDITABLE_FIELDS.map((f) => `requested_${f}`),
       "message",
     ];
-    const rows: CsvRow[] = selectedRequests.map((r) => {
+    const rows: CsvRow[] = items.map((r) => {
       const row: CsvRow = {
         request_id: r.id,
         submitted_at: new Date(r.created_at).toISOString(),
@@ -470,15 +473,22 @@ export default function AdminUpdateRequestsPage() {
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `update-requests-${stamp}.csv`;
+    a.download = `update-requests-${scope}-${stamp}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast({
-      title: `Exported ${selectedRequests.length} request${selectedRequests.length === 1 ? "" : "s"}`,
+      title: `Exported ${items.length} request${items.length === 1 ? "" : "s"}`,
     });
   };
+
+  const exportSelectedCsv = () =>
+    downloadRequestsCsv(selectedRequests, "selected");
+
+  /** Export the full filtered list — same status/search/sort the user sees. */
+  const exportFilteredCsv = () =>
+    downloadRequestsCsv(visibleRequests, statusFilter);
 
   // Bulk approve/reject — runs items in parallel and reports a combined result.
   const bulkMut = useMutation({
@@ -577,6 +587,17 @@ export default function AdminUpdateRequestsPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                onClick={exportFilteredCsv}
+                disabled={visibleRequests.length === 0}
+                className="w-full sm:w-auto"
+                title="Export the currently filtered list as CSV"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
             </div>
 
             {/* Active filter summary */}
