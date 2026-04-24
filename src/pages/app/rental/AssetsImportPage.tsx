@@ -497,6 +497,13 @@ export default function AssetsImportPage() {
       setRedoCount(redoHistory.current.length);
     }
   }, [validated, undoCount, redoCount]);
+
+  // Flush any queued analytics events when leaving the page so we don't
+  // lose the tail of a session (e.g. last few edits before navigation).
+  useEffect(() => {
+    return () => { void flushCsvEditEvents(); };
+  }, []);
+
   /** Restore one row's raw values to the originally-parsed snapshot, then
    * re-validate it so the errors column refreshes. */
   const undoRow = (lineNumber: number) => {
