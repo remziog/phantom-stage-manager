@@ -58,6 +58,9 @@ jobs:
       - name: Preflight — verify Supabase schema matches seed script
         env:
           PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
+          # Fail CI only on actual regressions (newly missing tables/columns/enums).
+          # Use "any" to also fail on additions, "none" to disable diff-based failures.
+          PREFLIGHT_FAIL_ON: regressions
         run: npm run test:e2e:preflight
 
       - name: Upload preflight schema snapshot
