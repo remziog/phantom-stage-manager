@@ -55,16 +55,36 @@ export default function AssetsImportPage() {
   const validRows = useMemo(() => validated.filter((r) => r.errors.length === 0), [validated]);
   const invalidRows = useMemo(() => validated.filter((r) => r.errors.length > 0), [validated]);
 
+  // Holds the AbortController for the active import so the Cancel button
+  // can stop the loop between rows. Stored in a ref so toggling it doesn't
+  // re-render and tear down the in-flight mutation.
+  const abortRef = useRef<AbortController | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const importMut = useMutation({
-    mutationFn: () =>
-      importAssets(
-        cid,
-        user!.id,
-        validRows.map((r) => r.parsed),
-        (p) => setProgress(p),
-      ),
+    mutationFn: () => {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      return importAssets(cid, user!.id, validRows.map((r) => r.parsed), {
+        onProgress: (p) => setProgress(p),
+        signal: controller.signal,
+      });
+    },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["assets", cid] });
+      abortRef.current = null;
+      setIsCancelling(false);
+
+      if (res.cancelled) {
+        toast({
+          title: "Import cancelled",
+          description: `${res.inserted} added, ${res.updated} updated before stopping. Remaining rows were not saved.`,
+        });
+        // Stay on the import page so the user can review or retry.
+        setProgress(null);
+        return;
+      }
+
       const skipped = invalidRows.length;
       const partial = res.failed.length > 0 ? `, ${res.failed.length} failed` : "";
       toast({
@@ -76,10 +96,18 @@ export default function AssetsImportPage() {
       if (res.failed.length === 0) navigate("/app/assets");
     },
     onError: (e) => {
+      abortRef.current = null;
+      setIsCancelling(false);
       setProgress(null);
       toast({ title: "Import failed", description: (e as Error).message, variant: "destructive" });
     },
   });
+
+  const handleCancel = () => {
+    if (!abortRef.current || isCancelling) return;
+    setIsCancelling(true);
+    abortRef.current.abort();
+  };
 
   const isImporting = importMut.isPending;
 
@@ -390,21 +418,37 @@ export default function AssetsImportPage() {
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <div>
                         <div className="text-sm font-medium">
-                          {progress.phase === "preparing"
-                            ? "Preparing import…"
-                            : progress.phase === "done"
-                              ? "Finishing up…"
-                              : `Importing row ${progress.processed} of ${progress.total}…`}
+                          {isCancelling
+                            ? `Cancelling — finishing row ${progress.processed} of ${progress.total}…`
+                            : progress.phase === "preparing"
+                              ? "Preparing import…"
+                              : progress.phase === "done"
+                                ? "Finishing up…"
+                                : `Importing row ${progress.processed} of ${progress.total}…`}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Please keep this tab open until the import finishes.
+                          {isCancelling
+                            ? "Already-saved rows will be kept."
+                            : "Please keep this tab open until the import finishes."}
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm tabular-nums text-muted-foreground">
-                      {progress.total > 0
-                        ? `${Math.round((progress.processed / progress.total) * 100)}%`
-                        : "0%"}
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm tabular-nums text-muted-foreground">
+                        {progress.total > 0
+                          ? `${Math.round((progress.processed / progress.total) * 100)}%`
+                          : "0%"}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                        disabled={isCancelling}
+                        aria-label="Cancel import"
+                      >
+                        {isCancelling ? "Cancelling…" : "Cancel import"}
+                      </Button>
                     </div>
                   </div>
 
