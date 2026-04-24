@@ -78,28 +78,54 @@ interface Finding {
 
 const findings: Finding[] = [];
 
+type ProbeStatus = "ok" | "missing" | "error";
+interface ColumnSnapshot { name: string; status: ProbeStatus; error?: string }
+interface TableSnapshot {
+  name: string;
+  status: ProbeStatus; // "missing" if the table itself isn't reachable
+  error?: string;
+  columns: ColumnSnapshot[];
+}
+interface EnumSnapshot {
+  table: string;
+  column: string;
+  value: string;
+  status: ProbeStatus;
+  error?: string;
+}
+
+const tableSnapshots: TableSnapshot[] = [];
+const enumSnapshots: EnumSnapshot[] = [];
+
 /** Mask a string of unknown shape for safe console output. */
 function safeMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
 async function checkTable(table: string, columns: string[]): Promise<void> {
+  const snap: TableSnapshot = { name: table, status: "ok", columns: [] };
+  tableSnapshots.push(snap);
+
   // Step 1: probe the table itself with `select(id) limit 0`.
   const probe = await admin.from(table).select("id").limit(0);
   if (probe.error) {
     const msg = probe.error.message;
-    // Postgrest reports missing relations with this code/message shape.
     if (
       probe.error.code === "PGRST205" ||
       /relation .* does not exist/i.test(msg) ||
       /could not find the table/i.test(msg)
     ) {
+      snap.status = "missing";
+      snap.error = msg;
       findings.push({
         severity: "error", kind: "missing_table", table, detail: table, rawError: msg,
       });
+      // Still record the columns as "missing" so the snapshot stays uniform.
+      for (const col of columns) snap.columns.push({ name: col, status: "missing" });
       return;
     }
-    // Some other failure — still record it so the user sees something.
+    snap.status = "error";
+    snap.error = msg;
     findings.push({
       severity: "error", kind: "unknown", table, detail: "probe failed", rawError: msg,
     });
@@ -108,18 +134,26 @@ async function checkTable(table: string, columns: string[]): Promise<void> {
 
   // Step 2: probe each column individually so we can list every miss.
   for (const col of columns) {
-    if (col === "id") continue; // already covered by the table probe
+    if (col === "id") {
+      snap.columns.push({ name: col, status: "ok" });
+      continue;
+    }
     const { error } = await admin.from(table).select(col).limit(0);
-    if (!error) continue;
+    if (!error) {
+      snap.columns.push({ name: col, status: "ok" });
+      continue;
+    }
     if (
       error.code === "42703" ||
       /column .* does not exist/i.test(error.message) ||
       /could not find the .* column/i.test(error.message)
     ) {
+      snap.columns.push({ name: col, status: "missing", error: error.message });
       findings.push({
         severity: "error", kind: "missing_column", table, detail: col, rawError: error.message,
       });
     } else {
+      snap.columns.push({ name: col, status: "error", error: error.message });
       findings.push({
         severity: "warning", kind: "unknown", table,
         detail: `column "${col}"`, rawError: error.message,
@@ -133,20 +167,48 @@ async function checkTable(table: string, columns: string[]): Promise<void> {
 async function checkEnumValue(table: string, column: string, value: string): Promise<void> {
   const { error } = await admin.from(table).select("id").eq(column, value).limit(0);
   if (!error) {
+    enumSnapshots.push({ table, column, value, status: "ok" });
     console.log(`[preflight] ✓ enum ${table}.${column} accepts "${value}"`);
     return;
   }
   if (error.code === "22P02" || /invalid input value for enum/i.test(error.message)) {
+    enumSnapshots.push({ table, column, value, status: "missing", error: error.message });
     findings.push({
       severity: "error", kind: "missing_enum_value", table,
       detail: `${column} = "${value}"`, rawError: error.message,
     });
     return;
   }
+  enumSnapshots.push({ table, column, value, status: "error", error: error.message });
   findings.push({
     severity: "warning", kind: "unknown", table,
     detail: `enum probe ${column}="${value}"`, rawError: error.message,
   });
+}
+
+function writeSnapshot(): string {
+  const errors = findings.filter((f) => f.severity === "error").length;
+  const warnings = findings.filter((f) => f.severity === "warning").length;
+  const snapshot = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    project: sanitizeUrl(SUPABASE_URL),
+    scriptPath: SCRIPT_PATH,
+    summary: {
+      tablesChecked: tableSnapshots.length,
+      columnsChecked: tableSnapshots.reduce((n, t) => n + t.columns.length, 0),
+      enumValuesChecked: enumSnapshots.length,
+      errors,
+      warnings,
+      ok: errors === 0,
+    },
+    tables: tableSnapshots,
+    enums: enumSnapshots,
+  };
+  mkdirSync(dirname(SNAPSHOT_PATH), { recursive: true });
+  writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2) + "\n");
+  console.log(`[preflight] 📄 Wrote snapshot to ${SNAPSHOT_PATH}`);
+  return SNAPSHOT_PATH;
 }
 
 function annotate(f: Finding): void {
