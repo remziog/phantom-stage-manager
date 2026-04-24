@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { listAssets, createAsset, updateAsset, archiveAsset, type AssetStatus } from "@/services/assets";
-import { Plus, Search, Archive } from "lucide-react";
+import { Plus, Search, Archive, Upload } from "lucide-react";
 
 const STATUS_LABELS: Record<AssetStatus, string> = {
   available: "Available", rented: "Rented", in_maintenance: "Maintenance", sold: "Sold", archived: "Archived",
@@ -96,25 +97,30 @@ export default function AssetsPage() {
             <h1 className="text-2xl font-bold tracking-display">Assets</h1>
             <p className="text-sm text-muted-foreground">{filtered.length} of {assets.length}</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New asset</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add asset</DialogTitle></DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-3">
-                <div className="space-y-1.5"><Label>Name</Label><Input name="name" required /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5"><Label>SKU</Label><Input name="sku" /></div>
-                  <div className="space-y-1.5"><Label>Category</Label><Input name="category" /></div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5"><Label>Quantity</Label><Input name="quantity" type="number" min={1} defaultValue={1} /></div>
-                  <div className="space-y-1.5"><Label>Unit price</Label><Input name="unit_price" type="number" step="0.01" min={0} defaultValue={0} /></div>
-                  <div className="space-y-1.5"><Label>Location</Label><Input name="location" /></div>
-                </div>
-                <DialogFooter><Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/app/assets/import"><Upload className="h-4 w-4 mr-2" />Import CSV</Link>
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New asset</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Add asset</DialogTitle></DialogHeader>
+                <form onSubmit={handleCreate} className="space-y-3">
+                  <div className="space-y-1.5"><Label>Name</Label><Input name="name" required /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5"><Label>SKU</Label><Input name="sku" /></div>
+                    <div className="space-y-1.5"><Label>Category</Label><Input name="category" /></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5"><Label>Quantity</Label><Input name="quantity" type="number" min={1} defaultValue={1} /></div>
+                    <div className="space-y-1.5"><Label>Unit price</Label><Input name="unit_price" type="number" step="0.01" min={0} defaultValue={0} /></div>
+                    <div className="space-y-1.5"><Label>Location</Label><Input name="location" /></div>
+                  </div>
+                  <DialogFooter><Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
