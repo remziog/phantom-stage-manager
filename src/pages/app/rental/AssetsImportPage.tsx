@@ -928,7 +928,9 @@ export default function AssetsImportPage() {
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">⇧⌘/Ctrl+Z</kbd>{" "}
                       to redo. Press{" "}
                       <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Enter</kbd>{" "}
-                      in any cell to jump to the next remaining error.
+                      /{" "}
+                      <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px] font-mono">Shift+Enter</kbd>{" "}
+                      in any cell to jump to the next / previous remaining error.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
