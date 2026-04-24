@@ -37,8 +37,9 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download,
 } from "lucide-react";
+import { rowsToCsv, type CsvRow } from "@/lib/csv";
 
 type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
 
