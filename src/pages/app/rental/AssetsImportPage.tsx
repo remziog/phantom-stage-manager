@@ -369,6 +369,9 @@ export default function AssetsImportPage() {
         return validateAssetRow(nextRaw, lineNumber);
       }),
     );
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "edit", field, lineNumber });
+    }
   };
 
   /** Pop the most recent inline edit off the history stack and restore the
