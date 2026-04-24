@@ -269,6 +269,7 @@ export default function AssetsImportPage() {
     setParseError(null);
     setResume(null);
     setProgress(null);
+    setLastRunSummary(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
