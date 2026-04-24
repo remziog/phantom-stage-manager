@@ -23,6 +23,7 @@ import ReportsPage from "./pages/app/rental/ReportsPage";
 import SettingsPage from "./pages/app/SettingsPage";
 import CsvAnalyticsPage from "./pages/app/admin/CsvAnalyticsPage";
 import CsvFieldDetailPage from "./pages/app/admin/CsvFieldDetailPage";
+import AdminUpdateRequestsPage from "./pages/app/admin/UpdateRequestsPage";
 import CustomerPortalPage from "./pages/app/portal/CustomerPortalPage";
 import NotFound from "./pages/NotFound";
 import { RoleGate } from "@/components/RoleGate";
@@ -100,6 +101,7 @@ function AppRoutes() {
       <Route path="/app/settings" element={<ProtectedRoute><RoleGate permission="view:settings"><SettingsPage /></RoleGate></ProtectedRoute>} />
       <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvAnalyticsPage /></RoleGate></ProtectedRoute>} />
       <Route path="/app/admin/csv-analytics/field/:field" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvFieldDetailPage /></RoleGate></ProtectedRoute>} />
+      <Route path="/app/admin/update-requests" element={<ProtectedRoute><RoleGate permission="manage:customers"><AdminUpdateRequestsPage /></RoleGate></ProtectedRoute>} />
       <Route path="/app/portal" element={<ProtectedRoute><RoleGate permission="view:portal"><CustomerPortalPage /></RoleGate></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
