@@ -183,15 +183,17 @@ export default function ReservationsPage() {
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost" size="sm"
-                            onClick={() => user && cid && invoiceMut.mutate({
-                              companyId: cid, reservationId: r.id, customerId: r.customer_id,
-                              total: Number(r.total_amount), currency: r.currency, userId: user.id,
-                            })}
-                          >
-                            <FileText className="h-4 w-4 mr-1" /> Invoice
-                          </Button>
+                          <PermissionGate permission="manage:invoices" hideWhenDenied>
+                            <Button
+                              variant="ghost" size="sm"
+                              onClick={() => user && cid && invoiceMut.mutate({
+                                companyId: cid, reservationId: r.id, customerId: r.customer_id,
+                                total: Number(r.total_amount), currency: r.currency, userId: user.id,
+                              })}
+                            >
+                              <FileText className="h-4 w-4 mr-1" /> Invoice
+                            </Button>
+                          </PermissionGate>
                         </TableCell>
                       </TableRow>
                     ))}
