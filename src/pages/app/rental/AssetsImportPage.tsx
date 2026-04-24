@@ -685,9 +685,11 @@ export default function AssetsImportPage() {
         e.preventDefault();
         const undone = undoLastEdit();
         if (undone) {
+          const remaining = editHistory.current.length;
+          const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
           toast({
             title: "Edit undone",
-            description: `${editHistory.current.length} earlier edit${editHistory.current.length === 1 ? "" : "s"} remain in history.`,
+            description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
           });
         }
       }
