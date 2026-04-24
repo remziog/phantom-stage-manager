@@ -100,6 +100,7 @@ function AppRoutes() {
       <Route path="/app/settings" element={<ProtectedRoute><RoleGate permission="view:settings"><SettingsPage /></RoleGate></ProtectedRoute>} />
       <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvAnalyticsPage /></RoleGate></ProtectedRoute>} />
       <Route path="/app/admin/csv-analytics/field/:field" element={<ProtectedRoute><RoleGate permission="view:csv-analytics"><CsvFieldDetailPage /></RoleGate></ProtectedRoute>} />
+      <Route path="/app/portal" element={<ProtectedRoute><RoleGate permission="view:portal"><CustomerPortalPage /></RoleGate></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
