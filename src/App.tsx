@@ -21,6 +21,7 @@ import CustomersPage from "./pages/app/rental/CustomersPage";
 import InvoicesPage from "./pages/app/rental/InvoicesPage";
 import ReportsPage from "./pages/app/rental/ReportsPage";
 import SettingsPage from "./pages/app/SettingsPage";
+import CsvAnalyticsPage from "./pages/app/admin/CsvAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
