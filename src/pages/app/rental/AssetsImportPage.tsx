@@ -513,6 +513,9 @@ export default function AssetsImportPage() {
     editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
     redoHistory.current = redoHistory.current.filter((h) => h.lineNumber !== lineNumber);
     syncHistoryCounts();
+    if (cid && user) {
+      logCsvEditEvent({ companyId: cid, userId: user.id, action: "undo_row", lineNumber });
+    }
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
