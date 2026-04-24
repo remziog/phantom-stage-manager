@@ -55,6 +55,8 @@ async function main() {
   for (const email of [ADMIN_EMAIL, OPERATOR_EMAIL].filter(Boolean) as string[]) {
     const uid = await findUserId(email);
     if (uid) {
+      // profiles.user_id has no FK cascade — clear it explicitly first.
+      await admin.from("profiles").delete().eq("user_id", uid);
       const { error } = await admin.auth.admin.deleteUser(uid);
       if (error) console.warn(`[teardown] Could not delete ${email}:`, error.message);
       else console.log(`[teardown] Deleted user ${email} (${uid})`);

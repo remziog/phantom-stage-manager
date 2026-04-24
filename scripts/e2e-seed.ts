@@ -83,13 +83,23 @@ async function ensureUser(
 }
 
 async function ensureProfile(admin: SupabaseClient, userId: string, fullName: string, companyId: string | null) {
-  const { error } = await admin
+  // The `handle_new_user` trigger inserts a profile row on signup, but
+  // `profiles.user_id` has no UNIQUE constraint — so we can't rely on upsert
+  // with onConflict. Update first, insert only if no row exists.
+  const { data: updated, error: updateErr } = await admin
     .from("profiles")
-    .upsert(
-      { user_id: userId, full_name: fullName, current_company_id: companyId },
-      { onConflict: "user_id" },
-    );
-  if (error) throw error;
+    .update({ full_name: fullName, current_company_id: companyId })
+    .eq("user_id", userId)
+    .select("id");
+  if (updateErr) throw updateErr;
+  if (updated && updated.length > 0) return;
+
+  const { error: insertErr } = await admin.from("profiles").insert({
+    user_id: userId,
+    full_name: fullName,
+    current_company_id: companyId,
+  });
+  if (insertErr) throw insertErr;
 }
 
 async function deleteExistingCompany(admin: SupabaseClient, slug: string) {
