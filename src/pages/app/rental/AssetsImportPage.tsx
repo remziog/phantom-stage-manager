@@ -259,6 +259,37 @@ export default function AssetsImportPage() {
     });
   };
 
+  /** Build a fresh CSV containing only the rows that currently fail
+   * validation, then feed it back through the importer so the user can fix
+   * & retry without manual re-uploading. The original headers are kept so
+   * re-validation runs against the same schema. */
+  const retryInvalidRows = async () => {
+    if (invalidRows.length === 0 || headers.length === 0) return;
+    const csv = rowsToCsv(headers, invalidRows.map((r) => ({ ...r.raw })));
+    const base = (fileName ?? "import.csv").replace(/\.csv$/i, "");
+    const file = new File([csv], `${base}-still-failing.csv`, { type: "text/csv" });
+    const count = invalidRows.length;
+    const result = await handleFile(file);
+    if (result.ok) {
+      toast({
+        title: "Retrying failed rows only",
+        description:
+          result.invalid === 0
+            ? `All ${result.valid} row${result.valid === 1 ? "" : "s"} now pass — ready to import.`
+            : `${result.valid} of ${count} row${count === 1 ? "" : "s"} now pass; ${result.invalid} still ${result.invalid === 1 ? "has" : "have"} errors.`,
+        variant: result.invalid > 0 ? "destructive" : "default",
+      });
+    } else {
+      toast({ title: "Could not revalidate", description: result.message, variant: "destructive" });
+    }
+    requestAnimationFrame(() => {
+      const el = importStepRef.current;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.focus({ preventScroll: true });
+    });
+  };
+
   const handleCancel = () => {
     if (!abortRef.current || isCancelling) return;
     setIsCancelling(true);
@@ -537,16 +568,27 @@ export default function AssetsImportPage() {
                       Showing first 100 of {invalidRows.length} rows with errors.
                     </div>
                   )}
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 border-t">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t">
                     <div className="flex items-center gap-2">
                       <Switch id="partial" checked={allowPartial} onCheckedChange={setAllowPartial} disabled={isImporting} />
                       <Label htmlFor="partial" className="cursor-pointer">
                         Import valid rows only ({validRows.length})
                       </Label>
                     </div>
-                    <Button variant="outline" size="sm" onClick={downloadSkipped}>
-                      <Download className="h-4 w-4 mr-2" />Download skipped rows
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={retryInvalidRows}
+                        disabled={isImporting}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Retry only failed rows ({invalidRows.length})
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={downloadSkipped}>
+                        <Download className="h-4 w-4 mr-2" />Download skipped rows
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
