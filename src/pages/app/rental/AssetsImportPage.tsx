@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseCsv,
@@ -95,6 +96,28 @@ export default function AssetsImportPage() {
 
   const validRows = useMemo(() => validated.filter((r) => r.errors.length === 0), [validated]);
   const invalidRows = useMemo(() => validated.filter((r) => r.errors.length > 0), [validated]);
+
+  /** Asset columns that are present in the uploaded file — used to render the
+   * inline editor. Header keys are lowercased to match how `validateAssetRow`
+   * looks them up. */
+  const editableColumns = useMemo(() => {
+    const present = new Set(headers.map((h) => h.toLowerCase()));
+    return [
+      ...ASSET_REQUIRED_HEADERS,
+      ...ASSET_OPTIONAL_HEADERS,
+    ].filter((c) => present.has(c));
+  }, [headers]);
+
+  /** Per-field error lookup so we can highlight the offending input. */
+  const errorsByLine = useMemo(() => {
+    const m = new Map<number, Map<string, string>>();
+    for (const r of invalidRows) {
+      const fields = new Map<string, string>();
+      for (const e of r.errors) fields.set(e.field, e.message);
+      m.set(r.lineNumber, fields);
+    }
+    return m;
+  }, [invalidRows]);
 
   // Holds the AbortController for the active import so the Cancel button
   // can stop the loop between rows. Stored in a ref so toggling it doesn't
@@ -288,6 +311,20 @@ export default function AssetsImportPage() {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       el.focus({ preventScroll: true });
     });
+  };
+
+  /** Patch a single cell in the parsed-rows model and re-validate just that
+   * row in place. Updates flow back into `validated`, which feeds the valid /
+   * invalid summaries — so a row can move to the valid bucket as soon as the
+   * user fixes it. */
+  const editCell = (lineNumber: number, field: string, value: string) => {
+    setValidated((prev) =>
+      prev.map((row) => {
+        if (row.lineNumber !== lineNumber) return row;
+        const nextRaw = { ...row.raw, [field]: value };
+        return validateAssetRow(nextRaw, lineNumber);
+      }),
+    );
   };
 
   const handleCancel = () => {
@@ -531,36 +568,59 @@ export default function AssetsImportPage() {
                 <CardHeader>
                   <CardTitle className="text-base">Row errors</CardTitle>
                   <CardDescription>
-                    Fix these in your CSV and re-upload, or enable “Import valid rows only”.
+                    Edit values directly below — rows are re-validated as you
+                    type and move to the valid bucket once all errors clear. Or
+                    fix them in your CSV and re-upload, or enable “Import valid
+                    rows only”.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">Line</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Errors</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {invalidRows.slice(0, 100).map((r) => (
-                        <TableRow key={r.lineNumber}>
-                          <TableCell className="tabular-nums text-muted-foreground">{r.lineNumber}</TableCell>
-                          <TableCell className="font-medium">{r.parsed.name || <span className="text-muted-foreground italic">—</span>}</TableCell>
-                          <TableCell className="text-muted-foreground">{r.parsed.sku || "—"}</TableCell>
-                          <TableCell>
-                            <ul className="space-y-0.5 text-sm text-destructive">
-                              {r.errors.map((e, i) => (
-                                <li key={i}><strong>{e.field}:</strong> {e.message}</li>
-                              ))}
-                            </ul>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">Line</TableHead>
+                          {editableColumns.map((c) => (
+                            <TableHead key={c} className="capitalize">{c.replace(/_/g, " ")}</TableHead>
+                          ))}
+                          <TableHead>Errors</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {invalidRows.slice(0, 100).map((r) => {
+                          const fieldErrors = errorsByLine.get(r.lineNumber);
+                          return (
+                            <TableRow key={r.lineNumber} className="align-top">
+                              <TableCell className="tabular-nums text-muted-foreground pt-3">
+                                {r.lineNumber}
+                              </TableCell>
+                              {editableColumns.map((c) => {
+                                const hasError = fieldErrors?.has(c);
+                                return (
+                                  <TableCell key={c} className="min-w-[140px]">
+                                    <Input
+                                      value={r.raw[c] ?? ""}
+                                      onChange={(e) => editCell(r.lineNumber, c, e.target.value)}
+                                      aria-invalid={hasError ? true : undefined}
+                                      aria-label={`${c} for line ${r.lineNumber}`}
+                                      className={`h-8 ${hasError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                                    />
+                                  </TableCell>
+                                );
+                              })}
+                              <TableCell>
+                                <ul className="space-y-0.5 text-sm text-destructive pt-1">
+                                  {r.errors.map((e, i) => (
+                                    <li key={i}><strong>{e.field}:</strong> {e.message}</li>
+                                  ))}
+                                </ul>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                   {invalidRows.length > 100 && (
                     <div className="px-4 py-3 text-xs text-muted-foreground border-t">
                       Showing first 100 of {invalidRows.length} rows with errors.
