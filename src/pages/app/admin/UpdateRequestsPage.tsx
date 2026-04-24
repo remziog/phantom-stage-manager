@@ -613,6 +613,15 @@ export default function AdminUpdateRequestsPage() {
                   )}
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={exportSelectedCsv}
+                    disabled={bulkBusy || selectedCount === 0}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Export CSV
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="destructive"
                     onClick={() => setBulkConfirm("reject")}
                     disabled={bulkBusy || selectedCount === 0}
