@@ -12,10 +12,10 @@ import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
   Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCurrentMemberRole } from "@/services/csvAnalyticsAdmin";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
+import { useUserRole, deniedReason, type Permission } from "@/hooks/useUserRole";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Industry = Database["public"]["Enums"]["industry_type"];
 
