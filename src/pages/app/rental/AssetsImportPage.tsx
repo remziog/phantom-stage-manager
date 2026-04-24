@@ -1046,6 +1046,7 @@ export default function AssetsImportPage() {
                                 return (
                                   <TableCell key={c} className="min-w-[140px]">
                                     <Input
+                                      data-csv-cell={`${r.lineNumber}:${c}`}
                                       value={r.raw[c] ?? ""}
                                       onChange={(e) => editCell(r.lineNumber, c, e.target.value)}
                                       aria-invalid={hasError ? true : undefined}
