@@ -10,15 +10,24 @@ jobs:
   playwright:
     name: Playwright (login, redirect, quote creation, smoke)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     env:
       CI: "true"
-      # Test-account credentials (configure as repository secrets).
+      # Backend (used by both the seed/teardown scripts and the built app).
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      VITE_SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      # Test-account credentials.
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       E2E_OPERATOR_EMAIL: ${{ secrets.E2E_OPERATOR_EMAIL }}
       E2E_OPERATOR_PASSWORD: ${{ secrets.E2E_OPERATOR_PASSWORD }}
+      # Stable slug so the seed script can find + clear prior fixtures.
+      E2E_COMPANY_SLUG: e2e-test-co
+      E2E_COMPANY_NAME: E2E Test Co
 
     steps:
       - name: Checkout repository
@@ -36,11 +45,19 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Seed Supabase test data
+        run: npm run test:e2e:seed
+
       - name: Build app
         run: npm run build
 
       - name: Run Playwright E2E tests
         run: npm run test:e2e
+
+      - name: Tear down Supabase test data
+        if: always()
+        run: npm run test:e2e:teardown
+        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
