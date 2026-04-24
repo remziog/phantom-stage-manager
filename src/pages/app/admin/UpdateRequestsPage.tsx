@@ -327,12 +327,18 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function AdminUpdateRequestsPage() {
-  const { company } = useAuth();
+  const { company, user } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
   const cid = company?.id ?? "";
   const [reviewing, setReviewing] = useState<UpdateRequestWithCustomer | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("date_desc");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+  // Selected request IDs across the whole inbox (only pending IDs are kept).
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Confirm dialog for the bulk action; null = closed.
+  const [bulkConfirm, setBulkConfirm] = useState<"approve" | "reject" | null>(null);
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
@@ -387,6 +393,85 @@ export default function AdminUpdateRequestsPage() {
 
   const statusLabel =
     STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label.toLowerCase() ?? "";
+
+  // Only pending rows in the *current* view are eligible for bulk actions.
+  const visiblePending = useMemo(
+    () => visibleRequests.filter((r) => r.status === "pending"),
+    [visibleRequests],
+  );
+  const visiblePendingIds = useMemo(
+    () => visiblePending.map((r) => r.id),
+    [visiblePending],
+  );
+  const selectedRequests = useMemo(
+    () => visiblePending.filter((r) => selected.has(r.id)),
+    [visiblePending, selected],
+  );
+  const allVisibleSelected =
+    visiblePendingIds.length > 0 &&
+    visiblePendingIds.every((id) => selected.has(id));
+  const someVisibleSelected =
+    !allVisibleSelected && visiblePendingIds.some((id) => selected.has(id));
+
+  const toggleOne = (id: string, next: boolean) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (next) n.add(id); else n.delete(id);
+      return n;
+    });
+  };
+
+  const toggleAllVisible = (next: boolean) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (next) visiblePendingIds.forEach((id) => n.add(id));
+      else visiblePendingIds.forEach((id) => n.delete(id));
+      return n;
+    });
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  // Bulk approve/reject — runs items in parallel and reports a combined result.
+  const bulkMut = useMutation({
+    mutationFn: async (action: "approve" | "reject") => {
+      if (!user) throw new Error("Not authenticated");
+      const targets = selectedRequests; // snapshot
+      const results = await Promise.allSettled(
+        targets.map((r) =>
+          action === "approve"
+            ? approveRequest(r, user.id)
+            : rejectRequest(r.id, user.id),
+        ),
+      );
+      const ok = results.filter((r) => r.status === "fulfilled").length;
+      const fail = results.length - ok;
+      return { action, ok, fail, total: results.length };
+    },
+    onSuccess: ({ action, ok, fail, total }) => {
+      qc.invalidateQueries({ queryKey: ["update-requests"] });
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      clearSelection();
+      setBulkConfirm(null);
+      const verb = action === "approve" ? "approved" : "rejected";
+      if (fail === 0) {
+        toast({ title: `${ok} request${ok === 1 ? "" : "s"} ${verb}` });
+      } else {
+        toast({
+          title: `${ok} of ${total} ${verb}`,
+          description: `${fail} failed — try again or review individually.`,
+          variant: fail === total ? "destructive" : "default",
+        });
+      }
+    },
+    onError: (e: Error) => {
+      toast({ title: "Bulk action failed", description: e.message, variant: "destructive" });
+      setBulkConfirm(null);
+    },
+  });
+
+  const bulkBusy = bulkMut.isPending;
+  const selectedCount = selectedRequests.length;
 
   return (
     <AppShell>
@@ -453,6 +538,52 @@ export default function AdminUpdateRequestsPage() {
               {search.trim() && ` · matching "${search.trim()}"`}
             </div>
 
+            {/* Select-all + bulk action bar — only useful while pending rows are visible. */}
+            {visiblePending.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <Checkbox
+                  checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                  onCheckedChange={(v) => toggleAllVisible(v === true)}
+                  disabled={bulkBusy}
+                  aria-label="Select all visible pending requests"
+                />
+                <span className="text-sm">
+                  {selectedCount > 0
+                    ? `${selectedCount} selected`
+                    : `Select all (${visiblePending.length} pending)`}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  {selectedCount > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={clearSelection}
+                      disabled={bulkBusy}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setBulkConfirm("reject")}
+                    disabled={bulkBusy || selectedCount === 0}
+                  >
+                    <X className="h-4 w-4 mr-1.5" />
+                    Reject
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setBulkConfirm("approve")}
+                    disabled={bulkBusy || selectedCount === 0}
+                  >
+                    <Check className="h-4 w-4 mr-1.5" />
+                    Approve
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {isLoading ? (
               <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
             ) : visibleRequests.length === 0 ? (
@@ -463,9 +594,19 @@ export default function AdminUpdateRequestsPage() {
               </p>
             ) : (
               <ul className="space-y-3">
-                {visibleRequests.map((r) => (
-                  <RequestRow key={r.id} request={r} onReview={setReviewing} />
-                ))}
+                {visibleRequests.map((r) => {
+                  const isPending = r.status === "pending";
+                  return (
+                    <RequestRow
+                      key={r.id}
+                      request={r}
+                      onReview={setReviewing}
+                      selected={isPending ? selected.has(r.id) : undefined}
+                      onSelectedChange={isPending ? (v) => toggleOne(r.id, v) : undefined}
+                      disabled={bulkBusy}
+                    />
+                  );
+                })}
               </ul>
             )}
           </CardContent>
@@ -473,6 +614,47 @@ export default function AdminUpdateRequestsPage() {
       </div>
 
       <ReviewDialog request={reviewing} onClose={() => setReviewing(null)} />
+
+      {/* Bulk confirm */}
+      <AlertDialog
+        open={bulkConfirm !== null}
+        onOpenChange={(o) => !o && !bulkBusy && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm === "approve" ? "Approve" : "Reject"} {selectedCount} request
+              {selectedCount === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm === "approve"
+                ? "Each selected request will be applied to its customer record. This cannot be undone."
+                : "Each selected request will be marked as rejected. The customer records will not change."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (bulkConfirm) bulkMut.mutate(bulkConfirm);
+              }}
+              disabled={bulkBusy}
+              className={
+                bulkConfirm === "reject"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : ""
+              }
+            >
+              {bulkBusy
+                ? "Working…"
+                : bulkConfirm === "approve"
+                ? "Approve all"
+                : "Reject all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
