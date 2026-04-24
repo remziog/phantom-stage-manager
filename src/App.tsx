@@ -21,6 +21,7 @@ import CustomersPage from "./pages/app/rental/CustomersPage";
 import InvoicesPage from "./pages/app/rental/InvoicesPage";
 import ReportsPage from "./pages/app/rental/ReportsPage";
 import SettingsPage from "./pages/app/SettingsPage";
+import CsvAnalyticsPage from "./pages/app/admin/CsvAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ function AppRoutes() {
       <Route path="/app/invoices" element={<ProtectedRoute path="/app/invoices"><InvoicesPage /></ProtectedRoute>} />
       <Route path="/app/reports" element={<ProtectedRoute path="/app/reports"><ReportsPage /></ProtectedRoute>} />
       <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/app/admin/csv-analytics" element={<ProtectedRoute><CsvAnalyticsPage /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

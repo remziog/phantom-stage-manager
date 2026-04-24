@@ -10,8 +10,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Boxes, CalendarRange, Users, FileText, BarChart3,
-  Settings, LogOut, Truck, Warehouse, MapPinned,
+  Settings, LogOut, Truck, Warehouse, MapPinned, ShieldCheck,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCurrentMemberRole } from "@/services/csvAnalyticsAdmin";
 import type { Database } from "@/integrations/supabase/types";
 import { getEnabledModules } from "@/lib/modules";
 
@@ -75,6 +77,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const enabledModules = getEnabledModules(company?.settings, company?.industry_type);
   const items = navItems(company?.industry_type, enabledModules);
 
+  // Resolve the caller's role inside the current company so we can show
+  // admin-only nav links (e.g. CSV analytics). RLS still enforces access
+  // on the page itself — this is purely UX.
+  const { data: role } = useQuery({
+    queryKey: ["company-role", company?.id ?? "", user?.id ?? ""],
+    queryFn: () => fetchCurrentMemberRole(company!.id, user!.id),
+    enabled: !!company?.id && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+  const isAdmin = role === "owner" || role === "admin";
+
   const initials = (profile?.full_name || user?.email || "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
 
@@ -104,7 +117,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          {isAdmin && (
+            <NavLink
+              to="/app/admin/csv-analytics"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                }`
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              CSV analytics
+            </NavLink>
+          )}
           <NavLink
             to="/app/settings"
             className={({ isActive }) =>
