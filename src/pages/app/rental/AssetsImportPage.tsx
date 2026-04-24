@@ -389,6 +389,8 @@ export default function AssetsImportPage() {
           : row,
       ),
     );
+    // Drop history entries for this row — they no longer reflect the live state.
+    editHistory.current = editHistory.current.filter((h) => h.lineNumber !== lineNumber);
   };
 
   /** Restore every row's raw values to the originally-parsed snapshot. */
@@ -401,6 +403,7 @@ export default function AssetsImportPage() {
         return validateAssetRow({ ...original }, row.lineNumber);
       }),
     );
+    editHistory.current = [];
     toast({
       title: "Edits reverted",
       description: "Inline changes were rolled back to the originally uploaded values.",
