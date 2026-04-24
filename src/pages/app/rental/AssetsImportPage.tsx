@@ -1002,9 +1002,18 @@ export default function AssetsImportPage() {
                         if (!undone) return;
                         const remaining = editHistory.current.length;
                         const display = undone.restoredValue.trim() === "" ? "(empty)" : `"${undone.restoredValue}"`;
+                        focusCellByCoords(undone.lineNumber, undone.field);
                         toast({
                           title: "Edit undone",
                           description: `Row ${undone.lineNumber} · column "${undone.field}" restored to ${display}. ${remaining} earlier edit${remaining === 1 ? "" : "s"} remain in history.`,
+                          action: (
+                            <ToastAction
+                              altText={`Jump to row ${undone.lineNumber}, column ${undone.field}`}
+                              onClick={() => focusCellByCoords(undone.lineNumber, undone.field)}
+                            >
+                              Jump to cell
+                            </ToastAction>
+                          ),
                         });
                       }}
                       disabled={undoCount === 0 || isImporting}
