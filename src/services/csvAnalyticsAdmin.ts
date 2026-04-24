@@ -86,6 +86,51 @@ export const fetchCsvFieldStats = async (
     .slice(0, limit);
 };
 
+/** Full event timeline for a single field. Used by the field detail view
+ *  to show every edit/undo/redo on a particular CSV column. */
+export const fetchCsvFieldTimeline = async (
+  companyId: string,
+  field: string,
+  rangeDays: number = RANGE_DAYS_DEFAULT,
+  limit: number = 200,
+): Promise<CsvEditEventRow[]> => {
+  const { data, error } = await supabase
+    .from("csv_edit_events")
+    .select("id, created_at, action, field, line_number, user_id")
+    .eq("company_id", companyId)
+    .eq("field", field)
+    .gte("created_at", sinceIso(rangeDays))
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as CsvEditEventRow[];
+};
+
+/** Per-field action breakdown including bulk reverts in the trailing window.
+ *  Used as the header summary on the field detail page. */
+export const fetchCsvFieldSummary = async (
+  companyId: string,
+  field: string,
+  rangeDays: number = RANGE_DAYS_DEFAULT,
+): Promise<CsvActionTotals> => {
+  const { data, error } = await supabase
+    .from("csv_edit_events")
+    .select("action")
+    .eq("company_id", companyId)
+    .eq("field", field)
+    .gte("created_at", sinceIso(rangeDays));
+  if (error) throw error;
+  const totals: CsvActionTotals = {
+    edit: 0, undo: 0, redo: 0, undo_row: 0, undo_all: 0, total: 0,
+  };
+  for (const row of data ?? []) {
+    const a = row.action as keyof CsvActionTotals;
+    if (a in totals && a !== "total") totals[a] += 1;
+    totals.total += 1;
+  }
+  return totals;
+};
+
 /** Most recent events for a quick activity feed. */
 export const fetchCsvRecentEvents = async (
   companyId: string,
