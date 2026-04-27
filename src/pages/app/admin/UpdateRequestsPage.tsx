@@ -496,9 +496,34 @@ export default function AdminUpdateRequestsPage() {
   const exportSelectedCsv = () =>
     downloadRequestsCsv(selectedRequests, "selected");
 
-  /** Export the full filtered list — same status/search/sort the user sees. */
-  const exportFilteredCsv = () =>
-    downloadRequestsCsv(visibleRequests, statusFilter);
+  /**
+   * Export the search/sort-filtered list, narrowed further to whichever
+   * statuses are checked in the export popover. The status filter on the
+   * page narrows what's visible; the export scope narrows what's written.
+   */
+  const exportFilteredCsv = () => {
+    const items = visibleRequests.filter((r) => exportStatuses.has(r.status));
+    const scope =
+      exportStatuses.size === 3
+        ? "all"
+        : Array.from(exportStatuses).sort().join("-") || "none";
+    downloadRequestsCsv(items, scope);
+    setExportOpen(false);
+  };
+
+  const toggleExportStatus = (s: UpdateRequestStatus, next: boolean) => {
+    setExportStatuses((prev) => {
+      const n = new Set(prev);
+      if (next) n.add(s); else n.delete(s);
+      return n;
+    });
+  };
+
+  // Count of rows that *would* be exported with the current scope + filters.
+  const exportPreviewCount = useMemo(
+    () => visibleRequests.filter((r) => exportStatuses.has(r.status)).length,
+    [visibleRequests, exportStatuses],
+  );
 
   // Bulk approve/reject — runs items in parallel and reports a combined result.
   const bulkMut = useMutation({
