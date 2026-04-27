@@ -344,6 +344,12 @@ export default function AdminUpdateRequestsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Confirm dialog for the bulk action; null = closed.
   const [bulkConfirm, setBulkConfirm] = useState<"approve" | "reject" | null>(null);
+  // Statuses to include when exporting the filtered list. Defaults to whatever
+  // the user is currently viewing — pending alone, or all three for "all".
+  const [exportStatuses, setExportStatuses] = useState<Set<UpdateRequestStatus>>(
+    () => new Set<UpdateRequestStatus>(["pending"]),
+  );
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
