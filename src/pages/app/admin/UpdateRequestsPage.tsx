@@ -369,17 +369,27 @@ export default function AdminUpdateRequestsPage() {
 
   type StatusPresetPayload = { statuses: UpdateRequestStatus[] };
 
+  // Tracks whether the last preset load fell back to localStorage. Set inside
+  // the `onDbError` callback and cleared on every successful fetch start.
+  const [presetsOffline, setPresetsOffline] = useState(false);
+
   const presetsQuery = useQuery({
     queryKey: ["export-presets", presetScope],
-    queryFn: () =>
-      loadPresets<StatusPresetPayload>(presetScope, {
-        onDbError: (err) =>
+    queryFn: async () => {
+      let offline = false;
+      const data = await loadPresets<StatusPresetPayload>(presetScope, {
+        onDbError: (err) => {
+          offline = true;
           toast({
             title: "Showing offline presets",
             description: `Couldn't reach the server (${err.message}). Using your locally cached presets.`,
             variant: "destructive",
-          }),
-      }),
+          });
+        },
+      });
+      setPresetsOffline(offline);
+      return data;
+    },
     enabled: !!user,
   });
   const presets = presetsQuery.data ?? [];
