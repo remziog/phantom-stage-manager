@@ -350,6 +350,68 @@ export default function AdminUpdateRequestsPage() {
     () => new Set<UpdateRequestStatus>(["pending"]),
   );
   const [exportOpen, setExportOpen] = useState(false);
+  // Saved export-scope presets, persisted per-browser via localStorage.
+  // Stored as a name → status[] map so older presets keep working if we ever
+  // add new statuses. Keyed by company so different orgs don't collide.
+  const presetsKey = `update-requests:export-presets:${cid || "anon"}`;
+  const [presets, setPresets] = useState<Record<string, UpdateRequestStatus[]>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(`update-requests:export-presets:${cid || "anon"}`);
+      return raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [presetName, setPresetName] = useState("");
+
+  // Re-load presets whenever the active company changes (login/switch).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(presetsKey);
+      setPresets(raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {});
+    } catch {
+      setPresets({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetsKey]);
+
+  const persistPresets = (next: Record<string, UpdateRequestStatus[]>) => {
+    setPresets(next);
+    try {
+      window.localStorage.setItem(presetsKey, JSON.stringify(next));
+    } catch {
+      // Storage may be full or disabled — silently ignore.
+    }
+  };
+
+  const savePreset = () => {
+    const name = presetName.trim();
+    if (!name || exportStatuses.size === 0) return;
+    const statuses = (["pending", "approved", "rejected"] as UpdateRequestStatus[]).filter(
+      (s) => exportStatuses.has(s),
+    );
+    persistPresets({ ...presets, [name]: statuses });
+    setPresetName("");
+    toast({ title: `Preset "${name}" saved` });
+  };
+
+  const applyPreset = (name: string) => {
+    const statuses = presets[name];
+    if (!statuses) return;
+    setExportStatuses(new Set(statuses));
+  };
+
+  const deletePreset = (name: string) => {
+    const next = { ...presets };
+    delete next[name];
+    persistPresets(next);
+  };
+
+  const presetEntries = useMemo(
+    () => Object.entries(presets).sort(([a], [b]) => a.localeCompare(b)),
+    [presets],
+  );
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
