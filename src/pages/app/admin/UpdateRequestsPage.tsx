@@ -41,7 +41,7 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download, Bookmark, Trash2,
 } from "lucide-react";
 import { rowsToCsv, type CsvRow } from "@/lib/csv";
 
