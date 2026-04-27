@@ -774,7 +774,7 @@ export default function AdminUpdateRequestsPage() {
                             >
                               <button
                                 type="button"
-                                onClick={() => applyPreset(name)}
+                                onClick={() => applyPreset(statuses)}
                                 className="flex-1 text-left text-sm hover:underline truncate"
                                 title={`Apply: ${statuses.join(", ")}`}
                               >
