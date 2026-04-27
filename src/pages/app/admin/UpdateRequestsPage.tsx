@@ -350,68 +350,71 @@ export default function AdminUpdateRequestsPage() {
     () => new Set<UpdateRequestStatus>(["pending"]),
   );
   const [exportOpen, setExportOpen] = useState(false);
-  // Saved export-scope presets, persisted per-browser via localStorage.
-  // Stored as a name → status[] map so older presets keep working if we ever
-  // add new statuses. Keyed by company so different orgs don't collide.
-  const presetsKey = `update-requests:export-presets:${cid || "anon"}`;
-  const [presets, setPresets] = useState<Record<string, UpdateRequestStatus[]>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = window.localStorage.getItem(`update-requests:export-presets:${cid || "anon"}`);
-      return raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {};
-    } catch {
-      return {};
-    }
+  // Saved export-scope presets — synced to the user's profile via
+  // `user_export_presets`. The service falls back to localStorage when
+  // offline so saved presets stay available.
+  const presetScope = useMemo(
+    () => ({
+      userId: user?.id ?? null,
+      companyId: cid || null,
+      pageKey: "admin/update-requests",
+    }),
+    [user?.id, cid],
+  );
+
+  type StatusPresetPayload = { statuses: UpdateRequestStatus[] };
+
+  const presetsQuery = useQuery({
+    queryKey: ["export-presets", presetScope],
+    queryFn: () => loadPresets<StatusPresetPayload>(presetScope),
+    enabled: !!user,
   });
+  const presets = presetsQuery.data ?? [];
+  const presetEntries = useMemo(
+    () =>
+      [...presets].sort((a, b) => a.name.localeCompare(b.name)).map(
+        (p) => [p.name, p.payload.statuses] as const,
+      ),
+    [presets],
+  );
+
   const [presetName, setPresetName] = useState("");
 
-  // Re-load presets whenever the active company changes (login/switch).
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(presetsKey);
-      setPresets(raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {});
-    } catch {
-      setPresets({});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetsKey]);
+  const saveMut = useMutation({
+    mutationFn: (vars: { name: string; statuses: UpdateRequestStatus[] }) =>
+      savePresetSvc<StatusPresetPayload>(presetScope, {
+        name: vars.name,
+        payload: { statuses: vars.statuses },
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["export-presets", presetScope] });
+      setPresetName("");
+      toast({ title: `Preset "${vars.name}" saved`, description: "Synced to your profile." });
+    },
+    onError: (e: Error) =>
+      toast({ title: "Could not save preset", description: e.message, variant: "destructive" }),
+  });
 
-  const persistPresets = (next: Record<string, UpdateRequestStatus[]>) => {
-    setPresets(next);
-    try {
-      window.localStorage.setItem(presetsKey, JSON.stringify(next));
-    } catch {
-      // Storage may be full or disabled — silently ignore.
-    }
-  };
+  const deleteMut = useMutation({
+    mutationFn: (name: string) => deletePresetSvc(presetScope, name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["export-presets", presetScope] }),
+    onError: (e: Error) =>
+      toast({ title: "Could not delete preset", description: e.message, variant: "destructive" }),
+  });
 
-  const savePreset = () => {
+  const handleSavePreset = () => {
     const name = presetName.trim();
     if (!name || exportStatuses.size === 0) return;
     const statuses = (["pending", "approved", "rejected"] as UpdateRequestStatus[]).filter(
       (s) => exportStatuses.has(s),
     );
-    persistPresets({ ...presets, [name]: statuses });
-    setPresetName("");
-    toast({ title: `Preset "${name}" saved` });
+    saveMut.mutate({ name, statuses });
   };
 
-  const applyPreset = (name: string) => {
-    const statuses = presets[name];
-    if (!statuses) return;
+  const applyPreset = (statuses: UpdateRequestStatus[]) => {
     setExportStatuses(new Set(statuses));
   };
 
-  const deletePreset = (name: string) => {
-    const next = { ...presets };
-    delete next[name];
-    persistPresets(next);
-  };
-
-  const presetEntries = useMemo(
-    () => Object.entries(presets).sort(([a], [b]) => a.localeCompare(b)),
-    [presets],
-  );
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
