@@ -1,366 +1,71 @@
-# Welcome to your Lovable project
+# Apex Cloud
 
-## Project info
+> Your operations, one cloud. The operations platform for SMBs who've outgrown spreadsheets but can't afford enterprise software.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What it does
 
-## How can I edit this code?
+Apex Cloud is a multi-tenant operations platform that adapts to how a small business actually runs. An onboarding wizard learns whether you do **rentals**, **warehousing**, or **logistics** and tailors the navigation, dashboard KPIs, and modules accordingly — so every team sees only the surface area they need.
 
-There are several ways of editing your application.
+## Who it's for
 
-**Use Lovable**
+- Equipment **rental** businesses (AV, events, construction, party hire)
+- **Warehouse** operators managing inventory across one or more locations
+- **Logistics** SMBs coordinating dispatch, drivers, and proof of delivery
+- Teams of **5–50 employees** who've outgrown spreadsheets but find Salesforce / SAP overkill
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Modules
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Rental Operations** — assets, reservations, customers, invoices, PDF export · _live_
+- **Warehouse Management** — inventory, picks, transfers · _planned_
+- **Logistics & Dispatch** — routes, drivers, POD · _planned_
+- **AI Operations Agent** — natural-language queries and workflow automation across all modules · _planned_
 
-**Use your preferred IDE**
+## Tech stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend:** React 18 + Vite 5 + TypeScript 5, shadcn/ui, Tailwind CSS v3
+- **Data:** TanStack Query for server state, Zod for validation
+- **Backend:** Supabase (Postgres, Auth, Row-Level Security, Storage, Edge Functions)
+- **Testing:** Vitest (unit) + Playwright (E2E) + custom schema preflight
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Getting started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Install
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Configure environment
+cp .env.example .env
+#   Fill in VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_ID, VITE_SUPABASE_PUBLISHABLE_KEY
+#   from your Supabase project (Settings → API).
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3. Run the dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app expects the database schema in `supabase/migrations/` to be applied. If you're working in the Lovable Cloud sandbox, the schema is provisioned automatically.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Architecture
 
-**Use GitHub Codespaces**
+Every tenant-owned table carries a `company_id` column, and **Row-Level Security policies** scoped to `is_company_member(company_id, auth.uid())` enforce isolation at the database layer — there is no application-level tenancy filter to forget. Users belong to one or more companies via the `company_members` table; their **active** company is tracked on `profiles.current_company_id`. Roles (`owner`, `admin`, `manager`, `operator`, `viewer`) gate write paths via `has_company_role(...)` helpers, and audit-only tables (`module_change_log`, `csv_edit_events`, `customer_update_requests`) intentionally allow only inserts/selects to keep history immutable.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-
-## E2E preflight script
-
-`scripts/e2e-preflight.ts` probes the live Supabase backend before E2E tests run, ensuring the schema (tables, columns, enums) matches what the seed script and tests expect. It writes a sanitized JSON snapshot, optionally diffs it against a baseline, and can fail CI based on a configurable policy.
-
-Run it locally with:
+## Testing
 
 ```sh
-npm run test:e2e:preflight           # normal run
-npm run test:e2e:preflight -- --help # print usage and exit
+npm run test                  # Vitest unit tests (jsdom)
+npm run test:coverage         # Vitest with v8 coverage
+npm run test:e2e              # Playwright E2E (smoke, login, quote creation, RLS isolation)
+npm run test:e2e:preflight    # Verify live Supabase schema matches what tests expect
+npm run lint                  # ESLint
 ```
 
-### CLI flags
+The **preflight** script (`scripts/e2e-preflight.ts`) probes the deployed Supabase project before E2E runs and diffs its schema against a baseline snapshot — see `scripts/e2e-preflight.ts` for the full CLI/env reference.
 
-| Flag | Description |
-| ---- | ----------- |
-| `--help`, `-h` | Print full usage (flags + every supported env var with example values) and exit `0`. Equivalent to running the script's built-in `printHelp()`. |
+The **RLS multi-tenancy test** (`e2e/rls-multitenancy.e2e.ts`) provisions two isolated tenants, signs in as each, and asserts that no row from tenant A is visible — or mutable — from tenant B's session. This is the load-bearing security regression test; it must stay green.
 
-All other behavior is configured through environment variables (below). The script is intentionally flag-light so the same invocation works locally and in CI.
+## Status
 
-### Environment variables
+**Pre-launch.** Looking for design partners in the rental, warehouse, and logistics verticals. If that's you, get in touch: `hello@apexcloud.app` _(replace with your real address)_.
 
-#### Required (Supabase access)
+## License
 
-| Variable | Example | Purpose |
-| -------- | ------- | ------- |
-| `SUPABASE_URL` | `https://<ref>.supabase.co` | Project URL probed by the preflight. |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOi...` | Service-role key used to introspect schema. Never commit. |
-
-If either is missing, the script prints a hint to run with `--help` and exits non-zero.
-
-#### Snapshot output
-
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `PREFLIGHT_SNAPSHOT_PATH` | `preflight-report/schema-snapshot.json` | Where the sanitized snapshot is written. Uploaded as the `preflight-report` artifact in CI. |
-| `GITHUB_STEP_SUMMARY` | _(set by GitHub Actions)_ | If set, the script appends a markdown summary (probed schema + diff + failure reasons) to the GitHub step summary. |
-
-#### Baseline resolution (for diffing)
-
-The script tries these sources in order; the first one that resolves wins:
-
-| Variable | Example | Purpose |
-| -------- | ------- | ------- |
-| `PREFLIGHT_BASELINE_PATH` | `preflight-baseline/schema-snapshot.json` | Local file path to a previous snapshot. Highest priority. |
-| `PREFLIGHT_BASELINE_ARTIFACT_URL` | `https://api.github.com/repos/OWNER/REPO/actions/artifacts/123/zip` | REST or browser URL to a specific artifact zip. Browser URLs are normalized to the REST endpoint. |
-| `PREFLIGHT_BASELINE_RUN_ID` | `9876543210` | Workflow run ID; combined with `PREFLIGHT_BASELINE_REPO` to look up artifacts via the GitHub API. |
-| `PREFLIGHT_BASELINE_REPO` | `owner/repo` | Repo (`OWNER/REPO`) used with `PREFLIGHT_BASELINE_RUN_ID`. Defaults to `GITHUB_REPOSITORY` when running in Actions. |
-| `PREFLIGHT_BASELINE_ARTIFACT_NAME` | `preflight-report` | Artifact name to download from a run. Defaults to `preflight-report`. |
-| `GITHUB_TOKEN` | `ghp_...` | Required for both artifact fallbacks (`actions:read` scope). |
-
-If no baseline is found, the diff section is skipped — schema probing still runs and the snapshot is still written.
-
-#### Failure policy
-
-| Variable | Default | Accepted values | Behavior |
-| -------- | ------- | --------------- | -------- |
-| `PREFLIGHT_FAIL_ON` | `regressions` | Comma-separated list of: `regressions`, `removed`, `any`, `none` | Controls when a diff causes the script to exit non-zero. The core "required schema present" check always blocks regardless of this setting. |
-
-Modes:
-
-- `regressions` — fail when items previously `ok` are now missing or erroring (recommended default).
-- `removed` — fail when tables, columns, or enum values present in the baseline are gone.
-- `any` — fail on any detected change, including additions.
-- `none` — never fail from diffs (snapshot + summary still produced).
-
-### Exit codes
-
-| Code | Meaning |
-| ---- | ------- |
-| `0` | Required schema present and no failure-policy violations. |
-| `1` | Required schema check failed, or `PREFLIGHT_FAIL_ON` matched a detected diff, or required env vars missing. |
-
-### CI usage
-
-The GitHub Actions workflow (`.github/workflows/e2e.yml`) wires this up by:
-
-1. Downloading the previous run's `preflight-report` artifact into `preflight-baseline/`.
-2. Setting `PREFLIGHT_BASELINE_PATH=preflight-baseline/schema-snapshot.json` and `PREFLIGHT_FAIL_ON=regressions`.
-3. Running `npm run test:e2e:preflight` and uploading the new `preflight-report/` directory as an artifact for the next run to diff against.
-
-#### Example GitHub Actions step
-
-A complete preflight step showing every supported variable. Required vars are marked; optional ones can be omitted to fall back to defaults.
-
-```yaml
-- name: Preflight — verify Supabase schema matches seed script
-  env:
-    # ── Required: Supabase access ─────────────────────────────────────────
-    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-    # ── Optional: snapshot output ─────────────────────────────────────────
-    # Default: preflight-report/schema-snapshot.json
-    PREFLIGHT_SNAPSHOT_PATH: preflight-report/schema-snapshot.json
-
-    # ── Optional: baseline resolution (first match wins) ──────────────────
-    # 1) Local file (downloaded from a previous run's artifact).
-    PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
-    # 2) Direct artifact URL (REST or browser link — both accepted).
-    # PREFLIGHT_BASELINE_ARTIFACT_URL: https://api.github.com/repos/${{ github.repository }}/actions/artifacts/123456789/zip
-    # 3) Look up by run ID + repo + artifact name.
-    # PREFLIGHT_BASELINE_RUN_ID: "9876543210"
-    PREFLIGHT_BASELINE_REPO: ${{ github.repository }}
-    # PREFLIGHT_BASELINE_ARTIFACT_NAME: preflight-report
-
-    # ── Optional: failure policy ──────────────────────────────────────────
-    # regressions (default) | removed | any | none — comma-separated to combine.
-    PREFLIGHT_FAIL_ON: regressions
-
-    # ── Required for artifact fallbacks (URL or RUN_ID resolution) ────────
-    # Needs `actions: read` permission (see `permissions:` block below).
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: npm run test:e2e:preflight
-
-- name: Upload preflight schema snapshot
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: preflight-report
-    path: preflight-report/
-    retention-days: 14
-```
-
-To download the previous run's snapshot for diffing, add this step **before** the preflight step:
-
-```yaml
-- name: Download previous preflight snapshot (for diff)
-  uses: dawidd6/action-download-artifact@v6
-  continue-on-error: true
-  with:
-    name: preflight-report
-    workflow: e2e.yml
-    branch: ${{ github.event.repository.default_branch }}
-    path: preflight-baseline
-    if_no_artifact_found: warn
-```
-
-#### When `actions: read` is required
-
-The preflight only needs `actions: read` when it has to call the GitHub API to fetch a baseline artifact. Use this quick reference to decide:
-
-| Baseline source | Needs `actions: read`? |
-| --------------- | ---------------------- |
-| No baseline (first run, or diff disabled) | ❌ No |
-| `PREFLIGHT_BASELINE_PATH` (local file, e.g. downloaded by `dawidd6/action-download-artifact`) | ❌ No — the download action uses its own token. |
-| `PREFLIGHT_BASELINE_ARTIFACT_URL` (REST or browser artifact URL) | ✅ Yes |
-| `PREFLIGHT_BASELINE_RUN_ID` + `PREFLIGHT_BASELINE_REPO` | ✅ Yes |
-
-Minimal `permissions:` block for the artifact-URL or run-ID fallbacks (set at workflow or job level):
-
-```yaml
-permissions:
-  contents: read
-  actions: read   # required ONLY for PREFLIGHT_BASELINE_ARTIFACT_URL / PREFLIGHT_BASELINE_RUN_ID
-```
-
-If you only ever use `PREFLIGHT_BASELINE_PATH` (the recommended default), you can omit `actions: read` entirely:
-
-```yaml
-permissions:
-  contents: read
-```
-
-> Note: cross-repo artifact fetches (when `PREFLIGHT_BASELINE_REPO` points at a different repository) require a PAT with `actions:read` on that repo passed as `GITHUB_TOKEN` — the default `GITHUB_TOKEN` is scoped to the current repo only.
-
-#### Complete examples per baseline option
-
-The three blocks below are full, copy-pasteable job snippets. Each one shows the `permissions:` block and the `env:` wiring that match a single baseline source. Pick the one that fits your setup.
-
-##### Option A — `PREFLIGHT_BASELINE_PATH` (recommended default)
-
-Downloads the previous run's artifact to a local path, then points the preflight at the file. No `actions: read` needed.
-
-```yaml
-jobs:
-  preflight:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      # actions: read NOT required — download action uses its own token.
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-      - run: npm ci
-
-      - name: Download previous preflight snapshot
-        uses: dawidd6/action-download-artifact@v6
-        continue-on-error: true
-        with:
-          name: preflight-report
-          workflow: e2e.yml
-          branch: ${{ github.event.repository.default_branch }}
-          path: preflight-baseline
-          if_no_artifact_found: warn
-
-      - name: Preflight (baseline = local file)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          PREFLIGHT_BASELINE_PATH: preflight-baseline/schema-snapshot.json
-          PREFLIGHT_FAIL_ON: regressions
-        run: npm run test:e2e:preflight
-
-      - name: Upload new snapshot
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: preflight-report
-          path: preflight-report/
-          retention-days: 14
-```
-
-##### Option B — `PREFLIGHT_BASELINE_ARTIFACT_URL` (pin to a known artifact)
-
-Useful when comparing against a specific artifact (e.g. the last green build on `main`). Requires `actions: read` and `GITHUB_TOKEN`.
-
-```yaml
-jobs:
-  preflight:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read   # required: script calls GitHub API to download the artifact zip
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-      - run: npm ci
-
-      - name: Preflight (baseline = artifact URL)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Either a REST URL (…/zip) or a browser URL — both are normalized.
-          PREFLIGHT_BASELINE_ARTIFACT_URL: https://api.github.com/repos/${{ github.repository }}/actions/artifacts/123456789/zip
-          PREFLIGHT_FAIL_ON: regressions
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run test:e2e:preflight
-
-      - name: Upload new snapshot
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: preflight-report
-          path: preflight-report/
-          retention-days: 14
-```
-
-##### Option C — `PREFLIGHT_BASELINE_RUN_ID` + `PREFLIGHT_BASELINE_REPO`
-
-Looks up the named artifact (default `preflight-report`) on a specific workflow run. Requires `actions: read` and `GITHUB_TOKEN`.
-
-```yaml
-jobs:
-  preflight:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read   # required: script lists + downloads artifacts via GitHub API
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-      - run: npm ci
-
-      - name: Preflight (baseline = workflow run)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          PREFLIGHT_BASELINE_RUN_ID: "9876543210"
-          PREFLIGHT_BASELINE_REPO: ${{ github.repository }}
-          PREFLIGHT_BASELINE_ARTIFACT_NAME: preflight-report   # optional, this is the default
-          PREFLIGHT_FAIL_ON: regressions
-          # For cross-repo lookups, swap GITHUB_TOKEN for a PAT with actions:read on the target repo.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run test:e2e:preflight
-
-      - name: Upload new snapshot
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: preflight-report
-          path: preflight-report/
-          retention-days: 14
-```
+Proprietary — all rights reserved.
