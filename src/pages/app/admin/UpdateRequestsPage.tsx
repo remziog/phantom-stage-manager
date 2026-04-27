@@ -392,7 +392,7 @@ export default function AdminUpdateRequestsPage() {
     },
     enabled: !!user,
   });
-  const presets = presetsQuery.data ?? [];
+  const presets = useMemo(() => presetsQuery.data ?? [], [presetsQuery.data]);
   const presetEntries = useMemo(
     () =>
       [...presets].sort((a, b) => a.name.localeCompare(b.name)).map(
