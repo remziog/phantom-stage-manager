@@ -41,7 +41,7 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download, Bookmark, Trash2,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download, Bookmark, Trash2, RefreshCw, CloudOff,
 } from "lucide-react";
 import { rowsToCsv, type CsvRow } from "@/lib/csv";
 import {
@@ -369,17 +369,27 @@ export default function AdminUpdateRequestsPage() {
 
   type StatusPresetPayload = { statuses: UpdateRequestStatus[] };
 
+  // Tracks whether the last preset load fell back to localStorage. Set inside
+  // the `onDbError` callback and cleared on every successful fetch start.
+  const [presetsOffline, setPresetsOffline] = useState(false);
+
   const presetsQuery = useQuery({
     queryKey: ["export-presets", presetScope],
-    queryFn: () =>
-      loadPresets<StatusPresetPayload>(presetScope, {
-        onDbError: (err) =>
+    queryFn: async () => {
+      let offline = false;
+      const data = await loadPresets<StatusPresetPayload>(presetScope, {
+        onDbError: (err) => {
+          offline = true;
           toast({
             title: "Showing offline presets",
             description: `Couldn't reach the server (${err.message}). Using your locally cached presets.`,
             variant: "destructive",
-          }),
-      }),
+          });
+        },
+      });
+      setPresetsOffline(offline);
+      return data;
+    },
     enabled: !!user,
   });
   const presets = presetsQuery.data ?? [];
@@ -777,11 +787,38 @@ export default function AdminUpdateRequestsPage() {
 
                     <Separator />
 
-                    {/* Saved presets — local to this browser. */}
+                    {/* Saved presets — synced to your profile, cached locally. */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Bookmark className="h-3.5 w-3.5" />
                         Presets
+                        {presetsOffline && (
+                          <span
+                            className="ml-1 inline-flex items-center gap-1 text-[10px] font-normal text-destructive"
+                            title="Showing locally cached presets"
+                          >
+                            <CloudOff className="h-3 w-3" />
+                            Offline
+                          </span>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="ml-auto h-6 w-6"
+                          onClick={() => presetsQuery.refetch()}
+                          disabled={presetsQuery.isFetching}
+                          aria-label="Retry loading presets from the server"
+                          title={
+                            presetsOffline
+                              ? "Retry loading presets from the server"
+                              : "Refresh presets"
+                          }
+                        >
+                          <RefreshCw
+                            className={`h-3.5 w-3.5 ${presetsQuery.isFetching ? "animate-spin" : ""}`}
+                          />
+                        </Button>
                       </div>
                       {presetEntries.length === 0 ? (
                         <p className="text-xs text-muted-foreground">
