@@ -44,6 +44,11 @@ import {
   Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download, Bookmark, Trash2,
 } from "lucide-react";
 import { rowsToCsv, type CsvRow } from "@/lib/csv";
+import {
+  loadPresets,
+  savePreset as savePresetSvc,
+  deletePreset as deletePresetSvc,
+} from "@/services/exportPresets";
 
 type SortKey = "date_desc" | "date_asc" | "name_asc" | "name_desc" | "email_asc" | "email_desc";
 
