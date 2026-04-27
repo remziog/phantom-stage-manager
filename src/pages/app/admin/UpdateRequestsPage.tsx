@@ -439,12 +439,30 @@ export default function AdminUpdateRequestsPage() {
     },
   });
 
+  // When the user types a name that already exists, we stash the pending
+  // save here and surface an AlertDialog instead of overwriting silently.
+  const [overwriteConfirm, setOverwriteConfirm] = useState<
+    { name: string; statuses: UpdateRequestStatus[]; existing: UpdateRequestStatus[] } | null
+  >(null);
+
   const handleSavePreset = () => {
     const name = presetName.trim();
     if (!name || exportStatuses.size === 0) return;
     const statuses = (["pending", "approved", "rejected"] as UpdateRequestStatus[]).filter(
       (s) => exportStatuses.has(s),
     );
+    const existing = presets.find((p) => p.name === name);
+    if (existing) {
+      setOverwriteConfirm({ name, statuses, existing: existing.payload.statuses });
+      return;
+    }
+    saveMut.mutate({ name, statuses });
+  };
+
+  const confirmOverwrite = () => {
+    if (!overwriteConfirm) return;
+    const { name, statuses } = overwriteConfirm;
+    setOverwriteConfirm(null);
     saveMut.mutate({ name, statuses });
   };
 
@@ -1031,6 +1049,57 @@ export default function AdminUpdateRequestsPage() {
                 : bulkConfirm === "approve"
                 ? "Approve all"
                 : "Reject all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Overwrite-existing-preset confirm */}
+      <AlertDialog
+        open={overwriteConfirm !== null}
+        onOpenChange={(o) => !o && !saveMut.isPending && setOverwriteConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Overwrite preset "{overwriteConfirm?.name}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>A preset with this name already exists. Saving will replace it.</p>
+                {overwriteConfirm && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded border border-border bg-muted/30 p-2">
+                      <div className="uppercase tracking-wide text-muted-foreground mb-1">
+                        Current
+                      </div>
+                      <div className="text-foreground">
+                        {overwriteConfirm.existing.map((s) => STATUS_META[s].label).join(", ") || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded border border-primary/30 bg-primary/10 p-2">
+                      <div className="uppercase tracking-wide text-primary mb-1">
+                        New
+                      </div>
+                      <div className="text-foreground">
+                        {overwriteConfirm.statuses.map((s) => STATUS_META[s].label).join(", ") || "—"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saveMut.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmOverwrite();
+              }}
+              disabled={saveMut.isPending}
+            >
+              {saveMut.isPending ? "Saving…" : "Overwrite"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
