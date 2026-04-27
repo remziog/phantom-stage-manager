@@ -807,7 +807,7 @@ export default function AdminUpdateRequestsPage() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              savePreset();
+                              handleSavePreset();
                             }
                           }}
                         />
@@ -815,10 +815,14 @@ export default function AdminUpdateRequestsPage() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={savePreset}
-                          disabled={!presetName.trim() || exportStatuses.size === 0}
+                          onClick={handleSavePreset}
+                          disabled={
+                            !presetName.trim() ||
+                            exportStatuses.size === 0 ||
+                            saveMut.isPending
+                          }
                         >
-                          Save
+                          {saveMut.isPending ? "Saving…" : "Save"}
                         </Button>
                       </div>
                     </div>
