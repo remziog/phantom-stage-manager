@@ -4,7 +4,7 @@
  * requested) and approve/reject actions. Approval writes the requested
  * values to the customer record; reject just records the decision.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
