@@ -4,7 +4,7 @@
  * requested) and approve/reject actions. Approval writes the requested
  * values to the customer record; reject just records the decision.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppShell } from "@/components/layout/AppShell";
@@ -41,7 +41,7 @@ import {
   type UpdateRequestWithCustomer,
 } from "@/services/updateRequestsAdmin";
 import {
-  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download,
+  Clock, CheckCircle2, XCircle, UserCircle2, Eye, Check, X, Search, ArrowUpDown, Filter, Download, Bookmark, Trash2,
 } from "lucide-react";
 import { rowsToCsv, type CsvRow } from "@/lib/csv";
 
@@ -350,6 +350,68 @@ export default function AdminUpdateRequestsPage() {
     () => new Set<UpdateRequestStatus>(["pending"]),
   );
   const [exportOpen, setExportOpen] = useState(false);
+  // Saved export-scope presets, persisted per-browser via localStorage.
+  // Stored as a name → status[] map so older presets keep working if we ever
+  // add new statuses. Keyed by company so different orgs don't collide.
+  const presetsKey = `update-requests:export-presets:${cid || "anon"}`;
+  const [presets, setPresets] = useState<Record<string, UpdateRequestStatus[]>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(`update-requests:export-presets:${cid || "anon"}`);
+      return raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [presetName, setPresetName] = useState("");
+
+  // Re-load presets whenever the active company changes (login/switch).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(presetsKey);
+      setPresets(raw ? (JSON.parse(raw) as Record<string, UpdateRequestStatus[]>) : {});
+    } catch {
+      setPresets({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetsKey]);
+
+  const persistPresets = (next: Record<string, UpdateRequestStatus[]>) => {
+    setPresets(next);
+    try {
+      window.localStorage.setItem(presetsKey, JSON.stringify(next));
+    } catch {
+      // Storage may be full or disabled — silently ignore.
+    }
+  };
+
+  const savePreset = () => {
+    const name = presetName.trim();
+    if (!name || exportStatuses.size === 0) return;
+    const statuses = (["pending", "approved", "rejected"] as UpdateRequestStatus[]).filter(
+      (s) => exportStatuses.has(s),
+    );
+    persistPresets({ ...presets, [name]: statuses });
+    setPresetName("");
+    toast({ title: `Preset "${name}" saved` });
+  };
+
+  const applyPreset = (name: string) => {
+    const statuses = presets[name];
+    if (!statuses) return;
+    setExportStatuses(new Set(statuses));
+  };
+
+  const deletePreset = (name: string) => {
+    const next = { ...presets };
+    delete next[name];
+    persistPresets(next);
+  };
+
+  const presetEntries = useMemo(
+    () => Object.entries(presets).sort(([a], [b]) => a.localeCompare(b)),
+    [presets],
+  );
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
@@ -682,6 +744,78 @@ export default function AdminUpdateRequestsPage() {
                         Select all
                       </button>
                     </div>
+
+                    <Separator />
+
+                    {/* Saved presets — local to this browser. */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Bookmark className="h-3.5 w-3.5" />
+                        Presets
+                      </div>
+                      {presetEntries.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          No saved presets yet.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {presetEntries.map(([name, statuses]) => (
+                            <li
+                              key={name}
+                              className="flex items-center gap-2 rounded-md border border-border px-2 py-1"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => applyPreset(name)}
+                                className="flex-1 text-left text-sm hover:underline truncate"
+                                title={`Apply: ${statuses.join(", ")}`}
+                              >
+                                {name}
+                              </button>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {statuses.length}/3
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => deletePreset(name)}
+                                aria-label={`Delete preset ${name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="flex gap-2">
+                        <Input
+                          value={presetName}
+                          onChange={(e) => setPresetName(e.target.value)}
+                          placeholder="Preset name"
+                          className="h-8 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              savePreset();
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={savePreset}
+                          disabled={!presetName.trim() || exportStatuses.size === 0}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Separator />
+
                     <Button
                       className="w-full"
                       size="sm"
