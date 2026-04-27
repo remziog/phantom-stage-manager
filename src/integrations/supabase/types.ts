@@ -600,6 +600,39 @@ export type Database = {
           },
         ]
       }
+      user_export_presets: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          name: string
+          page_key: string
+          payload: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          page_key: string
+          payload?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          page_key?: string
+          payload?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
