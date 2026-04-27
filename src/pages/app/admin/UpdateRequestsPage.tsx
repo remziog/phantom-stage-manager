@@ -1053,6 +1053,57 @@ export default function AdminUpdateRequestsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Overwrite-existing-preset confirm */}
+      <AlertDialog
+        open={overwriteConfirm !== null}
+        onOpenChange={(o) => !o && !saveMut.isPending && setOverwriteConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Overwrite preset "{overwriteConfirm?.name}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>A preset with this name already exists. Saving will replace it.</p>
+                {overwriteConfirm && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded border border-border bg-muted/30 p-2">
+                      <div className="uppercase tracking-wide text-muted-foreground mb-1">
+                        Current
+                      </div>
+                      <div className="text-foreground">
+                        {overwriteConfirm.existing.map((s) => STATUS_META[s].label).join(", ") || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded border border-primary/30 bg-primary/10 p-2">
+                      <div className="uppercase tracking-wide text-primary mb-1">
+                        New
+                      </div>
+                      <div className="text-foreground">
+                        {overwriteConfirm.statuses.map((s) => STATUS_META[s].label).join(", ") || "—"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saveMut.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmOverwrite();
+              }}
+              disabled={saveMut.isPending}
+            >
+              {saveMut.isPending ? "Saving…" : "Overwrite"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
