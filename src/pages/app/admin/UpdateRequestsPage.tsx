@@ -371,7 +371,15 @@ export default function AdminUpdateRequestsPage() {
 
   const presetsQuery = useQuery({
     queryKey: ["export-presets", presetScope],
-    queryFn: () => loadPresets<StatusPresetPayload>(presetScope),
+    queryFn: () =>
+      loadPresets<StatusPresetPayload>(presetScope, {
+        onDbError: (err) =>
+          toast({
+            title: "Showing offline presets",
+            description: `Couldn't reach the server (${err.message}). Using your locally cached presets.`,
+            variant: "destructive",
+          }),
+      }),
     enabled: !!user,
   });
   const presets = presetsQuery.data ?? [];
@@ -396,15 +404,29 @@ export default function AdminUpdateRequestsPage() {
       setPresetName("");
       toast({ title: `Preset "${vars.name}" saved`, description: "Synced to your profile." });
     },
-    onError: (e: Error) =>
-      toast({ title: "Could not save preset", description: e.message, variant: "destructive" }),
+    onError: (e: Error, vars) => {
+      // The service writes to localStorage before calling Supabase, so the
+      // preset is still usable on this device even when the DB call fails.
+      qc.invalidateQueries({ queryKey: ["export-presets", presetScope] });
+      toast({
+        title: "Saved locally only",
+        description: `"${vars.name}" couldn't sync (${e.message}). It will stay on this device until the server is reachable.`,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteMut = useMutation({
     mutationFn: (name: string) => deletePresetSvc(presetScope, name),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["export-presets", presetScope] }),
-    onError: (e: Error) =>
-      toast({ title: "Could not delete preset", description: e.message, variant: "destructive" }),
+    onError: (e: Error, name) => {
+      qc.invalidateQueries({ queryKey: ["export-presets", presetScope] });
+      toast({
+        title: "Removed locally only",
+        description: `"${name}" couldn't sync the deletion (${e.message}). It will reappear on other devices until the server is reachable.`,
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSavePreset = () => {
