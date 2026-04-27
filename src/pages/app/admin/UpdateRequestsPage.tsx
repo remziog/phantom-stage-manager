@@ -22,6 +22,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -340,6 +344,12 @@ export default function AdminUpdateRequestsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Confirm dialog for the bulk action; null = closed.
   const [bulkConfirm, setBulkConfirm] = useState<"approve" | "reject" | null>(null);
+  // Statuses to include when exporting the filtered list. Defaults to whatever
+  // the user is currently viewing — pending alone, or all three for "all".
+  const [exportStatuses, setExportStatuses] = useState<Set<UpdateRequestStatus>>(
+    () => new Set<UpdateRequestStatus>(["pending"]),
+  );
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Fetch all requests once; filter/sort happens client-side so the status
   // dropdown stays instant and the counts always reflect the same dataset.
@@ -486,9 +496,34 @@ export default function AdminUpdateRequestsPage() {
   const exportSelectedCsv = () =>
     downloadRequestsCsv(selectedRequests, "selected");
 
-  /** Export the full filtered list — same status/search/sort the user sees. */
-  const exportFilteredCsv = () =>
-    downloadRequestsCsv(visibleRequests, statusFilter);
+  /**
+   * Export the search/sort-filtered list, narrowed further to whichever
+   * statuses are checked in the export popover. The status filter on the
+   * page narrows what's visible; the export scope narrows what's written.
+   */
+  const exportFilteredCsv = () => {
+    const items = visibleRequests.filter((r) => exportStatuses.has(r.status));
+    const scope =
+      exportStatuses.size === 3
+        ? "all"
+        : Array.from(exportStatuses).sort().join("-") || "none";
+    downloadRequestsCsv(items, scope);
+    setExportOpen(false);
+  };
+
+  const toggleExportStatus = (s: UpdateRequestStatus, next: boolean) => {
+    setExportStatuses((prev) => {
+      const n = new Set(prev);
+      if (next) n.add(s); else n.delete(s);
+      return n;
+    });
+  };
+
+  // Count of rows that *would* be exported with the current scope + filters.
+  const exportPreviewCount = useMemo(
+    () => visibleRequests.filter((r) => exportStatuses.has(r.status)).length,
+    [visibleRequests, exportStatuses],
+  );
 
   // Bulk approve/reject — runs items in parallel and reports a combined result.
   const bulkMut = useMutation({
@@ -588,16 +623,77 @@ export default function AdminUpdateRequestsPage() {
                 </SelectContent>
               </Select>
 
-              <Button
-                variant="outline"
-                onClick={exportFilteredCsv}
-                disabled={visibleRequests.length === 0}
-                className="w-full sm:w-auto"
-                title="Export the currently filtered list as CSV"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              <Popover open={exportOpen} onOpenChange={setExportOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={visibleRequests.length === 0}
+                    className="w-full sm:w-auto"
+                    title="Export filtered list as CSV"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm font-medium">Export scope</div>
+                      <p className="text-xs text-muted-foreground">
+                        Pick which statuses to include. Search and sort still apply.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {(["pending", "approved", "rejected"] as UpdateRequestStatus[]).map((s) => {
+                        const meta = STATUS_META[s];
+                        const checked = exportStatuses.has(s);
+                        const id = `export-status-${s}`;
+                        return (
+                          <label
+                            key={s}
+                            htmlFor={id}
+                            className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={id}
+                                checked={checked}
+                                onCheckedChange={(v) => toggleExportStatus(s, v === true)}
+                              />
+                              <span className="text-sm">{meta.label}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {counts[s]}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{exportPreviewCount} row{exportPreviewCount === 1 ? "" : "s"} to export</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExportStatuses(new Set<UpdateRequestStatus>(["pending", "approved", "rejected"]))
+                        }
+                        className="text-primary hover:underline"
+                      >
+                        Select all
+                      </button>
+                    </div>
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={exportFilteredCsv}
+                      disabled={exportStatuses.size === 0 || exportPreviewCount === 0}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download CSV
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Active filter summary */}
