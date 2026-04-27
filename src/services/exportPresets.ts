@@ -50,9 +50,14 @@ function writeLocal<T>(scope: PresetScope, presets: ExportPreset<T>[]) {
  * Load presets for the current user/page. Tries the DB first; if that fails
  * (offline, signed out), returns whatever's in localStorage so the UI keeps
  * working. Always refreshes the local cache when DB returns successfully.
+ *
+ * When the DB request fails, `onDbError` is invoked with the error so callers
+ * can surface a toast — the function still resolves with the local cache so
+ * the UI keeps working offline.
  */
 export async function loadPresets<T = unknown>(
   scope: PresetScope,
+  options?: { onDbError?: (error: Error) => void },
 ): Promise<ExportPreset<T>[]> {
   if (!scope.userId) return readLocal<T>(scope);
 
@@ -75,7 +80,8 @@ export async function loadPresets<T = unknown>(
     }));
     writeLocal(scope, presets);
     return presets;
-  } catch {
+  } catch (err) {
+    options?.onDbError?.(err instanceof Error ? err : new Error(String(err)));
     return readLocal<T>(scope);
   }
 }
