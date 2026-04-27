@@ -744,6 +744,78 @@ export default function AdminUpdateRequestsPage() {
                         Select all
                       </button>
                     </div>
+
+                    <Separator />
+
+                    {/* Saved presets — local to this browser. */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Bookmark className="h-3.5 w-3.5" />
+                        Presets
+                      </div>
+                      {presetEntries.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          No saved presets yet.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {presetEntries.map(([name, statuses]) => (
+                            <li
+                              key={name}
+                              className="flex items-center gap-2 rounded-md border border-border px-2 py-1"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => applyPreset(name)}
+                                className="flex-1 text-left text-sm hover:underline truncate"
+                                title={`Apply: ${statuses.join(", ")}`}
+                              >
+                                {name}
+                              </button>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {statuses.length}/3
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => deletePreset(name)}
+                                aria-label={`Delete preset ${name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="flex gap-2">
+                        <Input
+                          value={presetName}
+                          onChange={(e) => setPresetName(e.target.value)}
+                          placeholder="Preset name"
+                          className="h-8 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              savePreset();
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={savePreset}
+                          disabled={!presetName.trim() || exportStatuses.size === 0}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Separator />
+
                     <Button
                       className="w-full"
                       size="sm"
