@@ -439,12 +439,30 @@ export default function AdminUpdateRequestsPage() {
     },
   });
 
+  // When the user types a name that already exists, we stash the pending
+  // save here and surface an AlertDialog instead of overwriting silently.
+  const [overwriteConfirm, setOverwriteConfirm] = useState<
+    { name: string; statuses: UpdateRequestStatus[]; existing: UpdateRequestStatus[] } | null
+  >(null);
+
   const handleSavePreset = () => {
     const name = presetName.trim();
     if (!name || exportStatuses.size === 0) return;
     const statuses = (["pending", "approved", "rejected"] as UpdateRequestStatus[]).filter(
       (s) => exportStatuses.has(s),
     );
+    const existing = presets.find((p) => p.name === name);
+    if (existing) {
+      setOverwriteConfirm({ name, statuses, existing: existing.payload.statuses });
+      return;
+    }
+    saveMut.mutate({ name, statuses });
+  };
+
+  const confirmOverwrite = () => {
+    if (!overwriteConfirm) return;
+    const { name, statuses } = overwriteConfirm;
+    setOverwriteConfirm(null);
     saveMut.mutate({ name, statuses });
   };
 
